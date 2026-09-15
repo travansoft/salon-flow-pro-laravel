@@ -14,21 +14,22 @@
         <form id="bill-form">
             @csrf
 
-            <div class="sfp-field" style="position:relative">
+            <div class="sfp-field">
                 <label class="sfp-label" for="bill-client-search">Client</label>
                 <input type="text" id="bill-client-search" class="sfp-input" autocomplete="off" placeholder="Search by phone or name&hellip; (blank = walk-in)">
                 <input type="hidden" name="client_id" id="bill-client-id">
-                <div id="bill-client-suggestions" class="sfp-suggestions" hidden></div>
+                <div id="bill-client-suggestions" class="sfp-autosuggest-list" style="display:none"></div>
+                <div id="bill-client-selected" style="display:none;margin-top:8px" class="sfp-pill sfp-pill-blue"></div>
                 <div id="bill-client-feedback" style="font-size:12.5px;margin-top:6px;color:#66736F"></div>
                 @error('client_id')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
             </div>
 
-            <div class="sfp-field" style="position:relative">
+            <div class="sfp-field">
                 <label class="sfp-label" for="bill-item-search">Add service</label>
                 <input type="text" id="bill-item-search" class="sfp-input" autocomplete="off" placeholder="Type a service name or code, press Enter to add exact code">
-                <div id="bill-item-suggestions" class="sfp-suggestions" hidden></div>
+                <div id="bill-item-suggestions" class="sfp-autosuggest-list" style="display:none"></div>
             </div>
 
             <div class="sfp-field">
@@ -79,31 +80,13 @@
 
 @section('styles')
 <style>
-    .sfp-suggestions {
-        position: absolute;
-        z-index: 20;
-        left: 0;
-        right: 0;
-        top: 100%;
-        background: #fff;
-        border: 1px solid #E3EAE8;
-        border-radius: 8px;
-        box-shadow: 0 6px 18px rgba(0,0,0,.08);
-        max-height: 260px;
-        overflow-y: auto;
-        margin-top: 4px;
+    .sfp-autosuggest-item.active {
+        background: #F4F9F7;
     }
-    .sfp-suggestion-item {
-        padding: 8px 12px;
-        font-size: 13.5px;
-        cursor: pointer;
-    }
-    .sfp-suggestion-item:hover,
-    .sfp-suggestion-item.active {
-        background: #F1F6F4;
-    }
-    .sfp-suggestion-item small {
+    .sfp-autosuggest-item small {
         color: #94A19D;
+        display: block;
+        margin-top: 2px;
     }
 </style>
 @endsection
@@ -116,6 +99,7 @@
     const clientSearch = document.getElementById('bill-client-search');
     const clientIdInput = document.getElementById('bill-client-id');
     const clientSuggestions = document.getElementById('bill-client-suggestions');
+    const clientSelected = document.getElementById('bill-client-selected');
     const clientFeedback = document.getElementById('bill-client-feedback');
 
     const itemSearch = document.getElementById('bill-item-search');
@@ -153,7 +137,7 @@
     }
 
     function hideSuggestions(box) {
-        box.hidden = true;
+        box.style.display = 'none';
         box.innerHTML = '';
     }
 
@@ -166,7 +150,7 @@
         box.innerHTML = '';
         items.forEach((item, index) => {
             const row = document.createElement('div');
-            row.className = 'sfp-suggestion-item' + (index === 0 ? ' active' : '');
+            row.className = 'sfp-autosuggest-item' + (index === 0 ? ' active' : '');
             row.innerHTML = renderLabel(item);
             row.addEventListener('mousedown', (event) => {
                 event.preventDefault();
@@ -174,11 +158,11 @@
             });
             box.appendChild(row);
         });
-        box.hidden = false;
+        box.style.display = 'block';
     }
 
     function moveActiveSuggestion(box, direction) {
-        const items = [...box.querySelectorAll('.sfp-suggestion-item')];
+        const items = [...box.querySelectorAll('.sfp-autosuggest-item')];
         if (!items.length) {
             return;
         }
@@ -191,7 +175,7 @@
     }
 
     function pickActiveSuggestion(box) {
-        return box.querySelector('.sfp-suggestion-item.active');
+        return box.querySelector('.sfp-autosuggest-item.active');
     }
 
     // ----- Client search -----
@@ -216,23 +200,27 @@
         }
 
         const clients = await searchClients(term);
-        renderSuggestions(clientSuggestions, clients, (client) => `
-            <div>${client.name}</div>
-            <small>${client.phone || ''}</small>
-        `, selectClient);
+        renderSuggestions(clientSuggestions, clients, (client) => client.name + (client.phone ? ' &middot; ' + client.phone : ''), selectClient);
     }, 250);
 
     function selectClient(client) {
         clientSelection = client;
         clientIdInput.value = client.id;
-        clientSearch.value = client.name + (client.phone ? ' · ' + client.phone : '');
+        clientSearch.value = client.name;
+        clientSelected.textContent = client.name + (client.phone ? ' · ' + client.phone : '');
+        clientSelected.style.display = 'inline-block';
         clientFeedback.textContent = '';
         hideSuggestions(clientSuggestions);
     }
 
-    clientSearch.addEventListener('input', () => {
+    function clearClientSelection() {
         clientSelection = null;
         clientIdInput.value = '';
+        clientSelected.style.display = 'none';
+    }
+
+    clientSearch.addEventListener('input', () => {
+        clearClientSelection();
         debouncedClientSearch(clientSearch.value.trim());
     });
 
@@ -287,7 +275,7 @@
 
         const services = await searchServices(term);
         renderSuggestions(itemSuggestions, services, (service) => `
-            <div>${service.name} <small>(${service.code})</small></div>
+            ${service.name} &middot; ${service.code}
             <small>${money(service.price)}</small>
         `, addServiceLine);
     }, 250);
