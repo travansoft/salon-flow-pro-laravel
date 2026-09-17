@@ -6,7 +6,7 @@
     <div class="sfp-page-header">
         <div>
             <h1 class="sfp-page-title">New bill</h1>
-            <p class="sfp-page-subtitle">Search a service by name or code, or add a manual item. Press Enter on an exact code for the fastest add.</p>
+            <p class="sfp-page-subtitle">Search a service by name or code. Press Enter on an exact code for the fastest add.</p>
         </div>
     </div>
 
@@ -14,18 +14,21 @@
         <form id="bill-form">
             @csrf
 
-            <div class="sfp-field">
+            <div class="sfp-field sfp-autosuggest">
                 <label class="sfp-label" for="bill-client-search">Client</label>
-                <select id="bill-client-search" name="client_id" placeholder="Search by phone or name&hellip; (blank = walk-in)"></select>
+                <input type="text" id="bill-client-search" class="sfp-input" autocomplete="off" placeholder="Search by phone or name&hellip; (blank = walk-in)">
+                <input type="hidden" name="client_id" id="bill-client-id">
+                <div id="bill-client-suggestions" class="sfp-suggestions" hidden></div>
                 <div id="bill-client-feedback" style="font-size:12.5px;margin-top:6px;color:#66736F"></div>
                 @error('client_id')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
             </div>
 
-            <div class="sfp-field">
+            <div class="sfp-field sfp-autosuggest">
                 <label class="sfp-label" for="bill-item-search">Add service</label>
-                <select id="bill-item-search" placeholder="Type a service name or code&hellip;"></select>
+                <input type="text" id="bill-item-search" class="sfp-input" autocomplete="off" placeholder="Type a service name or code, press Enter to add exact code">
+                <div id="bill-item-suggestions" class="sfp-suggestions" hidden></div>
             </div>
 
             <div class="sfp-field">
@@ -43,7 +46,6 @@
                         <span style="color:#94A19D;font-size:13.5px">No items added yet.</span>
                     </div>
                 </div>
-                <button type="button" id="bill-add-manual" class="sfp-btn-outline" style="margin-top:10px">+ Add manual item</button>
                 @error('items')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
@@ -75,39 +77,95 @@
 @endsection
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('admin/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
 <style>
-    .ts-wrapper.single .ts-control {
+    .sfp-autosuggest {
+        position: relative;
+    }
+
+    .sfp-autosuggest .sfp-input {
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .sfp-autosuggest .sfp-input:focus {
+        border-color: #1B4B8F;
+        box-shadow: 0 0 0 3px rgba(27,75,143,.12);
+        outline: none;
+    }
+
+    .sfp-suggestions {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        top: calc(100% + 4px);
+        background: #fff;
+        border: 1px solid #E3EAE8;
         border-radius: 10px;
-        border-color: #E3EAE8;
-        padding: 9px 12px;
-        font-size: 14px;
+        box-shadow: 0 10px 24px rgba(16,24,22,.1);
+        max-height: 280px;
+        overflow-y: auto;
+        padding: 6px;
+        animation: sfp-suggestions-in .12s ease-out;
     }
-    .ts-dropdown {
-        border-color: #E3EAE8;
-        border-radius: 8px;
-        box-shadow: 0 6px 18px rgba(0,0,0,.08);
+
+    @keyframes sfp-suggestions-in {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sfp-suggestion-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 10px;
         font-size: 13.5px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background-color .1s ease;
     }
-    .ts-dropdown .option small,
-    .ts-control small {
+
+    .sfp-suggestion-item:hover,
+    .sfp-suggestion-item.active {
+        background: #F1F6F4;
+    }
+
+    .sfp-suggestion-item .sfp-suggestion-main {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sfp-suggestion-item small {
+        color: #94A19D;
+        white-space: nowrap;
+        flex: none;
+    }
+
+    .sfp-suggestion-empty {
+        padding: 10px;
+        font-size: 13px;
         color: #94A19D;
     }
 </style>
 @endsection
 
 @section('scripts')
-<script src="{{ asset('admin/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 <script>
 (function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
+    const clientSearch = document.getElementById('bill-client-search');
+    const clientIdInput = document.getElementById('bill-client-id');
+    const clientSuggestions = document.getElementById('bill-client-suggestions');
     const clientFeedback = document.getElementById('bill-client-feedback');
+
+    const itemSearch = document.getElementById('bill-item-search');
+    const itemSuggestions = document.getElementById('bill-item-suggestions');
 
     const itemsBox = document.getElementById('bill-items');
     const itemsEmpty = document.getElementById('bill-items-empty');
     const totalEl = document.getElementById('bill-total');
-    const addManualBtn = document.getElementById('bill-add-manual');
 
     const paymentSection = document.getElementById('bill-payment-section');
     const methodButtons = [...document.querySelectorAll('.bill-method')];
@@ -118,92 +176,228 @@
     let lines = [];
     let lineSeq = 0;
     let paymentMethod = 'cash';
+    let clientSelection = null;
 
     const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function debounce(fn, delay) {
+        let timer = null;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), delay);
+        };
+    }
 
     function setFeedback(message, isError) {
         feedback.textContent = message || '';
         feedback.style.color = isError ? '#A8506B' : '#66736F';
     }
 
+    function hideSuggestions(box) {
+        box.hidden = true;
+        box.innerHTML = '';
+    }
+
+    function renderSuggestions(box, items, renderLabel, onPick, emptyMessage) {
+        if (!items.length) {
+            if (emptyMessage) {
+                box.innerHTML = `<div class="sfp-suggestion-empty">${emptyMessage}</div>`;
+                box.hidden = false;
+                return;
+            }
+            hideSuggestions(box);
+            return;
+        }
+
+        box.innerHTML = '';
+        items.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'sfp-suggestion-item' + (index === 0 ? ' active' : '');
+            row.innerHTML = renderLabel(item);
+            row.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                onPick(item);
+            });
+            box.appendChild(row);
+        });
+        box.hidden = false;
+    }
+
+    function moveActiveSuggestion(box, direction) {
+        const items = [...box.querySelectorAll('.sfp-suggestion-item')];
+        if (!items.length) {
+            return;
+        }
+
+        let index = items.findIndex((item) => item.classList.contains('active'));
+        items[index]?.classList.remove('active');
+        index = (index + direction + items.length) % items.length;
+        items[index].classList.add('active');
+        items[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    function pickActiveSuggestion(box) {
+        return box.querySelector('.sfp-suggestion-item.active');
+    }
+
     // ----- Client search -----
 
-    const clientSelect = new TomSelect('#bill-client-search', {
-        valueField: 'id',
-        labelField: 'name',
-        searchField: ['name', 'phone'],
-        options: [],
-        create: false,
-        load(term, callback) {
-            if (!term) {
-                clientFeedback.textContent = 'Walk-in customer.';
-                return callback();
-            }
+    async function searchClients(term) {
+        const response = await fetch('{{ $tenantUrl->route("clients.search") }}?q=' + encodeURIComponent(term), {
+            headers: { 'Accept': 'application/json' },
+        });
 
-            fetch('{{ $tenantUrl->route("clients.search") }}?q=' + encodeURIComponent(term), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => (response.ok ? response.json() : { clients: [] }))
-                .then((data) => callback(data.clients || []))
-                .catch(() => callback());
-        },
-        render: {
-            option(client, escape) {
-                return `<div>${escape(client.name)} <small>${escape(client.phone || '')}</small></div>`;
-            },
-            item(client, escape) {
-                return `<div>${escape(client.name)}${client.phone ? ' · ' + escape(client.phone) : ''}</div>`;
-            },
-            no_results() {
-                return '<div class="no-results">No clients found.</div>';
-            },
-        },
-        onChange() {
-            clientFeedback.textContent = '';
-        },
+        if (!response.ok) {
+            return [];
+        }
+
+        const data = await response.json();
+        return data.clients || [];
+    }
+
+    const debouncedClientSearch = debounce(async (term) => {
+        if (!term) {
+            hideSuggestions(clientSuggestions);
+            return;
+        }
+
+        const clients = await searchClients(term);
+        renderSuggestions(clientSuggestions, clients, (client) => `
+            <span class="sfp-suggestion-main">${client.name}</span>
+            <small>${client.phone || ''}</small>
+        `, selectClient, `No clients matching "${term}".`);
+    }, 250);
+
+    function selectClient(client) {
+        clientSelection = client;
+        clientIdInput.value = client.id;
+        clientSearch.value = client.name + (client.phone ? ' · ' + client.phone : '');
+        clientFeedback.textContent = '';
+        hideSuggestions(clientSuggestions);
+    }
+
+    clientSearch.addEventListener('input', () => {
+        clientSelection = null;
+        clientIdInput.value = '';
+        debouncedClientSearch(clientSearch.value.trim());
     });
+
+    clientSearch.addEventListener('focus', () => {
+        if (clientSearch.value.trim()) {
+            debouncedClientSearch(clientSearch.value.trim());
+        }
+    });
+
+    clientSearch.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            moveActiveSuggestion(clientSuggestions, 1);
+        }
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            moveActiveSuggestion(clientSuggestions, -1);
+        }
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const active = pickActiveSuggestion(clientSuggestions);
+            if (active) {
+                active.dispatchEvent(new Event('mousedown'));
+                return;
+            }
+            if (clientSearch.value.trim() === '') {
+                clientFeedback.textContent = 'Walk-in customer.';
+            }
+            itemSearch.focus();
+        }
+        if (event.key === 'Escape') {
+            hideSuggestions(clientSuggestions);
+        }
+    });
+
+    clientSearch.addEventListener('blur', () => setTimeout(() => hideSuggestions(clientSuggestions), 150));
 
     // ----- Item search -----
 
-    const itemSelect = new TomSelect('#bill-item-search', {
-        valueField: 'id',
-        labelField: 'name',
-        searchField: ['name', 'code'],
-        options: [],
-        create: false,
-        load(term, callback) {
-            if (!term) {
-                return callback();
-            }
+    async function searchServices(term) {
+        const response = await fetch('{{ $tenantUrl->route("services.search") }}?q=' + encodeURIComponent(term), {
+            headers: { 'Accept': 'application/json' },
+        });
 
-            fetch('{{ $tenantUrl->route("services.search") }}?q=' + encodeURIComponent(term), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => (response.ok ? response.json() : { services: [] }))
-                .then((data) => callback(data.services || []))
-                .catch(() => callback());
-        },
-        render: {
-            option(service, escape) {
-                return `<div>${escape(service.name)} <small>(${escape(service.code || '')})</small> <small>${escape(money(service.price))}</small></div>`;
-            },
-            no_results() {
-                return '<div class="no-results">No services found.</div>';
-            },
-        },
-        onChange(value) {
-            if (!value) {
-                return;
-            }
+        if (!response.ok) {
+            return [];
+        }
 
-            const service = itemSelect.options[value];
-            addServiceLine(service);
-            setTimeout(() => {
-                itemSelect.clear(true);
-                itemSelect.clearOptions();
-            }, 0);
-        },
+        const data = await response.json();
+        return data.services || [];
+    }
+
+    const debouncedItemSearch = debounce(async (term) => {
+        if (!term) {
+            hideSuggestions(itemSuggestions);
+            return;
+        }
+
+        const services = await searchServices(term);
+        renderSuggestions(itemSuggestions, services, (service) => `
+            <span class="sfp-suggestion-main">${service.name} <small>(${service.code})</small></span>
+            <small>${money(service.price)}</small>
+        `, addServiceLine, `No active service matching "${term}".`);
+    }, 250);
+
+    itemSearch.addEventListener('input', () => {
+        debouncedItemSearch(itemSearch.value.trim());
     });
+
+    itemSearch.addEventListener('focus', () => {
+        if (itemSearch.value.trim()) {
+            debouncedItemSearch(itemSearch.value.trim());
+        }
+    });
+
+    itemSearch.addEventListener('keydown', async (event) => {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            moveActiveSuggestion(itemSuggestions, 1);
+            return;
+        }
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            moveActiveSuggestion(itemSuggestions, -1);
+            return;
+        }
+        if (event.key === 'Escape') {
+            hideSuggestions(itemSuggestions);
+            return;
+        }
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+
+        const active = pickActiveSuggestion(itemSuggestions);
+        if (active) {
+            active.dispatchEvent(new Event('mousedown'));
+            return;
+        }
+
+        const term = itemSearch.value.trim();
+        if (term === '') {
+            return;
+        }
+
+        const services = await searchServices(term);
+        const exact = services.find((service) => String(service.code) === term);
+
+        if (exact) {
+            addServiceLine(exact);
+            return;
+        }
+
+        setFeedback('No active service matches "' + term + '".', true);
+    });
+
+    itemSearch.addEventListener('blur', () => setTimeout(() => hideSuggestions(itemSuggestions), 150));
 
     // ----- Line items -----
 
@@ -215,27 +409,13 @@
             price: Number(service.price),
             quantity: 1,
             staffProfileId: null,
-            manual: false,
         });
         renderLines();
-        itemSelect.focus();
+        itemSearch.value = '';
+        hideSuggestions(itemSuggestions);
+        itemSearch.focus();
         setFeedback('', false);
     }
-
-    function addManualLine() {
-        lines.push({
-            id: lineSeq++,
-            serviceId: null,
-            description: '',
-            price: 0,
-            quantity: 1,
-            staffProfileId: null,
-            manual: true,
-        });
-        renderLines();
-    }
-
-    addManualBtn.addEventListener('click', addManualLine);
 
     async function loadEligibleStaff(line, select) {
         if (!line.serviceId) {
@@ -266,19 +446,11 @@
             row.className = 'sfp-table-row';
             row.style.gridTemplateColumns = '1.6fr 1.2fr 70px 110px auto';
 
-            const descriptionCell = line.manual
-                ? `<input type="text" class="sfp-input bill-line-description" placeholder="Description" value="${line.description}" style="margin-bottom:0;font-size:13.5px;padding:4px 8px">`
-                : `<span style="font-size:14px">${line.description}</span>`;
-
-            const priceCell = line.manual
-                ? `<input type="number" step="0.01" min="0" class="sfp-input bill-line-price" value="${line.price}" style="margin-bottom:0;font-size:13.5px;padding:4px 8px;text-align:right">`
-                : `<span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.price)}</span>`;
-
             row.innerHTML = `
-                <span class="bill-line-description-wrap">${descriptionCell}</span>
+                <span class="bill-line-description-wrap"><span style="font-size:14px">${line.description}</span></span>
                 <span></span>
                 <input type="number" min="1" value="${line.quantity}" class="sfp-input bill-line-qty" style="margin-bottom:0;font-size:13.5px;padding:4px 8px">
-                <span class="bill-line-price-wrap">${priceCell}</span>
+                <span class="bill-line-price-wrap"><span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.price)}</span></span>
                 <button type="button" class="sfp-btn-outline bill-line-remove" style="padding:4px 10px">Remove</button>
             `;
 
@@ -290,16 +462,6 @@
             });
             row.children[1].replaceWith(staffSelect);
             loadEligibleStaff(line, staffSelect);
-
-            if (line.manual) {
-                row.querySelector('.bill-line-description').addEventListener('input', (event) => {
-                    line.description = event.target.value;
-                });
-                row.querySelector('.bill-line-price').addEventListener('input', (event) => {
-                    line.price = Number(event.target.value) || 0;
-                    updateTotal();
-                });
-            }
 
             row.querySelector('.bill-line-qty').addEventListener('input', (event) => {
                 line.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
@@ -339,7 +501,7 @@
         }
 
         const active = document.activeElement;
-        const inFormField = active?.closest('.ts-wrapper') || active?.classList?.contains('bill-line-description') || active?.classList?.contains('bill-line-price') || active?.classList?.contains('bill-line-qty');
+        const inFormField = active === clientSearch || active === itemSearch || active?.classList?.contains('bill-line-qty');
 
         if (!inFormField && (event.key === '1' || event.key === '2' || event.key === '3')) {
             const map = { '1': 'cash', '2': 'card', '3': 'upi' };
@@ -365,12 +527,6 @@
             return false;
         }
 
-        const missingDescription = lines.some((line) => line.manual && line.description.trim() === '');
-        if (missingDescription) {
-            setFeedback('Every manual item needs a description.', true);
-            return false;
-        }
-
         return true;
     }
 
@@ -391,7 +547,7 @@
                     'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
-                    client_id: clientSelect.getValue() || null,
+                    client_id: clientIdInput.value || null,
                     items: buildItemsPayload(),
                 }),
             });
@@ -438,7 +594,7 @@
                     'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
-                    client_id: clientSelect.getValue() || null,
+                    client_id: clientIdInput.value || null,
                     items: buildItemsPayload(),
                     payment_method: paymentMethod,
                 }),
