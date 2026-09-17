@@ -15,14 +15,32 @@
             @csrf
 
             <div class="sfp-field sfp-autosuggest">
-                <label class="sfp-label" for="bill-client-search">Client</label>
-                <input type="text" id="bill-client-search" class="sfp-input" autocomplete="off" placeholder="Search by phone or name&hellip; (blank = walk-in)">
+                <label class="sfp-label" for="bill-client-search">Client name</label>
+                <input type="text" id="bill-client-search" class="sfp-input" autocomplete="off" placeholder="Search or type a new client&hellip; (blank = walk-in)">
                 <input type="hidden" name="client_id" id="bill-client-id">
                 <div id="bill-client-suggestions" class="sfp-suggestions" hidden></div>
                 <div id="bill-client-feedback" style="font-size:12.5px;margin-top:6px;color:#66736F"></div>
                 @error('client_id')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
+            </div>
+
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label" for="bill-client-phone">Mobile number <span style="color:#94A19D;font-weight:400">(optional)</span></label>
+                    <input type="text" id="bill-client-phone" class="sfp-input" autocomplete="off">
+                    @error('client_phone')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label" for="bill-client-gst">Client GSTIN <span style="color:#94A19D;font-weight:400">(optional)</span></label>
+                    <input type="text" id="bill-client-gst" class="sfp-input" autocomplete="off">
+                    @error('client_gst_number')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
             </div>
 
             <div class="sfp-field sfp-autosuggest">
@@ -157,6 +175,8 @@
 
     const clientSearch = document.getElementById('bill-client-search');
     const clientIdInput = document.getElementById('bill-client-id');
+    const clientPhoneInput = document.getElementById('bill-client-phone');
+    const clientGstInput = document.getElementById('bill-client-gst');
     const clientSuggestions = document.getElementById('bill-client-suggestions');
     const clientFeedback = document.getElementById('bill-client-feedback');
 
@@ -265,22 +285,33 @@
         renderSuggestions(clientSuggestions, clients, (client) => `
             <span class="sfp-suggestion-main">${client.name}</span>
             <small>${client.phone || ''}</small>
-        `, selectClient, `No clients matching "${term}".`);
+        `, selectClient, `No clients matching "${term}" &mdash; fill the fields below to add a new client.`);
     }, 250);
 
     function selectClient(client) {
         clientSelection = client;
         clientIdInput.value = client.id;
-        clientSearch.value = client.name + (client.phone ? ' · ' + client.phone : '');
+        clientSearch.value = client.name;
+        clientPhoneInput.value = client.phone || '';
+        clientGstInput.value = client.gst_number || '';
         clientFeedback.textContent = '';
         hideSuggestions(clientSuggestions);
     }
 
+    function clearClientSelection() {
+        if (clientSelection) {
+            clientSelection = null;
+            clientIdInput.value = '';
+        }
+    }
+
     clientSearch.addEventListener('input', () => {
-        clientSelection = null;
-        clientIdInput.value = '';
+        clearClientSelection();
         debouncedClientSearch(clientSearch.value.trim());
     });
+
+    clientPhoneInput.addEventListener('input', clearClientSelection);
+    clientGstInput.addEventListener('input', clearClientSelection);
 
     clientSearch.addEventListener('focus', () => {
         if (clientSearch.value.trim()) {
@@ -501,7 +532,7 @@
         }
 
         const active = document.activeElement;
-        const inFormField = active === clientSearch || active === itemSearch || active?.classList?.contains('bill-line-qty');
+        const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active?.classList?.contains('bill-line-qty');
 
         if (!inFormField && (event.key === '1' || event.key === '2' || event.key === '3')) {
             const map = { '1': 'cash', '2': 'card', '3': 'upi' };
@@ -510,6 +541,15 @@
     });
 
     // ----- Submission -----
+
+    function buildClientPayload() {
+        return {
+            client_id: clientIdInput.value || null,
+            client_name: clientSearch.value.trim() || null,
+            client_phone: clientPhoneInput.value.trim() || null,
+            client_gst_number: clientGstInput.value.trim() || null,
+        };
+    }
 
     function buildItemsPayload() {
         return lines.map((line) => ({
@@ -547,7 +587,7 @@
                     'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
-                    client_id: clientIdInput.value || null,
+                    ...buildClientPayload(),
                     items: buildItemsPayload(),
                 }),
             });
@@ -594,7 +634,7 @@
                     'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
-                    client_id: clientIdInput.value || null,
+                    ...buildClientPayload(),
                     items: buildItemsPayload(),
                     payment_method: paymentMethod,
                 }),

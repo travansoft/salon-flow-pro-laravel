@@ -93,4 +93,64 @@ class StoreManualBillTest extends TestCase
             'staff_profile_id' => null,
         ]);
     }
+
+    public function test_leaving_every_client_field_blank_bills_the_walk_in_customer(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'items' => [
+                ['description' => 'Retail shampoo', 'unit_price' => 350],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('clients', [
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Walk-in customer',
+        ]);
+    }
+
+    public function test_typing_new_client_details_creates_a_client_and_bills_them(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'client_name' => 'Priya Nair',
+            'client_phone' => '9876543210',
+            'client_gst_number' => '32AAAAA0000A1Z5',
+            'items' => [
+                ['description' => 'Retail shampoo', 'unit_price' => 350],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('clients', [
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Priya Nair',
+            'phone' => '9876543210',
+            'gst_number' => '32AAAAA0000A1Z5',
+        ]);
+    }
+
+    public function test_typing_a_phone_that_matches_an_existing_client_reuses_it(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $existing = Client::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Priya Nair', 'phone' => '9876543210']);
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'client_name' => 'Priya Nair',
+            'client_phone' => '9876543210',
+            'items' => [
+                ['description' => 'Retail shampoo', 'unit_price' => 350],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bills', ['client_id' => $existing->id]);
+        $this->assertSame(1, Client::query()->where('phone', '9876543210')->count());
+    }
 }

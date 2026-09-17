@@ -67,6 +67,7 @@ class ClientsController extends Controller
                 'id' => $client->id,
                 'name' => $client->name,
                 'phone' => $client->phone,
+                'gst_number' => $client->gst_number,
             ])->values(),
         ]);
     }

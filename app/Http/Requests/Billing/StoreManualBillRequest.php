@@ -30,9 +30,12 @@ class StoreManualBillRequest extends FormRequest
 
         return [
             'client_id' => [
-                'required', 'integer',
+                'nullable', 'integer',
                 Rule::exists('clients', 'id')->where('tenant_id', $tenantId),
             ],
+            'client_name' => ['nullable', 'string', 'max:255'],
+            'client_phone' => ['nullable', 'string', 'max:30'],
+            'client_gst_number' => ['nullable', 'string', 'regex:/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.service_id' => [

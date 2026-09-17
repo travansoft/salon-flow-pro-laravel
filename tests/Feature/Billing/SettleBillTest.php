@@ -84,6 +84,29 @@ class SettleBillTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_settle_creates_a_client_from_typed_details_when_no_search_result_was_selected(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        $service = Service::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($user)->postToTenant('/bills/settle', [
+            'client_name' => 'Priya Nair',
+            'client_phone' => '9876543210',
+            'items' => [
+                ['service_id' => $service->id],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('clients', [
+            'tenant_id' => $this->tenant->id,
+            'name' => 'Priya Nair',
+            'phone' => '9876543210',
+        ]);
+    }
+
     public function test_settle_validates_required_fields(): void
     {
         $user = User::factory()->for($this->tenant)->create();

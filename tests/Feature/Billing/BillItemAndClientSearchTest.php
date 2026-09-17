@@ -80,6 +80,18 @@ class BillItemAndClientSearchTest extends TestCase
         $this->assertSame('Priya Nair', $response->json('clients.0.name'));
     }
 
+    public function test_client_search_includes_gst_number_for_autofill(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        Client::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Priya Nair', 'phone' => '9876543210', 'gst_number' => '32AAAAA0000A1Z5']);
+
+        $response = $this->actingAs($user)->getFromTenant('/clients/search?q=Priya');
+
+        $response->assertOk();
+        $this->assertSame('32AAAAA0000A1Z5', $response->json('clients.0.gst_number'));
+    }
+
     public function test_client_search_returns_empty_for_blank_query(): void
     {
         $user = User::factory()->for($this->tenant)->create();
