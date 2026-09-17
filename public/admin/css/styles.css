@@ -441,10 +441,50 @@ button.sfp-btn-link {
     padding: 15px 20px;
     border-bottom: 1px solid #EDF1F0;
     align-items: center;
+    column-gap: 12px;
 }
 
 .sfp-table-row:last-child {
     border-bottom: none;
+}
+
+.sfp-table-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #E3EAE8;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 13.5px;
+    line-height: 1.3;
+    outline: none;
+    margin-bottom: 0;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.sfp-table-control:focus {
+    border-color: #1B4B8F;
+    box-shadow: 0 0 0 3px rgba(27,75,143,.12);
+}
+
+.sfp-table-control--qty {
+    text-align: center;
+}
+
+.sfp-table-remove {
+    border: none;
+    background: transparent;
+    color: #94A19D;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    justify-self: end;
+    transition: background-color .1s ease, color .1s ease;
+}
+
+.sfp-table-remove:hover {
+    background: #FBEEF1;
+    color: #A8506B;
 }
 
 .sfp-avatar-chip {

@@ -26,9 +26,10 @@
             </div>
 
             <div class="sfp-split-2">
-                <div class="sfp-field">
+                <div class="sfp-field sfp-autosuggest">
                     <label class="sfp-label" for="bill-client-phone">Mobile number <span style="color:#94A19D;font-weight:400">(optional)</span></label>
                     <input type="text" id="bill-client-phone" class="sfp-input" autocomplete="off">
+                    <div id="bill-client-phone-suggestions" class="sfp-suggestions" hidden></div>
                     @error('client_phone')
                         <span class="sfp-invalid-feedback">{{ $message }}</span>
                     @enderror
@@ -52,10 +53,10 @@
             <div class="sfp-field">
                 <label class="sfp-label">Line items</label>
                 <div class="sfp-table-wrap">
-                    <div class="sfp-table-head-row" style="grid-template-columns:1.6fr 1.2fr 70px 110px auto">
+                    <div class="sfp-table-head-row" style="grid-template-columns:1.5fr 1.3fr 64px 100px 40px">
                         <span>Item</span>
                         <span>Staff</span>
-                        <span>Qty</span>
+                        <span style="text-align:center">Qty</span>
                         <span style="text-align:right">Price</span>
                         <span></span>
                     </div>
@@ -178,6 +179,7 @@
     const clientPhoneInput = document.getElementById('bill-client-phone');
     const clientGstInput = document.getElementById('bill-client-gst');
     const clientSuggestions = document.getElementById('bill-client-suggestions');
+    const clientPhoneSuggestions = document.getElementById('bill-client-phone-suggestions');
     const clientFeedback = document.getElementById('bill-client-feedback');
 
     const itemSearch = document.getElementById('bill-item-search');
@@ -275,19 +277,6 @@
         return data.clients || [];
     }
 
-    const debouncedClientSearch = debounce(async (term) => {
-        if (!term) {
-            hideSuggestions(clientSuggestions);
-            return;
-        }
-
-        const clients = await searchClients(term);
-        renderSuggestions(clientSuggestions, clients, (client) => `
-            <span class="sfp-suggestion-main">${client.name}</span>
-            <small>${client.phone || ''}</small>
-        `, selectClient, `No clients matching "${term}" &mdash; fill the fields below to add a new client.`);
-    }, 250);
-
     function selectClient(client) {
         clientSelection = client;
         clientIdInput.value = client.id;
@@ -296,6 +285,7 @@
         clientGstInput.value = client.gst_number || '';
         clientFeedback.textContent = '';
         hideSuggestions(clientSuggestions);
+        hideSuggestions(clientPhoneSuggestions);
     }
 
     function clearClientSelection() {
@@ -305,47 +295,68 @@
         }
     }
 
-    clientSearch.addEventListener('input', () => {
-        clearClientSelection();
-        debouncedClientSearch(clientSearch.value.trim());
-    });
-
-    clientPhoneInput.addEventListener('input', clearClientSelection);
-    clientGstInput.addEventListener('input', clearClientSelection);
-
-    clientSearch.addEventListener('focus', () => {
-        if (clientSearch.value.trim()) {
-            debouncedClientSearch(clientSearch.value.trim());
-        }
-    });
-
-    clientSearch.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            moveActiveSuggestion(clientSuggestions, 1);
-        }
-        if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            moveActiveSuggestion(clientSuggestions, -1);
-        }
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const active = pickActiveSuggestion(clientSuggestions);
-            if (active) {
-                active.dispatchEvent(new Event('mousedown'));
+    function setupClientSearchField(input, suggestionsBox, renderLabel) {
+        const debouncedSearch = debounce(async (term) => {
+            if (!term) {
+                hideSuggestions(suggestionsBox);
                 return;
             }
-            if (clientSearch.value.trim() === '') {
-                clientFeedback.textContent = 'Walk-in customer.';
-            }
-            itemSearch.focus();
-        }
-        if (event.key === 'Escape') {
-            hideSuggestions(clientSuggestions);
-        }
-    });
 
-    clientSearch.addEventListener('blur', () => setTimeout(() => hideSuggestions(clientSuggestions), 150));
+            const clients = await searchClients(term);
+            renderSuggestions(suggestionsBox, clients, renderLabel, selectClient, `No clients matching "${term}" &mdash; fill the fields below to add a new client.`);
+        }, 250);
+
+        input.addEventListener('input', () => {
+            clearClientSelection();
+            debouncedSearch(input.value.trim());
+        });
+
+        input.addEventListener('focus', () => {
+            if (input.value.trim()) {
+                debouncedSearch(input.value.trim());
+            }
+        });
+
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                moveActiveSuggestion(suggestionsBox, 1);
+            }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                moveActiveSuggestion(suggestionsBox, -1);
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const active = pickActiveSuggestion(suggestionsBox);
+                if (active) {
+                    active.dispatchEvent(new Event('mousedown'));
+                    return;
+                }
+                if (input === clientSearch && input.value.trim() === '' && clientPhoneInput.value.trim() === '') {
+                    clientFeedback.textContent = 'Walk-in customer.';
+                }
+                itemSearch.focus();
+            }
+            if (event.key === 'Escape') {
+                hideSuggestions(suggestionsBox);
+            }
+        });
+
+        input.addEventListener('blur', () => setTimeout(() => hideSuggestions(suggestionsBox), 150));
+    }
+
+    setupClientSearchField(clientSearch, clientSuggestions, (client) => `
+        <span class="sfp-suggestion-main">${client.name}</span>
+        <small>${client.phone || ''}</small>
+    `);
+
+    setupClientSearchField(clientPhoneInput, clientPhoneSuggestions, (client) => `
+        <span class="sfp-suggestion-main">${client.phone || ''}</span>
+        <small>${client.name}</small>
+    `);
+
+    clientGstInput.addEventListener('input', clearClientSelection);
 
     // ----- Item search -----
 
@@ -475,19 +486,18 @@
         lines.forEach((line) => {
             const row = document.createElement('div');
             row.className = 'sfp-table-row';
-            row.style.gridTemplateColumns = '1.6fr 1.2fr 70px 110px auto';
+            row.style.gridTemplateColumns = '1.5fr 1.3fr 64px 100px 40px';
 
             row.innerHTML = `
                 <span class="bill-line-description-wrap"><span style="font-size:14px">${line.description}</span></span>
                 <span></span>
-                <input type="number" min="1" value="${line.quantity}" class="sfp-input bill-line-qty" style="margin-bottom:0;font-size:13.5px;padding:4px 8px">
+                <input type="number" min="1" value="${line.quantity}" class="sfp-table-control sfp-table-control--qty bill-line-qty">
                 <span class="bill-line-price-wrap"><span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.price)}</span></span>
-                <button type="button" class="sfp-btn-outline bill-line-remove" style="padding:4px 10px">Remove</button>
+                <button type="button" class="sfp-table-remove bill-line-remove" title="Remove item" aria-label="Remove item">&times;</button>
             `;
 
             const staffSelect = document.createElement('select');
-            staffSelect.className = 'sfp-select bill-line-staff';
-            staffSelect.style.cssText = 'margin-bottom:0;font-size:13px;padding:4px 8px';
+            staffSelect.className = 'sfp-table-control bill-line-staff';
             staffSelect.addEventListener('change', () => {
                 line.staffProfileId = staffSelect.value || null;
             });
