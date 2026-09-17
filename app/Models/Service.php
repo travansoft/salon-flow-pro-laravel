@@ -76,9 +76,11 @@ class Service extends Model
     /** @param Builder<Service> $query */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(function (Builder $query) use ($term): void {
-            $query->where('name', 'like', "%{$term}%")
-                ->orWhere('code', $term);
+        $needle = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(code) LIKE ?', [$needle]);
         });
     }
 }

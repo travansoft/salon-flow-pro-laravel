@@ -49,9 +49,11 @@ class Client extends Model
     /** @param Builder<Client> $query */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(function (Builder $query) use ($term): void {
-            $query->where('name', 'like', "%{$term}%")
-                ->orWhere('phone', 'like', "%{$term}%");
+        $needle = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(phone) LIKE ?', [$needle]);
         });
     }
 }
