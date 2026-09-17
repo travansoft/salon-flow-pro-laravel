@@ -42,6 +42,7 @@ use App\Services\Contracts\ReminderChannelInterface;
 use App\Services\LogReminderChannel;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -81,6 +82,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (str_starts_with(config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         View::composer('layouts.admin', function ($view): void {
             $view->with('tenant', $this->app->make(TenantContext::class)->get());
         });
