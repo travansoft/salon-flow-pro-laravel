@@ -102,6 +102,15 @@ class BillsController extends Controller
         return view('admin.bills.show', ['bill' => $bill]);
     }
 
+    public function print(Request $request, string $subdomain, Bill $bill): View
+    {
+        abort_unless($request->user()->can('billing.view'), 403);
+
+        $bill->load(['lineItems.service', 'client', 'tenant']);
+
+        return view('admin.bills.print', ['bill' => $bill]);
+    }
+
     public function recordPayment(RecordPaymentRequest $request, string $subdomain, Bill $bill): RedirectResponse
     {
         abort_unless($request->user()->can('billing.create'), 403);

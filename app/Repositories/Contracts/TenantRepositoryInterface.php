@@ -15,4 +15,7 @@ interface TenantRepositoryInterface
 
     /** @return Collection<int, Tenant> */
     public function getAllActive(): Collection;
+
+    /** @param array<string, mixed> $data */
+    public function update(Tenant $tenant, array $data): Tenant;
 }

@@ -30,4 +30,12 @@ class TenantRepository implements TenantRepositoryInterface
     {
         return $this->model->active()->get();
     }
+
+    /** @param array<string, mixed> $data */
+    public function update(Tenant $tenant, array $data): Tenant
+    {
+        $tenant->update($data);
+
+        return $tenant;
+    }
 }

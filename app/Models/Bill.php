@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'tenant_id', 'client_id', 'appointment_id', 'bill_number', 'subtotal', 'tax_amount', 'total',
-    'amount_paid', 'amount_refunded', 'status', 'created_by',
+    'tenant_id', 'client_id', 'appointment_id', 'bill_number', 'financial_year', 'subtotal', 'tax_amount', 'total',
+    'cgst_amount', 'sgst_amount', 'igst_amount', 'amount_paid', 'amount_refunded', 'status', 'created_by',
 ])]
 #[ScopedBy([TenantScope::class])]
 class Bill extends Model
@@ -38,6 +38,9 @@ class Bill extends Model
             'subtotal' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
+            'cgst_amount' => 'decimal:2',
+            'sgst_amount' => 'decimal:2',
+            'igst_amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'amount_refunded' => 'decimal:2',
         ];
@@ -88,6 +91,15 @@ class Bill extends Model
     public function balanceDue(): string
     {
         return bcsub((string) $this->total, (string) $this->amount_paid, 2);
+    }
+
+    public function invoiceNumber(): string
+    {
+        if (! $this->financial_year) {
+            return (string) $this->bill_number;
+        }
+
+        return "INV/{$this->financial_year}/".str_pad((string) $this->bill_number, 5, '0', STR_PAD_LEFT);
     }
 
     /** @param Builder<Bill> $query */

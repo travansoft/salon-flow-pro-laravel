@@ -39,6 +39,8 @@ class UpdateServiceRequest extends FormRequest
             'price' => ['sometimes', 'numeric', 'min:0'],
             'duration_minutes' => ['sometimes', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'hsn_sac_code' => ['nullable', 'string', 'max:10'],
 
             'staff_ids' => ['sometimes', 'array'],
             'staff_ids.*' => [

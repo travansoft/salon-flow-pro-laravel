@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'name', 'code', 'category_id', 'price', 'duration_minutes', 'is_active'])]
+#[Fillable(['tenant_id', 'name', 'code', 'category_id', 'price', 'duration_minutes', 'is_active', 'tax_rate', 'hsn_sac_code'])]
 #[ScopedBy([TenantScope::class])]
 class Service extends Model
 {
@@ -27,6 +27,7 @@ class Service extends Model
         return [
             'price' => 'decimal:2',
             'is_active' => 'boolean',
+            'tax_rate' => 'decimal:2',
         ];
     }
 

@@ -27,6 +27,8 @@ class ServiceCatalogService
                 'price' => $data['price'],
                 'duration_minutes' => $data['duration_minutes'],
                 'is_active' => $data['is_active'] ?? true,
+                'tax_rate' => $data['tax_rate'] ?? null,
+                'hsn_sac_code' => $data['hsn_sac_code'] ?? null,
             ]);
 
             $this->recordPriceHistory($service, $data['price'], $changedBy);
@@ -52,6 +54,8 @@ class ServiceCatalogService
                 'price' => $data['price'] ?? $service->price,
                 'duration_minutes' => $data['duration_minutes'] ?? $service->duration_minutes,
                 'is_active' => $data['is_active'] ?? $service->is_active,
+                'tax_rate' => array_key_exists('tax_rate', $data) ? $data['tax_rate'] : $service->tax_rate,
+                'hsn_sac_code' => array_key_exists('hsn_sac_code', $data) ? $data['hsn_sac_code'] : $service->hsn_sac_code,
             ]);
 
             if ($priceChanged) {

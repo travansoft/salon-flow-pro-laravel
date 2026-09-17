@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'bill_id', 'service_id', 'staff_profile_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'line_total'])]
+#[Fillable([
+    'tenant_id', 'bill_id', 'service_id', 'staff_profile_id', 'description', 'quantity', 'unit_price',
+    'tax_rate', 'line_total', 'cgst_amount', 'sgst_amount', 'igst_amount',
+])]
 #[ScopedBy([TenantScope::class])]
 class BillLineItem extends Model
 {
@@ -24,6 +27,9 @@ class BillLineItem extends Model
             'unit_price' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'cgst_amount' => 'decimal:2',
+            'sgst_amount' => 'decimal:2',
+            'igst_amount' => 'decimal:2',
         ];
     }
 

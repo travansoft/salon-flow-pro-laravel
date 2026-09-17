@@ -65,6 +65,24 @@
                 </div>
             </div>
 
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label">GST rate (%)</label>
+                    <input type="number" step="0.01" min="0" max="100" name="tax_rate" class="sfp-input" value="{{ old('tax_rate', $service->tax_rate) }}" placeholder="Uses tenant default if blank">
+                    @error('tax_rate')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label">HSN/SAC code</label>
+                    <input type="text" name="hsn_sac_code" class="sfp-input" value="{{ old('hsn_sac_code', $service->hsn_sac_code) }}">
+                    @error('hsn_sac_code')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
             <div class="sfp-field" style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
                 <input type="checkbox" name="is_active" value="1" id="is_active" @checked(old('is_active', $service->is_active))>
                 <label class="sfp-label" for="is_active" style="margin-bottom:0">Active</label>

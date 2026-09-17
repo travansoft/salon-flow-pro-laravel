@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'name', 'phone', 'email', 'family_link', 'notes', 'is_frequent_no_show'])]
+#[Fillable(['tenant_id', 'name', 'phone', 'email', 'family_link', 'notes', 'is_frequent_no_show', 'gst_number'])]
 #[ScopedBy([TenantScope::class])]
 class Client extends Model
 {

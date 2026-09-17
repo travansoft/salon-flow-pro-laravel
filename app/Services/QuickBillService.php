@@ -46,6 +46,8 @@ class QuickBillService
             throw new InvalidArgumentException('At least one line item is required.');
         }
 
+        $tenant = $this->tenantContext->get();
+
         $lineItems = [];
         foreach ($items as $item) {
             $staffProfileId = $item['staff_profile_id'] ?? null;
@@ -67,7 +69,7 @@ class QuickBillService
                     'description' => $service->name,
                     'quantity' => $item['quantity'] ?? 1,
                     'unit_price' => (float) $service->price,
-                    'tax_rate' => 18.00,
+                    'tax_rate' => (float) ($service->tax_rate ?? $tenant->default_gst_rate),
                 ];
 
                 continue;
@@ -79,7 +81,7 @@ class QuickBillService
                 'description' => $item['description'] ?? 'Manual item',
                 'quantity' => $item['quantity'] ?? 1,
                 'unit_price' => (float) ($item['unit_price'] ?? 0),
-                'tax_rate' => 18.00,
+                'tax_rate' => (float) $tenant->default_gst_rate,
             ];
         }
 

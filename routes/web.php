@@ -22,6 +22,7 @@ use App\Http\Controllers\StaffsController;
 use App\Http\Controllers\StockAdjustmentsController;
 use App\Http\Controllers\SuperAdminDashboardController;
 use App\Http\Controllers\TenantDashboardController;
+use App\Http\Controllers\TenantSettingsController;
 use App\Http\Controllers\TimeSlotsController;
 use App\Http\Controllers\WalkInsController;
 use Illuminate\Support\Facades\Route;
@@ -226,6 +227,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:billing.view')->group(function () use ($nameSuffix): void {
             Route::get('/bills/{bill}', [BillsController::class, 'show'])->name("bills.show{$nameSuffix}");
+            Route::get('/bills/{bill}/print', [BillsController::class, 'print'])->name("bills.print{$nameSuffix}");
         });
 
         Route::middleware('permission:expenses.view')->group(function () use ($nameSuffix): void {
@@ -279,6 +281,14 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:dashboard.view')->group(function () use ($nameSuffix): void {
             Route::get('/reports', [ReportsController::class, 'index'])->name("reports.index{$nameSuffix}");
+        });
+
+        Route::middleware('permission:settings.view')->group(function () use ($nameSuffix): void {
+            Route::get('/settings', [TenantSettingsController::class, 'edit'])->name("settings.edit{$nameSuffix}");
+        });
+
+        Route::middleware('permission:settings.edit')->group(function () use ($nameSuffix): void {
+            Route::put('/settings', [TenantSettingsController::class, 'update'])->name("settings.update{$nameSuffix}");
         });
     });
 };

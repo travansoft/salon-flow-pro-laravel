@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('admin/css/styles.css') }}">
+    @yield('styles')
 </head>
 <body class="sfp-body">
     <div class="sfp-shell">
@@ -16,7 +17,11 @@
 
             <div class="sfp-topbar">
                 <div class="sfp-brand">
-                    <div class="sfp-brand-mark">{{ strtoupper(substr($tenant->name ?? 'S', 0, 1)) }}</div>
+                    @if ($tenant->ui_logo ?? null)
+                        <img src="{{ $tenant->ui_logo }}" alt="{{ $tenant->name }}" class="sfp-brand-logo">
+                    @else
+                        <div class="sfp-brand-mark">{{ strtoupper(substr($tenant->name ?? 'S', 0, 1)) }}</div>
+                    @endif
                     <div class="sfp-brand-text">
                         <div class="sfp-brand-name">{{ $tenant->name ?? 'SalonFlow Pro' }}</div>
                     </div>
@@ -100,6 +105,12 @@
                     @can('commissions.view')
                         <a href="{{ $tenantUrl->route('commissionEarnings.index') }}" class="sfp-nav-item {{ request()->routeIs('commissionEarnings.*') || request()->routeIs('commissionRates.*') || request()->routeIs('staffIncentives.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Commission
+                        </a>
+                    @endcan
+
+                    @can('settings.view')
+                        <a href="{{ $tenantUrl->route('settings.edit') }}" class="sfp-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Settings
                         </a>
                     @endcan
 

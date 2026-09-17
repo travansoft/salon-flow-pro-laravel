@@ -18,6 +18,13 @@ class Tenant extends Model
         'subdomain',
         'custom_domain',
         'is_active',
+        'gst_number',
+        'gst_state_code',
+        'legal_name',
+        'address',
+        'default_gst_rate',
+        'print_logo',
+        'ui_logo',
     ];
 
     /** @return array<string, string> */
@@ -25,6 +32,7 @@ class Tenant extends Model
     {
         return [
             'is_active' => 'boolean',
+            'default_gst_rate' => 'decimal:2',
         ];
     }
 

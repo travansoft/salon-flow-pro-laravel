@@ -121,6 +121,14 @@ body.sfp-body {
     flex: none;
 }
 
+.sfp-brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    object-fit: contain;
+    flex: none;
+}
+
 .sfp-brand-name {
     font-size: 14.5px;
     font-weight: 500;

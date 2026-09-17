@@ -64,6 +64,24 @@
                 </div>
             </div>
 
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label">GST rate (%)</label>
+                    <input type="number" step="0.01" min="0" max="100" name="tax_rate" class="sfp-input" value="{{ old('tax_rate') }}" placeholder="Uses tenant default if blank">
+                    @error('tax_rate')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label">HSN/SAC code</label>
+                    <input type="text" name="hsn_sac_code" class="sfp-input" value="{{ old('hsn_sac_code') }}">
+                    @error('hsn_sac_code')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
             <div class="sfp-card-title" style="margin-top: 24px;">Eligible staff</div>
             <p style="color: #66736F; font-size: 13px; margin-top: -8px;">Select which staff members can perform this service. Only mapped staff can be assigned to it when billing.</p>
 
