@@ -197,7 +197,7 @@
     // ----- Client search -----
 
     async function searchClients(term) {
-        const response = await fetch('{{ url("/clients/search") }}?q=' + encodeURIComponent(term), {
+        const response = await fetch('{{ $tenantUrl->route("clients.search") }}?q=' + encodeURIComponent(term), {
             headers: { 'Accept': 'application/json' },
         });
 
@@ -267,7 +267,7 @@
     // ----- Item search -----
 
     async function searchServices(term) {
-        const response = await fetch('{{ url("/services/search") }}?q=' + encodeURIComponent(term), {
+        const response = await fetch('{{ $tenantUrl->route("services.search") }}?q=' + encodeURIComponent(term), {
             headers: { 'Accept': 'application/json' },
         });
 
