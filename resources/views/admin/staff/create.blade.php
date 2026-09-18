@@ -17,7 +17,7 @@
             <div class="sfp-card-title">Profile</div>
 
             <div class="sfp-field">
-                <label class="sfp-label">Name</label>
+                <label class="sfp-label">Name *</label>
                 <input type="text" name="name" class="sfp-input" value="{{ old('name') }}">
                 @error('name')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
@@ -25,7 +25,7 @@
             </div>
 
             <div class="sfp-field">
-                <label class="sfp-label">Designation</label>
+                <label class="sfp-label">Designation *</label>
                 <select name="designation_id" class="sfp-input">
                     <option value="">&mdash;</option>
                     @foreach ($designations as $designation)

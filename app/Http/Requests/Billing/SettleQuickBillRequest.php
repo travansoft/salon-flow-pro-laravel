@@ -36,6 +36,7 @@ class SettleQuickBillRequest extends FormRequest
             'client_name' => ['nullable', 'string', 'max:255'],
             'client_phone' => ['nullable', 'string', 'max:30'],
             'client_gst_number' => ['nullable', 'string', 'regex:/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/'],
+            'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['nullable', 'string', 'max:255'],
             'items.*.service_id' => [

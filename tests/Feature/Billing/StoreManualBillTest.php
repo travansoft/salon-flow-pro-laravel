@@ -153,4 +153,44 @@ class StoreManualBillTest extends TestCase
         $this->assertDatabaseHas('bills', ['client_id' => $existing->id]);
         $this->assertSame(1, Client::query()->where('phone', '9876543210')->count());
     }
+
+    public function test_discount_percent_reduces_the_bill_total(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bills', [
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'discount_amount' => 100,
+            'total' => 1062,
+        ]);
+    }
+
+    public function test_discount_percent_above_100_is_rejected(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'client_id' => $client->id,
+            'discount_percent' => 150,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('discount_percent');
+    }
 }

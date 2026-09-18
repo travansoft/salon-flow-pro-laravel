@@ -70,6 +70,22 @@
                 @enderror
             </div>
 
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label" for="bill-discount">Discount <span style="color:#94A19D;font-weight:400">(optional, %)</span></label>
+                    <input type="number" id="bill-discount" class="sfp-input" min="0" max="100" step="0.01" placeholder="0">
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#66736F;padding-top:4px">
+                <span>Subtotal</span>
+                <span id="bill-subtotal" class="sfp-mono">&#8377;0.00</span>
+            </div>
+            <div id="bill-discount-row" style="display:none;justify-content:space-between;font-size:13.5px;color:#A8506B;padding-top:4px">
+                <span>Discount</span>
+                <span id="bill-discount-amount" class="sfp-mono">&minus;&#8377;0.00</span>
+            </div>
+
             <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:16px;margin-top:8px;border-top:1px solid #EDF1F0">
                 <span style="font-size:15px">Total</span>
                 <span id="bill-total" class="sfp-heading" style="font-size:26px">&#8377;0.00</span>
@@ -188,6 +204,10 @@
 
     const itemsBox = document.getElementById('bill-items');
     const itemsEmpty = document.getElementById('bill-items-empty');
+    const subtotalEl = document.getElementById('bill-subtotal');
+    const discountInput = document.getElementById('bill-discount');
+    const discountRow = document.getElementById('bill-discount-row');
+    const discountAmountEl = document.getElementById('bill-discount-amount');
     const totalEl = document.getElementById('bill-total');
 
     const paymentSection = document.getElementById('bill-payment-section');
@@ -523,10 +543,24 @@
         updateTotal();
     }
 
+    function discountPercent() {
+        const value = parseFloat(discountInput.value);
+
+        return Number.isFinite(value) && value >= 0 && value <= 100 ? value : 0;
+    }
+
     function updateTotal() {
-        const total = lines.reduce((sum, line) => sum + (Number(line.priceInclusive) * Number(line.quantity)), 0);
+        const subtotal = lines.reduce((sum, line) => sum + (Number(line.priceInclusive) * Number(line.quantity)), 0);
+        const discount = subtotal * (discountPercent() / 100);
+        const total = subtotal - discount;
+
+        subtotalEl.textContent = money(subtotal);
+        discountRow.style.display = discount > 0 ? 'flex' : 'none';
+        discountAmountEl.textContent = '−' + money(discount);
         totalEl.textContent = money(total);
     }
+
+    discountInput.addEventListener('input', updateTotal);
 
     // ----- Payment method -----
 
@@ -545,7 +579,7 @@
         }
 
         const active = document.activeElement;
-        const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active?.classList?.contains('bill-line-qty');
+        const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active === discountInput || active?.classList?.contains('bill-line-qty');
 
         if (!inFormField && (event.key === '1' || event.key === '2' || event.key === '3')) {
             const map = { '1': 'cash', '2': 'card', '3': 'upi' };
@@ -561,6 +595,7 @@
             client_name: clientSearch.value.trim() || null,
             client_phone: clientPhoneInput.value.trim() || null,
             client_gst_number: clientGstInput.value.trim() || null,
+            discount_percent: discountPercent(),
         };
     }
 

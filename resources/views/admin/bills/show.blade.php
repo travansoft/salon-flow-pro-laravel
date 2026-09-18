@@ -63,6 +63,12 @@
                         <span style="color:#66736F">Subtotal</span>
                         <span class="sfp-mono">&#8377;{{ number_format($bill->subtotal, 2) }}</span>
                     </div>
+                    @if ($bill->discount_amount > 0)
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#A8506B">Discount ({{ number_format($bill->discount_percent, 2) }}%)</span>
+                            <span class="sfp-mono" style="color:#A8506B">&minus;&#8377;{{ number_format($bill->discount_amount, 2) }}</span>
+                        </div>
+                    @endif
                     @if ($bill->igst_amount > 0)
                         <div style="display:flex;justify-content:space-between">
                             <span style="color:#66736F">IGST</span>

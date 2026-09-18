@@ -181,6 +181,9 @@
 
     <div class="center bold">:::: SUMMARY ::::</div>
     <div class="totals-row"><span>Item Qty</span><span>{{ $bill->lineItems->sum('quantity') }}</span></div>
+    @if ($bill->discount_amount > 0)
+        <div class="totals-row"><span>Discount ({{ number_format($bill->discount_percent, 2) }}%)</span><span>&minus;{{ number_format($bill->discount_amount, 2) }}</span></div>
+    @endif
 
     @php
         $gstBreakdown = collect($bill->gstBreakdownByRate())->filter(fn ($amounts) => bccomp($amounts['taxable'], '0', 2) > 0);
@@ -207,7 +210,7 @@
         @endforeach
     @else
         <div class="summary-grid">
-            <div class="totals-row"><span>Taxable Amt</span><span>{{ number_format($bill->subtotal, 2) }}</span></div>
+            <div class="totals-row"><span>Taxable Amt</span><span>{{ number_format($bill->subtotal - $bill->discount_amount, 2) }}</span></div>
             @if ($gstBreakdown->isNotEmpty())
                 <div class="totals-row"><span>{{ $gstBreakdown->keys()->first() }}% GST</span><span>{{ number_format($bill->tax_amount, 2) }}</span></div>
             @endif

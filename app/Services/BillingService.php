@@ -19,7 +19,7 @@ class BillingService
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $manualLineItems
      */
-    public function generateFromAppointment(Appointment $appointment, int $createdBy, array $manualLineItems = []): Bill
+    public function generateFromAppointment(Appointment $appointment, int $createdBy, array $manualLineItems = [], float $discountPercent = 0): Bill
     {
         $tenant = $this->tenantContext->get();
 
@@ -32,32 +32,38 @@ class BillingService
             'tax_rate' => (float) ($service->tax_rate ?? $tenant->default_gst_rate),
         ])->all();
 
-        return $this->createBill($appointment->client_id, $createdBy, [...$lineItems, ...$manualLineItems], $appointment->id);
+        return $this->createBill($appointment->client_id, $createdBy, [...$lineItems, ...$manualLineItems], $appointment->id, $discountPercent);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    public function createManualBill(int $clientId, int $createdBy, array $lineItems): Bill
+    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0): Bill
     {
-        return $this->createBill($clientId, $createdBy, $lineItems);
+        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null): Bill
+    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0): Bill
     {
         if ($lineItems === []) {
             throw new InvalidArgumentException('A bill must have at least one line item.');
         }
 
+        if ($discountPercent < 0 || $discountPercent > 100) {
+            throw new InvalidArgumentException('Discount percentage must be between 0 and 100.');
+        }
+
         $tenant = $this->tenantContext->get();
         $client = Client::query()->findOrFail($clientId);
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
+        $discountRate = (string) $discountPercent;
 
-        return DB::transaction(function () use ($tenant, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState): Bill {
+        return DB::transaction(function () use ($tenant, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate): Bill {
             $subtotal = '0';
+            $discountAmount = '0';
             $taxAmount = '0';
             $cgstAmount = '0';
             $sgstAmount = '0';
@@ -70,11 +76,14 @@ class BillingService
                 $taxRate = (string) ($item['tax_rate'] ?? $tenant->default_gst_rate);
 
                 $lineTotal = bcmul($unitPrice, (string) $quantity, 2);
-                $lineTax = bcmul($lineTotal, bcdiv($taxRate, '100', 4), 2);
+                $lineDiscount = bcmul($lineTotal, bcdiv($discountRate, '100', 4), 2);
+                $taxableAmount = bcsub($lineTotal, $lineDiscount, 2);
+                $lineTax = bcmul($taxableAmount, bcdiv($taxRate, '100', 4), 2);
 
                 [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 
                 $subtotal = bcadd($subtotal, $lineTotal, 2);
+                $discountAmount = bcadd($discountAmount, $lineDiscount, 2);
                 $taxAmount = bcadd($taxAmount, $lineTax, 2);
                 $cgstAmount = bcadd($cgstAmount, $lineCgst, 2);
                 $sgstAmount = bcadd($sgstAmount, $lineSgst, 2);
@@ -88,13 +97,14 @@ class BillingService
                     'unit_price' => $unitPrice,
                     'tax_rate' => $taxRate,
                     'line_total' => $lineTotal,
+                    'discount_amount' => $lineDiscount,
                     'cgst_amount' => $lineCgst,
                     'sgst_amount' => $lineSgst,
                     'igst_amount' => $lineIgst,
                 ];
             }
 
-            $total = bcadd($subtotal, $taxAmount, 2);
+            $total = bcadd(bcsub($subtotal, $discountAmount, 2), $taxAmount, 2);
             $financialYear = FinancialYear::forDate(now());
 
             $bill = $this->billRepository->create([
@@ -104,6 +114,8 @@ class BillingService
                 'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $financialYear),
                 'financial_year' => $financialYear,
                 'subtotal' => $subtotal,
+                'discount_percent' => $discountRate,
+                'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
                 'total' => $total,
                 'cgst_amount' => $cgstAmount,

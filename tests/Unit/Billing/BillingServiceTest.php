@@ -261,4 +261,71 @@ class BillingServiceTest extends TestCase
 
         $this->assertSame('50.00', (string) $bill->tax_amount);
     }
+
+    public function test_discount_reduces_the_taxable_amount_before_gst_is_applied(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ], 10);
+
+        $this->assertSame('1000.00', (string) $bill->subtotal);
+        $this->assertSame('10.00', (string) $bill->discount_percent);
+        $this->assertSame('100.00', (string) $bill->discount_amount);
+        $this->assertSame('162.00', (string) $bill->tax_amount);
+        $this->assertSame('1062.00', (string) $bill->total);
+    }
+
+    public function test_zero_discount_leaves_the_bill_unchanged(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ]);
+
+        $this->assertSame('0.00', (string) $bill->discount_amount);
+        $this->assertSame('1180.00', (string) $bill->total);
+    }
+
+    public function test_discount_percent_above_100_is_rejected(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ], 150);
+    }
+
+    public function test_discount_is_split_proportionally_across_multiple_line_items(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 100, 'tax_rate' => 5],
+            ['description' => 'Spa Package', 'unit_price' => 200, 'tax_rate' => 18],
+        ], 10);
+
+        $first = $bill->lineItems->firstWhere('description', 'Hair Color');
+        $second = $bill->lineItems->firstWhere('description', 'Spa Package');
+
+        $this->assertSame('10.00', (string) $first->discount_amount);
+        $this->assertSame('20.00', (string) $second->discount_amount);
+        $this->assertSame('30.00', (string) $bill->discount_amount);
+    }
 }

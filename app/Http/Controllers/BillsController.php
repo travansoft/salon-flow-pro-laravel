@@ -80,7 +80,7 @@ class BillsController extends Controller
             'gst_number' => $data['client_gst_number'] ?? null,
         ]);
 
-        $bill = $this->billingService->createManualBill($client->id, $request->user()->id, $data['items']);
+        $bill = $this->billingService->createManualBill($client->id, $request->user()->id, $data['items'], (float) ($data['discount_percent'] ?? 0));
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill created.');
     }
@@ -102,6 +102,7 @@ class BillsController extends Controller
                 ],
                 $data['payment_method'],
                 $request->user()->id,
+                (float) ($data['discount_percent'] ?? 0),
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);

@@ -227,4 +227,25 @@ class QuickBillServiceTest extends TestCase
 
         $this->assertSame($selected->id, $resolved->id);
     }
+
+    public function test_create_and_settle_applies_a_discount_percent(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $staff = User::factory()->for($tenant)->create();
+
+        $bill = app(QuickBillService::class)->createAndSettle(
+            [['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18]],
+            ['client_id' => $client->id],
+            'cash',
+            $staff->id,
+            10,
+        );
+
+        $this->assertSame('100.00', (string) $bill->discount_amount);
+        $this->assertSame('1062.00', (string) $bill->total);
+        $this->assertSame('1062.00', (string) $bill->amount_paid);
+        $this->assertSame(Bill::StatusPaid, $bill->status);
+    }
 }

@@ -107,6 +107,31 @@ class SettleBillTest extends TestCase
         ]);
     }
 
+    public function test_settle_applies_discount_percent_and_settles_the_discounted_total(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($user)->postToTenant('/bills/settle', [
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(1062.0, $response->json('total'));
+        $this->assertDatabaseHas('bills', [
+            'id' => $response->json('bill_id'),
+            'discount_amount' => 100,
+            'amount_paid' => 1062,
+            'status' => 'paid',
+        ]);
+    }
+
     public function test_settle_validates_required_fields(): void
     {
         $user = User::factory()->for($this->tenant)->create();
