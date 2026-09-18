@@ -89,15 +89,22 @@
             justify-content: space-between;
         }
 
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            column-gap: 10px;
+        .summary-block {
             font-size: 11px;
         }
 
-        .summary-grid .totals-row {
-            padding: 1px 0;
+        .summary-block .totals-row {
+            padding: 2px 0;
+        }
+
+        .summary-block .totals-row.indent span:first-child {
+            padding-left: 10px;
+        }
+
+        .rate-heading {
+            font-size: 10.5px;
+            color: #333;
+            padding: 4px 0 1px;
         }
 
         .grand-total {
@@ -186,52 +193,50 @@
     <div class="divider"></div>
 
     <div class="center bold">:::: SUMMARY ::::</div>
-    <div class="totals-row"><span>Item Qty</span><span>{{ $bill->lineItems->sum('quantity') }}</span></div>
-    @if ($bill->discount_amount > 0)
-        <div class="totals-row"><span>Discount ({{ number_format($bill->discount_percent, 2) }}%)</span><span>&minus;{{ number_format($bill->discount_amount, 2) }}</span></div>
-    @endif
 
-    @php
-        $gstBreakdown = collect($bill->gstBreakdownByRate())->filter(fn ($amounts) => bccomp($amounts['taxable'], '0', 2) > 0);
-        $showPerRateBreakdown = $gstBreakdown->count() > 1;
-    @endphp
+    <div class="summary-block">
+        <div class="totals-row"><span>Item Qty</span><span>{{ $bill->lineItems->sum('quantity') }}</span></div>
+        @if ($bill->discount_amount > 0)
+            <div class="totals-row"><span>Discount ({{ number_format($bill->discount_percent, 2) }}%)</span><span>&minus;{{ number_format($bill->discount_amount, 2) }}</span></div>
+        @endif
 
-    @if ($showPerRateBreakdown)
-        @foreach ($gstBreakdown as $rate => $amounts)
-            <div class="divider"></div>
-            <div class="totals-row bold"><span>{{ $rate }}% GST</span><span></span></div>
-            <div class="summary-grid">
-                <div class="totals-row"><span>Taxable</span><span>{{ number_format($amounts['taxable'], 2) }}</span></div>
+        @php
+            $gstBreakdown = collect($bill->gstBreakdownByRate())->filter(fn ($amounts) => bccomp($amounts['taxable'], '0', 2) > 0);
+            $showPerRateBreakdown = $gstBreakdown->count() > 1;
+        @endphp
+
+        @if ($showPerRateBreakdown)
+            @foreach ($gstBreakdown as $rate => $amounts)
+                <div class="rate-heading bold">{{ $rate }}% GST</div>
+                <div class="totals-row indent"><span>Taxable</span><span>{{ number_format($amounts['taxable'], 2) }}</span></div>
                 @if (bccomp($amounts['igst'], '0', 2) > 0)
-                    <div class="totals-row"><span>IGST</span><span>{{ number_format($amounts['igst'], 2) }}</span></div>
+                    <div class="totals-row indent"><span>IGST</span><span>{{ number_format($amounts['igst'], 2) }}</span></div>
                 @else
                     @if (bccomp($amounts['cgst'], '0', 2) > 0)
-                        <div class="totals-row"><span>CGST</span><span>{{ number_format($amounts['cgst'], 2) }}</span></div>
+                        <div class="totals-row indent"><span>CGST</span><span>{{ number_format($amounts['cgst'], 2) }}</span></div>
                     @endif
                     @if (bccomp($amounts['sgst'], '0', 2) > 0)
-                        <div class="totals-row"><span>SGST</span><span>{{ number_format($amounts['sgst'], 2) }}</span></div>
+                        <div class="totals-row indent"><span>SGST</span><span>{{ number_format($amounts['sgst'], 2) }}</span></div>
                     @endif
                 @endif
-            </div>
-        @endforeach
-    @else
-        <div class="summary-grid">
+            @endforeach
+        @else
             <div class="totals-row"><span>Taxable Amt</span><span>{{ number_format($bill->subtotal - $bill->discount_amount, 2) }}</span></div>
             @if ($gstBreakdown->isNotEmpty())
-                <div class="totals-row"><span>{{ $gstBreakdown->keys()->first() }}% GST</span><span>{{ number_format($bill->tax_amount, 2) }}</span></div>
+                <div class="totals-row"><span>GST ({{ $gstBreakdown->keys()->first() }}%)</span><span>{{ number_format($bill->tax_amount, 2) }}</span></div>
             @endif
             @if (bccomp($bill->igst_amount, '0', 2) > 0)
-                <div class="totals-row"><span>IGST Amt</span><span>{{ number_format($bill->igst_amount, 2) }}</span></div>
+                <div class="totals-row indent"><span>IGST</span><span>{{ number_format($bill->igst_amount, 2) }}</span></div>
             @else
                 @if (bccomp($bill->cgst_amount, '0', 2) > 0)
-                    <div class="totals-row"><span>CGST Amt</span><span>{{ number_format($bill->cgst_amount, 2) }}</span></div>
+                    <div class="totals-row indent"><span>CGST</span><span>{{ number_format($bill->cgst_amount, 2) }}</span></div>
                 @endif
                 @if (bccomp($bill->sgst_amount, '0', 2) > 0)
-                    <div class="totals-row"><span>SGST Amt</span><span>{{ number_format($bill->sgst_amount, 2) }}</span></div>
+                    <div class="totals-row indent"><span>SGST</span><span>{{ number_format($bill->sgst_amount, 2) }}</span></div>
                 @endif
             @endif
-        </div>
-    @endif
+        @endif
+    </div>
 
     <div class="divider"></div>
 
