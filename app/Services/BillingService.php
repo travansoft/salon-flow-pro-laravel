@@ -72,13 +72,24 @@ class BillingService
             $resolvedItems = [];
             foreach ($lineItems as $item) {
                 $quantity = $item['quantity'] ?? 1;
-                $unitPrice = (string) $item['unit_price'];
+                $unitPriceInclusive = (string) $item['unit_price'];
                 $taxRate = (string) ($item['tax_rate'] ?? $tenant->default_gst_rate);
+                $taxRateMultiplier = bcadd('1', bcdiv($taxRate, '100', 4), 4);
 
-                $lineTotal = bcmul($unitPrice, (string) $quantity, 2);
+                // Unit price is GST-inclusive. Back-calculate the exclusive rate from
+                // the inclusive line total (not the inclusive unit price) so rounding
+                // is applied once per line, not once per unit — this keeps quantity > 1
+                // exact and avoids the classic "-1 paisa" drift from rounding twice.
+                $lineTotalInclusive = bcmul($unitPriceInclusive, (string) $quantity, 2);
+                $lineTotal = bcadd(bcdiv($lineTotalInclusive, $taxRateMultiplier, 10), '0', 2);
+                $unitPrice = bcdiv($lineTotal, (string) $quantity, 2);
+
                 $lineDiscount = bcmul($lineTotal, bcdiv($discountRate, '100', 4), 2);
                 $taxableAmount = bcsub($lineTotal, $lineDiscount, 2);
-                $lineTax = bcmul($taxableAmount, bcdiv($taxRate, '100', 4), 2);
+
+                $lineTax = bccomp($discountRate, '0', 2) === 0
+                    ? bcsub($lineTotalInclusive, $lineTotal, 2)
+                    : bcmul($taxableAmount, bcdiv($taxRate, '100', 4), 2);
 
                 [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 

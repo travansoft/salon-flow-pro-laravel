@@ -29,7 +29,7 @@ class BillGstBreakdownTest extends TestCase
 
         $this->assertCount(1, $breakdown);
         $this->assertArrayHasKey('18.00', $breakdown);
-        $this->assertSame('500.00', $breakdown['18.00']['taxable']);
+        $this->assertSame('423.72', $breakdown['18.00']['taxable']);
     }
 
     public function test_mixed_rate_bill_groups_each_rate_separately(): void
@@ -47,8 +47,8 @@ class BillGstBreakdownTest extends TestCase
         $breakdown = $bill->gstBreakdownByRate();
 
         $this->assertCount(2, $breakdown);
-        $this->assertSame('100.00', $breakdown['5.00']['taxable']);
-        $this->assertSame('200.00', $breakdown['18.00']['taxable']);
+        $this->assertSame('95.23', $breakdown['5.00']['taxable']);
+        $this->assertSame('169.49', $breakdown['18.00']['taxable']);
     }
 
     public function test_breakdown_omits_rates_with_no_amount(): void

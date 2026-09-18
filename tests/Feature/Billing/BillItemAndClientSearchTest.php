@@ -50,12 +50,12 @@ class BillItemAndClientSearchTest extends TestCase
     {
         $user = User::factory()->for($this->tenant)->create();
         $user->assignRole('FrontDesk');
-        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Gents Haircut', 'price' => 300, 'tax_rate' => null]);
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Gents Haircut', 'price' => 354, 'tax_rate' => null]);
 
         $response = $this->actingAs($user)->getFromTenant('/services/search?q=Haircut');
 
         $response->assertOk();
-        $this->assertEquals(300.0, $response->json('services.0.price'));
+        $this->assertEquals(354.0, $response->json('services.0.price'));
         $this->assertEquals(18.0, $response->json('services.0.tax_rate'));
         $this->assertEquals(354.0, $response->json('services.0.price_inclusive'));
     }
@@ -64,7 +64,7 @@ class BillItemAndClientSearchTest extends TestCase
     {
         $user = User::factory()->for($this->tenant)->create();
         $user->assignRole('FrontDesk');
-        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Retail Shampoo', 'price' => 100, 'tax_rate' => 5]);
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Retail Shampoo', 'price' => 105, 'tax_rate' => 5]);
 
         $response = $this->actingAs($user)->getFromTenant('/services/search?q=Shampoo');
 

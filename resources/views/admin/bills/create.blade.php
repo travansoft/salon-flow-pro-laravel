@@ -469,7 +469,6 @@
             id: lineSeq++,
             serviceId: service.id,
             description: service.name,
-            price: Number(service.price),
             priceInclusive: Number(service.price_inclusive),
             taxRate: Number(service.tax_rate),
             quantity: 1,
@@ -605,7 +604,7 @@
             staff_profile_id: line.staffProfileId || null,
             description: line.description,
             quantity: line.quantity,
-            unit_price: line.price,
+            unit_price: line.priceInclusive,
             tax_rate: line.taxRate,
         }));
     }

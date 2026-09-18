@@ -172,8 +172,8 @@ class StoreManualBillTest extends TestCase
         $this->assertDatabaseHas('bills', [
             'client_id' => $client->id,
             'discount_percent' => 10,
-            'discount_amount' => 100,
-            'total' => 1062,
+            'discount_amount' => 84.74,
+            'total' => 899.99,
         ]);
     }
 

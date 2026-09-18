@@ -123,11 +123,11 @@ class SettleBillTest extends TestCase
         ]);
 
         $response->assertOk();
-        $this->assertEquals(1062.0, $response->json('total'));
+        $this->assertEquals(899.99, $response->json('total'));
         $this->assertDatabaseHas('bills', [
             'id' => $response->json('bill_id'),
-            'discount_amount' => 100,
-            'amount_paid' => 1062,
+            'discount_amount' => 84.74,
+            'amount_paid' => 899.99,
             'status' => 'paid',
         ]);
     }

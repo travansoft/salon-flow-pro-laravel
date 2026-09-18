@@ -49,8 +49,7 @@
             <div class="sfp-split-2">
                 <div class="sfp-field">
                     <label class="sfp-label">Price (incl. GST)</label>
-                    <input type="number" step="0.01" min="0" id="service-price-inclusive" class="sfp-input" data-exclusive="{{ old('price') }}">
-                    <input type="hidden" name="price" id="service-price-exclusive" value="{{ old('price') }}">
+                    <input type="number" step="0.01" min="0" name="price" id="service-price-inclusive" class="sfp-input" value="{{ old('price') }}">
                     <p id="service-price-breakdown" style="font-size:12.5px;color:#66736F;margin:6px 0 0"></p>
                     @error('price')
                         <span class="sfp-invalid-feedback">{{ $message }}</span>
@@ -113,7 +112,6 @@
     const tenantDefaultGstRate = {{ (float) ($tenant->default_gst_rate ?? 18) }};
 
     const inclusiveInput = document.getElementById('service-price-inclusive');
-    const exclusiveInput = document.getElementById('service-price-exclusive');
     const taxRateInput = document.getElementById('service-tax-rate');
     const breakdown = document.getElementById('service-price-breakdown');
 
@@ -130,7 +128,6 @@
         const inclusive = parseFloat(inclusiveInput.value);
 
         if (!Number.isFinite(inclusive) || inclusive < 0) {
-            exclusiveInput.value = '';
             breakdown.textContent = '';
             return;
         }
@@ -139,26 +136,13 @@
         const exclusive = inclusive / (1 + rate / 100);
         const gstAmount = inclusive - exclusive;
 
-        exclusiveInput.value = exclusive.toFixed(2);
         breakdown.textContent = `Base price ${money(exclusive)} + GST (${rate}%) ${money(gstAmount)} = ${money(inclusive)}`;
-    }
-
-    function initFromStoredExclusive() {
-        const exclusive = parseFloat(inclusiveInput.dataset.exclusive);
-
-        if (!Number.isFinite(exclusive)) {
-            return;
-        }
-
-        const rate = currentTaxRate();
-        inclusiveInput.value = (exclusive * (1 + rate / 100)).toFixed(2);
-        recalculate();
     }
 
     inclusiveInput.addEventListener('input', recalculate);
     taxRateInput.addEventListener('input', recalculate);
 
-    initFromStoredExclusive();
+    recalculate();
 })();
 </script>
 @endsection

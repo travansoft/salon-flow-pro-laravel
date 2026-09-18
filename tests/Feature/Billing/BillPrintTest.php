@@ -57,7 +57,7 @@ class BillPrintTest extends TestCase
         $response->assertSee('INVOICE');
         $response->assertSee('SUMMARY');
         $response->assertSee('Bill Amount');
-        $response->assertSee('Two Hundred Thirty Six Rupees Only');
+        $response->assertSee('Two Hundred Rupees Only');
     }
 
     public function test_print_receipt_shows_a_per_rate_breakdown_only_when_rates_differ(): void

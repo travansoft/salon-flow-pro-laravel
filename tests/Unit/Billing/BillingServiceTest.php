@@ -30,9 +30,9 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ]);
 
-        $this->assertSame('1000.00', (string) $bill->subtotal);
-        $this->assertSame('180.00', (string) $bill->tax_amount);
-        $this->assertSame('1180.00', (string) $bill->total);
+        $this->assertSame('847.45', (string) $bill->subtotal);
+        $this->assertSame('152.55', (string) $bill->tax_amount);
+        $this->assertSame('1000.00', (string) $bill->total);
     }
 
     public function test_bill_numbers_are_sequential_per_tenant(): void
@@ -180,8 +180,8 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ]);
 
-        $this->assertSame('90.00', (string) $bill->cgst_amount);
-        $this->assertSame('90.00', (string) $bill->sgst_amount);
+        $this->assertSame('76.27', (string) $bill->cgst_amount);
+        $this->assertSame('76.27', (string) $bill->sgst_amount);
         $this->assertSame('0.00', (string) $bill->igst_amount);
     }
 
@@ -198,7 +198,7 @@ class BillingServiceTest extends TestCase
 
         $this->assertSame('0.00', (string) $bill->cgst_amount);
         $this->assertSame('0.00', (string) $bill->sgst_amount);
-        $this->assertSame('180.00', (string) $bill->igst_amount);
+        $this->assertSame('152.55', (string) $bill->igst_amount);
     }
 
     public function test_client_without_gstin_is_treated_as_intra_state(): void
@@ -212,8 +212,8 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ]);
 
-        $this->assertSame('90.00', (string) $bill->cgst_amount);
-        $this->assertSame('90.00', (string) $bill->sgst_amount);
+        $this->assertSame('76.27', (string) $bill->cgst_amount);
+        $this->assertSame('76.27', (string) $bill->sgst_amount);
     }
 
     public function test_service_tax_rate_falls_back_to_tenant_default_when_unset(): void
@@ -236,7 +236,7 @@ class BillingServiceTest extends TestCase
 
         $bill = app(BillingService::class)->generateFromAppointment($appointment, $user->id);
 
-        $this->assertSame('120.00', (string) $bill->tax_amount);
+        $this->assertSame('107.15', (string) $bill->tax_amount);
     }
 
     public function test_service_specific_tax_rate_overrides_tenant_default(): void
@@ -259,7 +259,7 @@ class BillingServiceTest extends TestCase
 
         $bill = app(BillingService::class)->generateFromAppointment($appointment, $user->id);
 
-        $this->assertSame('50.00', (string) $bill->tax_amount);
+        $this->assertSame('47.62', (string) $bill->tax_amount);
     }
 
     public function test_discount_reduces_the_taxable_amount_before_gst_is_applied(): void
@@ -273,11 +273,11 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ], 10);
 
-        $this->assertSame('1000.00', (string) $bill->subtotal);
+        $this->assertSame('847.45', (string) $bill->subtotal);
         $this->assertSame('10.00', (string) $bill->discount_percent);
-        $this->assertSame('100.00', (string) $bill->discount_amount);
-        $this->assertSame('162.00', (string) $bill->tax_amount);
-        $this->assertSame('1062.00', (string) $bill->total);
+        $this->assertSame('84.74', (string) $bill->discount_amount);
+        $this->assertSame('137.28', (string) $bill->tax_amount);
+        $this->assertSame('899.99', (string) $bill->total);
     }
 
     public function test_zero_discount_leaves_the_bill_unchanged(): void
@@ -292,7 +292,7 @@ class BillingServiceTest extends TestCase
         ]);
 
         $this->assertSame('0.00', (string) $bill->discount_amount);
-        $this->assertSame('1180.00', (string) $bill->total);
+        $this->assertSame('1000.00', (string) $bill->total);
     }
 
     public function test_discount_percent_above_100_is_rejected(): void
@@ -324,8 +324,8 @@ class BillingServiceTest extends TestCase
         $first = $bill->lineItems->firstWhere('description', 'Hair Color');
         $second = $bill->lineItems->firstWhere('description', 'Spa Package');
 
-        $this->assertSame('10.00', (string) $first->discount_amount);
-        $this->assertSame('20.00', (string) $second->discount_amount);
-        $this->assertSame('30.00', (string) $bill->discount_amount);
+        $this->assertSame('9.52', (string) $first->discount_amount);
+        $this->assertSame('16.94', (string) $second->discount_amount);
+        $this->assertSame('26.46', (string) $bill->discount_amount);
     }
 }

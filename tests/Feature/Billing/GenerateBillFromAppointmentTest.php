@@ -43,7 +43,7 @@ class GenerateBillFromAppointmentTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('bills', ['appointment_id' => $appointment->id, 'client_id' => $appointment->client_id]);
-        $this->assertDatabaseHas('bill_line_items', ['description' => $service->name, 'unit_price' => 500]);
+        $this->assertDatabaseHas('bill_line_items', ['description' => $service->name, 'unit_price' => 423.72]);
     }
 
     public function test_generated_bill_includes_manual_retail_line_items(): void
@@ -69,6 +69,6 @@ class GenerateBillFromAppointmentTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('bill_line_items', ['description' => 'Retail shampoo', 'unit_price' => 350]);
+        $this->assertDatabaseHas('bill_line_items', ['description' => 'Retail shampoo', 'unit_price' => 296.61]);
     }
 }

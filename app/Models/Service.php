@@ -89,10 +89,26 @@ class Service extends Model
         return (string) ($this->tax_rate ?? $tenantDefaultGstRate);
     }
 
+    /**
+     * Service::price is stored GST-inclusive, so this is the price itself.
+     * Kept as a named accessor so call sites read clearly and don't need to
+     * know that price is already tax-inclusive.
+     */
     public function priceInclusiveOfTax(float $tenantDefaultGstRate): string
+    {
+        return (string) $this->price;
+    }
+
+    /**
+     * Derives the GST-exclusive base price from the stored inclusive price,
+     * for display only (e.g. "Base price + GST = inclusive"). Billing never
+     * uses this directly — it re-derives the exclusive amount from the
+     * inclusive line total to avoid rounding a per-unit price twice.
+     */
+    public function exclusivePriceForDisplay(float $tenantDefaultGstRate): string
     {
         $rate = $this->effectiveTaxRate($tenantDefaultGstRate);
 
-        return bcmul((string) $this->price, bcadd('1', bcdiv($rate, '100', 4), 4), 2);
+        return bcdiv((string) $this->price, bcadd('1', bcdiv($rate, '100', 4), 4), 2);
     }
 }
