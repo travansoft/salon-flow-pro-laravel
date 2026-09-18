@@ -32,8 +32,12 @@
                 <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($expense->amount, 2) }}</div>
             </div>
             <div>
-                <div class="sfp-label" style="margin-bottom:6px">Date</div>
+                <div class="sfp-label" style="margin-bottom:6px">Expense date</div>
                 <div class="sfp-mono" style="font-size:20px">{{ $expense->expense_date->format('d M Y') }}</div>
+            </div>
+            <div>
+                <div class="sfp-label" style="margin-bottom:6px">Entered on</div>
+                <div class="sfp-mono" style="font-size:20px">{{ $expense->created_at->format('d M Y, h:i A') }}</div>
             </div>
             <div>
                 <div class="sfp-label" style="margin-bottom:6px">Type</div>
