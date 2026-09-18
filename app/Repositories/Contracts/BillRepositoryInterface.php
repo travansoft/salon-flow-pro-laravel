@@ -12,7 +12,7 @@ interface BillRepositoryInterface
     public function nextBillNumber(int $tenantId, string $financialYear): int;
 
     /** @return Collection<int, Bill> */
-    public function getForDate(string $date): Collection;
+    public function search(string $fromDate, string $toDate, ?string $clientName, ?string $clientPhone): Collection;
 
     /** @param array<string, mixed> $data */
     public function create(array $data): Bill;

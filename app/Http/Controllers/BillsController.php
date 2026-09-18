@@ -32,10 +32,20 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $date = $request->query('date', now()->toDateString());
-        $bills = $this->billRepository->getForDate($date);
+        $fromDate = $request->query('from_date', now()->toDateString());
+        $toDate = $request->query('to_date', now()->toDateString());
+        $clientName = $request->query('client_name');
+        $clientPhone = $request->query('client_phone');
 
-        return view('admin.bills.index', ['bills' => $bills, 'date' => $date]);
+        $bills = $this->billRepository->search($fromDate, $toDate, $clientName, $clientPhone);
+
+        return view('admin.bills.index', [
+            'bills' => $bills,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'clientName' => $clientName,
+            'clientPhone' => $clientPhone,
+        ]);
     }
 
     public function create(Request $request): View

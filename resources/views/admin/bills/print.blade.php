@@ -31,7 +31,7 @@
         }
 
         .divider {
-            border-top: 1px dashed #000;
+            border-top: 1px solid #000;
             margin: 8px 0;
         }
 
@@ -43,12 +43,35 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
 
         th, td {
             text-align: left;
-            padding: 2px 0;
-            font-size: 11px;
+            padding: 3px 2px;
+            font-size: 10.5px;
+            word-break: break-word;
+            vertical-align: top;
+        }
+
+        th:first-child, td:first-child {
+            width: 8%;
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            width: 40%;
+        }
+
+        th:nth-child(3), td:nth-child(3) {
+            width: 15%;
+        }
+
+        th:nth-child(4), td:nth-child(4) {
+            width: 18%;
+        }
+
+        th:nth-child(5), td:nth-child(5) {
+            width: 19%;
         }
 
         th.num, td.num {
@@ -115,7 +138,7 @@
     <div class="divider"></div>
 
     <div class="totals-row"><span>Inv. No.</span><span>{{ $bill->invoiceNumber() }}</span></div>
-    <div class="totals-row"><span>Date</span><span>{{ $bill->created_at->format('d-M-Y H:i') }}</span></div>
+    <div class="totals-row"><span>Date</span><span>{{ $bill->created_at->format('d-M-Y h:i A') }}</span></div>
     @if ($bill->createdBy)
         <div class="totals-row"><span>Billed by</span><span>{{ $bill->createdBy->name }}</span></div>
     @endif
@@ -139,16 +162,13 @@
         <tbody>
             @foreach ($bill->lineItems as $index => $item)
                 <tr>
-                    <td colspan="5" style="padding-top:6px">
+                    <td>{{ $index + 1 }}</td>
+                    <td>
                         {{ $item->description }}
                         @if ($item->service?->hsn_sac_code)
-                            <span style="font-size:10px">(HSN/SAC {{ $item->service->hsn_sac_code }})</span>
+                            <br><span style="font-size:9px">HSN/SAC {{ $item->service->hsn_sac_code }}</span>
                         @endif
                     </td>
-                </tr>
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td></td>
                     <td class="num">{{ $item->quantity }}</td>
                     <td class="num">{{ number_format($item->unit_price, 2) }}</td>
                     <td class="num">{{ number_format($item->line_total, 2) }}</td>

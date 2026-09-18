@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -34,9 +35,18 @@ class BillRepository implements BillRepositoryInterface
     }
 
     /** @return Collection<int, Bill> */
-    public function getForDate(string $date): Collection
+    public function search(string $fromDate, string $toDate, ?string $clientName, ?string $clientPhone): Collection
     {
-        return $this->model->whereDate('created_at', $date)
+        return $this->model->whereDate('created_at', '>=', $fromDate)
+            ->whereDate('created_at', '<=', $toDate)
+            ->when($clientName, fn (Builder $query, string $clientName) => $query->whereHas(
+                'client',
+                fn (Builder $clientQuery) => $clientQuery->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($clientName).'%'])
+            ))
+            ->when($clientPhone, fn (Builder $query, string $clientPhone) => $query->whereHas(
+                'client',
+                fn (Builder $clientQuery) => $clientQuery->where('phone', 'LIKE', '%'.$clientPhone.'%')
+            ))
             ->with(['client', 'payments', 'createdBy'])
             ->orderBy('bill_number')
             ->get();

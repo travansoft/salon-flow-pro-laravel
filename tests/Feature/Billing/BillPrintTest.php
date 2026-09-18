@@ -102,7 +102,7 @@ class BillPrintTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Meera Pillai');
-        $response->assertSee($bill->created_at->format('d-M-Y H:i'));
+        $response->assertSee($bill->created_at->format('d-M-Y h:i A'));
     }
 
     public function test_stylist_cannot_view_the_print_receipt(): void

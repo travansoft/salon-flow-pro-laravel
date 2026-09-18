@@ -37,7 +37,7 @@ class BillingAccessTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
         $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'created_by' => $frontDesk->id]);
 
-        $response = $this->actingAs($frontDesk)->getFromTenant('/bills?date='.$bill->created_at->toDateString());
+        $response = $this->actingAs($frontDesk)->getFromTenant('/bills?from_date='.$bill->created_at->toDateString().'&to_date='.$bill->created_at->toDateString());
 
         $response->assertOk();
         $response->assertSee('Meera Pillai');
