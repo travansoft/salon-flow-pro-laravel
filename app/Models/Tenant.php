@@ -22,6 +22,7 @@ class Tenant extends Model
         'gst_state_code',
         'legal_name',
         'address',
+        'phone',
         'default_gst_rate',
         'print_logo',
         'ui_logo',

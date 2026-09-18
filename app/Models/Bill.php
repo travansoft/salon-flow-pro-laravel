@@ -107,4 +107,28 @@ class Bill extends Model
     {
         return $query->whereIn('status', [self::StatusUnpaid, self::StatusPartial]);
     }
+
+    /**
+     * Groups line items by GST rate, for a receipt's tax summary block.
+     *
+     * @return array<string, array{taxable: string, cgst: string, sgst: string, igst: string}>
+     */
+    public function gstBreakdownByRate(): array
+    {
+        $breakdown = [];
+
+        foreach ($this->lineItems as $item) {
+            $rate = (string) $item->tax_rate;
+
+            $breakdown[$rate] ??= ['taxable' => '0', 'cgst' => '0', 'sgst' => '0', 'igst' => '0'];
+            $breakdown[$rate]['taxable'] = bcadd($breakdown[$rate]['taxable'], (string) $item->line_total, 2);
+            $breakdown[$rate]['cgst'] = bcadd($breakdown[$rate]['cgst'], (string) $item->cgst_amount, 2);
+            $breakdown[$rate]['sgst'] = bcadd($breakdown[$rate]['sgst'], (string) $item->sgst_amount, 2);
+            $breakdown[$rate]['igst'] = bcadd($breakdown[$rate]['igst'], (string) $item->igst_amount, 2);
+        }
+
+        ksort($breakdown, SORT_NUMERIC);
+
+        return $breakdown;
+    }
 }

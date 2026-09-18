@@ -383,7 +383,7 @@
         const services = await searchServices(term);
         renderSuggestions(itemSuggestions, services, (service) => `
             <span class="sfp-suggestion-main">${service.name} <small>(${service.code})</small></span>
-            <small>${money(service.price)}</small>
+            <small>${money(service.price_inclusive)}</small>
         `, addServiceLine, `No active service matching "${term}".`);
     }, 250);
 
@@ -450,6 +450,8 @@
             serviceId: service.id,
             description: service.name,
             price: Number(service.price),
+            priceInclusive: Number(service.price_inclusive),
+            taxRate: Number(service.tax_rate),
             quantity: 1,
             staffProfileId: null,
         });
@@ -493,7 +495,7 @@
                 <span class="bill-line-description-wrap"><span style="font-size:14px">${line.description}</span></span>
                 <span></span>
                 <input type="number" min="1" value="${line.quantity}" class="sfp-table-control sfp-table-control--qty bill-line-qty">
-                <span class="bill-line-price-wrap"><span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.price)}</span></span>
+                <span class="bill-line-price-wrap"><span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.priceInclusive)}</span></span>
                 <button type="button" class="sfp-table-remove bill-line-remove" title="Remove item" aria-label="Remove item">&times;</button>
             `;
 
@@ -522,7 +524,7 @@
     }
 
     function updateTotal() {
-        const total = lines.reduce((sum, line) => sum + (Number(line.price) * Number(line.quantity)), 0);
+        const total = lines.reduce((sum, line) => sum + (Number(line.priceInclusive) * Number(line.quantity)), 0);
         totalEl.textContent = money(total);
     }
 
@@ -569,6 +571,7 @@
             description: line.description,
             quantity: line.quantity,
             unit_price: line.price,
+            tax_rate: line.taxRate,
         }));
     }
 

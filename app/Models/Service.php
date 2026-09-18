@@ -83,4 +83,16 @@ class Service extends Model
                 ->orWhereRaw('LOWER(code) LIKE ?', [$needle]);
         });
     }
+
+    public function effectiveTaxRate(float $tenantDefaultGstRate): string
+    {
+        return (string) ($this->tax_rate ?? $tenantDefaultGstRate);
+    }
+
+    public function priceInclusiveOfTax(float $tenantDefaultGstRate): string
+    {
+        $rate = $this->effectiveTaxRate($tenantDefaultGstRate);
+
+        return bcmul((string) $this->price, bcadd('1', bcdiv($rate, '100', 4), 4), 2);
+    }
 }

@@ -46,6 +46,33 @@ class BillItemAndClientSearchTest extends TestCase
         $response->assertOk()->assertJsonCount(1, 'services');
     }
 
+    public function test_service_search_returns_gst_inclusive_price_and_tax_rate(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Gents Haircut', 'price' => 300, 'tax_rate' => null]);
+
+        $response = $this->actingAs($user)->getFromTenant('/services/search?q=Haircut');
+
+        $response->assertOk();
+        $this->assertEquals(300.0, $response->json('services.0.price'));
+        $this->assertEquals(18.0, $response->json('services.0.tax_rate'));
+        $this->assertEquals(354.0, $response->json('services.0.price_inclusive'));
+    }
+
+    public function test_service_search_uses_the_services_own_tax_rate_when_set(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Retail Shampoo', 'price' => 100, 'tax_rate' => 5]);
+
+        $response = $this->actingAs($user)->getFromTenant('/services/search?q=Shampoo');
+
+        $response->assertOk();
+        $this->assertEquals(5.0, $response->json('services.0.tax_rate'));
+        $this->assertEquals(105.0, $response->json('services.0.price_inclusive'));
+    }
+
     public function test_service_search_excludes_inactive_services(): void
     {
         $user = User::factory()->for($this->tenant)->create();
