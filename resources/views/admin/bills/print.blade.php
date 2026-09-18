@@ -17,9 +17,15 @@
             width: 302px;
             margin: 0 auto;
             padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
             font-size: 12px;
             color: #000;
+        }
+
+        .shop-name {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 19px;
+            font-weight: 700;
         }
 
         .center {
@@ -120,7 +126,7 @@
         <div class="center"><img src="{{ $bill->tenant->print_logo }}" alt="Logo" style="max-height:50px;max-width:100%"></div>
     @endif
 
-    <div class="center bold" style="font-size:16px">{{ $bill->tenant->legal_name ?? $bill->tenant->name }}</div>
+    <div class="center shop-name">{{ $bill->tenant->legal_name ?? $bill->tenant->name }}</div>
     @if ($bill->tenant->address)
         <div class="center">{{ $bill->tenant->address }}</div>
     @endif
