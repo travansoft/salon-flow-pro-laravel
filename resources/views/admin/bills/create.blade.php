@@ -173,6 +173,7 @@
 <script>
 (function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const eligibleStaffUrlTemplate = '{{ $tenantUrl->route('services.eligibleStaff', '__SERVICE_ID__') }}';
 
     const clientSearch = document.getElementById('bill-client-search');
     const clientIdInput = document.getElementById('bill-client-id');
@@ -467,7 +468,7 @@
 
         select.innerHTML = '<option value="">Loading&hellip;</option>';
 
-        const response = await fetch('{{ url("/services") }}/' + encodeURIComponent(line.serviceId) + '/eligible-staff', {
+        const response = await fetch(eligibleStaffUrlTemplate.replace('__SERVICE_ID__', encodeURIComponent(line.serviceId)), {
             headers: { 'Accept': 'application/json' },
         });
 
@@ -636,7 +637,7 @@
         setFeedback('Settling…', false);
 
         try {
-            const response = await fetch('{{ route("bills.settle") }}', {
+            const response = await fetch('{{ $tenantUrl->route("bills.settle") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
