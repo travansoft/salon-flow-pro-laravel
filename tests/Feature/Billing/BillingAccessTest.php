@@ -31,6 +31,32 @@ class BillingAccessTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_bills_index_shows_who_billed_and_a_reprint_link(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create(['name' => 'Meera Pillai']);
+        $frontDesk->assignRole('FrontDesk');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'created_by' => $frontDesk->id]);
+
+        $response = $this->actingAs($frontDesk)->getFromTenant('/bills?date='.$bill->created_at->toDateString());
+
+        $response->assertOk();
+        $response->assertSee('Meera Pillai');
+        $response->assertSee($this->tenantUrl("/bills/{$bill->id}/print"), false);
+    }
+
+    public function test_bill_detail_shows_who_billed_and_when(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create(['name' => 'Meera Pillai']);
+        $frontDesk->assignRole('FrontDesk');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'created_by' => $frontDesk->id]);
+
+        $response = $this->actingAs($frontDesk)->getFromTenant("/bills/{$bill->id}");
+
+        $response->assertOk();
+        $response->assertSee('Meera Pillai');
+        $response->assertSee($bill->created_at->format('d M Y'));
+    }
+
     public function test_front_desk_cannot_issue_a_refund(): void
     {
         $frontDesk = User::factory()->for($this->tenant)->create();

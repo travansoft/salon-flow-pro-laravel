@@ -89,6 +89,9 @@
 
     <div class="totals-row"><span>Invoice</span><span>{{ $bill->invoiceNumber() }}</span></div>
     <div class="totals-row"><span>Date</span><span>{{ $bill->created_at->format('d-M-Y H:i') }}</span></div>
+    @if ($bill->createdBy)
+        <div class="totals-row"><span>Billed by</span><span>{{ $bill->createdBy->name }}</span></div>
+    @endif
     <div class="totals-row"><span>Customer</span><span>{{ $bill->client->name }}</span></div>
     @if ($bill->client->gst_number)
         <div class="totals-row"><span>Customer GSTIN</span><span>{{ $bill->client->gst_number }}</span></div>

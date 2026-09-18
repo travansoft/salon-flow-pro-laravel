@@ -37,7 +37,7 @@ class BillRepository implements BillRepositoryInterface
     public function getForDate(string $date): Collection
     {
         return $this->model->whereDate('created_at', $date)
-            ->with(['client', 'payments'])
+            ->with(['client', 'payments', 'createdBy'])
             ->orderBy('bill_number')
             ->get();
     }

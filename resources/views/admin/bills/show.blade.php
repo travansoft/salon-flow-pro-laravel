@@ -16,7 +16,13 @@
     <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
             <h1 style="font-family:'Bricolage Grotesque',Outfit,sans-serif;font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em">Bill &middot; {{ $bill->invoiceNumber() }}</h1>
-            <p style="font-size:13.5px;color:#66736F;margin:6px 0 0">{{ $bill->client->name }}</p>
+            <p style="font-size:13.5px;color:#66736F;margin:6px 0 0">
+                {{ $bill->client->name }}
+                &middot; {{ $bill->created_at->format('d M Y, h:i A') }}
+                @if ($bill->createdBy)
+                    &middot; Billed by {{ $bill->createdBy->name }}
+                @endif
+            </p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
             <a href="{{ $tenantUrl->route('bills.print', $bill) }}" target="_blank" class="sfp-btn-outline">Print</a>

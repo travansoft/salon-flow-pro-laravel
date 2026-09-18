@@ -40,6 +40,24 @@ class BillPrintTest extends TestCase
         $response->assertSee($bill->invoiceNumber());
     }
 
+    public function test_print_receipt_shows_who_billed_and_when(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create(['name' => 'Meera Pillai']);
+        $frontDesk->assignRole('FrontDesk');
+
+        app(TenantContext::class)->set($this->tenant);
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+        $bill = app(BillingService::class)->createManualBill($client->id, $frontDesk->id, [
+            ['description' => 'Haircut', 'unit_price' => 500],
+        ]);
+
+        $response = $this->actingAs($frontDesk)->getFromTenant("/bills/{$bill->id}/print");
+
+        $response->assertOk();
+        $response->assertSee('Meera Pillai');
+        $response->assertSee($bill->created_at->format('d-M-Y H:i'));
+    }
+
     public function test_stylist_cannot_view_the_print_receipt(): void
     {
         $stylist = User::factory()->for($this->tenant)->create();

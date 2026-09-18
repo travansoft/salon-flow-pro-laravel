@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Bill;
 use App\Models\Client;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,18 +20,15 @@ class BillFactory extends Factory
      */
     public function definition(): array
     {
-        $client = Client::factory()->create();
-        $user = User::factory()->for($client->tenant)->create();
-
         return [
-            'tenant_id' => $client->tenant_id,
-            'client_id' => $client->id,
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'client_id' => fn (array $attributes) => Client::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'bill_number' => fake()->unique()->numberBetween(1, 100000),
             'subtotal' => 500,
             'tax_amount' => 90,
             'total' => 590,
             'status' => Bill::StatusUnpaid,
-            'created_by' => $user->id,
+            'created_by' => fn (array $attributes) => User::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
         ];
     }
 
