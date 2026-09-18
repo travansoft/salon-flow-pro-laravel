@@ -54,6 +54,30 @@
                         </a>
                     @endcan
 
+                    @can('expenses.view')
+                        <a href="{{ $tenantUrl->route('expenses.index') }}" class="sfp-nav-item {{ request()->routeIs('expenses.*') || request()->routeIs('expenseCategories.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Expenses
+                        </a>
+                    @endcan
+
+                    @can('services.view')
+                        <a href="{{ $tenantUrl->route('services.index') }}" class="sfp-nav-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Services
+                        </a>
+                    @endcan
+
+                    @can('staff.view')
+                        <a href="{{ $tenantUrl->route('staff.index') }}" class="sfp-nav-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Staff &amp; roster
+                        </a>
+                    @endcan
+
+                    @can('clients.view')
+                        <a href="{{ $tenantUrl->route('clients.index') }}" class="sfp-nav-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Clients
+                        </a>
+                    @endcan
+
                     @can('appointments.view')
                         <a href="{{ $tenantUrl->route('appointments.index') }}" class="sfp-nav-item {{ request()->routeIs('appointments.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Appointments
@@ -66,18 +90,6 @@
                         </a>
                     @endcan
 
-                    @can('expenses.view')
-                        <a href="{{ $tenantUrl->route('expenses.index') }}" class="sfp-nav-item {{ request()->routeIs('expenses.*') || request()->routeIs('expenseCategories.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Expenses
-                        </a>
-                    @endcan
-
-                    @can('staff.view')
-                        <a href="{{ $tenantUrl->route('staff.index') }}" class="sfp-nav-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Staff &amp; roster
-                        </a>
-                    @endcan
-
                     @can('inventory.view')
                         <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Inventory
@@ -87,18 +99,6 @@
                     @can('dashboard.view')
                         <a href="{{ $tenantUrl->route('reports.index') }}" class="sfp-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Reports
-                        </a>
-                    @endcan
-
-                    @can('clients.view')
-                        <a href="{{ $tenantUrl->route('clients.index') }}" class="sfp-nav-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Clients
-                        </a>
-                    @endcan
-
-                    @can('services.view')
-                        <a href="{{ $tenantUrl->route('services.index') }}" class="sfp-nav-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Services
                         </a>
                     @endcan
 
