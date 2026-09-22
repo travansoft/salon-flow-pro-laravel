@@ -33,6 +33,6 @@ class TenantUserImpersonationController extends Controller
         Auth::guard('web')->login($tenantUser);
         $request->session()->regenerate();
 
-        return redirect()->to("{$request->getScheme()}://{$tenant->subdomain}.".config('tenancy.main_domain').'/dashboard');
+        return redirect()->to("{$request->getScheme()}://".config('tenancy.main_domain')."/{$tenant->slug}/dashboard");
     }
 }

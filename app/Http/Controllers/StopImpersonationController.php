@@ -24,6 +24,6 @@ class StopImpersonationController extends Controller
 
         $this->activityLogger->logAs((int) $adminId, $adminName, 'tenant_user.impersonation_ended', 'Returned to the platform panel from impersonation.');
 
-        return redirect()->to("{$request->getScheme()}://admin.".config('tenancy.main_domain').'/');
+        return redirect()->to("{$request->getScheme()}://".config('tenancy.main_domain').'/admin');
     }
 }

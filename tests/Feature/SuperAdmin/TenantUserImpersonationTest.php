@@ -38,7 +38,7 @@ class TenantUserImpersonationTest extends TestCase
         $response = $this->actingAs($this->admin, 'super_admin')
             ->postToSuperAdmin("/tenants/{$this->tenant->id}/users/{$user->id}/impersonate");
 
-        $response->assertRedirect($this->tenantUrl('/dashboard'));
+        $response->assertRedirect("http://salonflow.test/{$this->tenant->slug}/dashboard");
         $this->assertAuthenticatedAs($user, 'web');
     }
 
@@ -76,7 +76,7 @@ class TenantUserImpersonationTest extends TestCase
             ])
             ->delete($this->tenantUrl('/impersonation'));
 
-        $response->assertRedirect('http://admin.salonflow.test/');
+        $response->assertRedirect('http://salonflow.test/admin');
         $this->assertGuest('web');
         $this->assertDatabaseHas('super_admin_activity_logs', [
             'platform_admin_id' => $this->admin->id,
