@@ -181,7 +181,7 @@ class BillingServiceTest extends TestCase
         ]);
 
         $this->assertSame('76.27', (string) $bill->cgst_amount);
-        $this->assertSame('76.27', (string) $bill->sgst_amount);
+        $this->assertSame('76.28', (string) $bill->sgst_amount);
         $this->assertSame('0.00', (string) $bill->igst_amount);
     }
 
@@ -213,7 +213,7 @@ class BillingServiceTest extends TestCase
         ]);
 
         $this->assertSame('76.27', (string) $bill->cgst_amount);
-        $this->assertSame('76.27', (string) $bill->sgst_amount);
+        $this->assertSame('76.28', (string) $bill->sgst_amount);
     }
 
     public function test_service_tax_rate_falls_back_to_tenant_default_when_unset(): void

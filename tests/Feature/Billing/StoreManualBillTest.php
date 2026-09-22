@@ -51,6 +51,36 @@ class StoreManualBillTest extends TestCase
         ]);
     }
 
+    public function test_counter_can_bill_a_consultation_priced_service_at_a_rate_different_from_the_catalogue_price(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+        $service = Service::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'price' => 1500,
+            'requires_rate_confirmation' => true,
+        ]);
+
+        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+            'client_id' => $client->id,
+            'items' => [
+                [
+                    'description' => $service->name,
+                    'service_id' => $service->id,
+                    'unit_price' => 2200,
+                    'tax_rate' => 0,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bill_line_items', [
+            'service_id' => $service->id,
+            'unit_price' => 2200,
+        ]);
+    }
+
     public function test_validation_rejects_a_staff_member_not_eligible_for_the_service(): void
     {
         $frontDesk = User::factory()->for($this->tenant)->create();

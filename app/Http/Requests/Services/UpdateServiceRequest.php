@@ -37,6 +37,7 @@ class UpdateServiceRequest extends FormRequest
                 Rule::exists('service_categories', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
             ],
             'price' => ['sometimes', 'numeric', 'min:0'],
+            'requires_rate_confirmation' => ['sometimes', 'boolean'],
             'duration_minutes' => ['sometimes', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],

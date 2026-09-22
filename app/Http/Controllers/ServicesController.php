@@ -138,6 +138,7 @@ class ServicesController extends Controller
                 'price' => (float) $service->price,
                 'tax_rate' => (float) $service->effectiveTaxRate($tenantDefaultGstRate),
                 'price_inclusive' => (float) $service->priceInclusiveOfTax($tenantDefaultGstRate),
+                'requires_rate_confirmation' => (bool) $service->requires_rate_confirmation,
             ])->values(),
         ]);
     }

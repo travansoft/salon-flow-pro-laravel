@@ -35,6 +35,9 @@
                         <span class="sfp-mono" style="font-size:13px;color:#66736F;text-align:right">{{ $service->duration_minutes }} min</span>
                         <span class="sfp-mono" style="font-size:14px;text-align:right">&#8377;{{ number_format($service->priceInclusiveOfTax((float) $tenant->default_gst_rate), 2) }}</span>
                         <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px">
+                            @if ($service->requires_rate_confirmation)
+                                <span class="sfp-pill sfp-pill-amber">Rate varies</span>
+                            @endif
                             @if (! $service->is_active)
                                 <span class="sfp-pill sfp-pill-neutral">Disabled</span>
                             @endif

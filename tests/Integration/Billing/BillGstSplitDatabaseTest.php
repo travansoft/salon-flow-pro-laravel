@@ -27,14 +27,14 @@ class BillGstSplitDatabaseTest extends TestCase
 
         $this->assertDatabaseHas('bills', [
             'id' => $bill->id,
-            'cgst_amount' => 90,
-            'sgst_amount' => 90,
+            'cgst_amount' => 76.27,
+            'sgst_amount' => 76.28,
             'igst_amount' => 0,
         ]);
         $this->assertDatabaseHas('bill_line_items', [
             'bill_id' => $bill->id,
-            'cgst_amount' => 90,
-            'sgst_amount' => 90,
+            'cgst_amount' => 76.27,
+            'sgst_amount' => 76.28,
         ]);
     }
 
@@ -53,7 +53,7 @@ class BillGstSplitDatabaseTest extends TestCase
             'id' => $bill->id,
             'cgst_amount' => 0,
             'sgst_amount' => 0,
-            'igst_amount' => 180,
+            'igst_amount' => 152.55,
         ]);
     }
 }

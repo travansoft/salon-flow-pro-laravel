@@ -26,6 +26,7 @@ class ServiceFactory extends Factory
             'price' => fake()->randomElement([299, 499, 799, 1299, 1999]),
             'duration_minutes' => fake()->randomElement([30, 45, 60, 90]),
             'is_active' => true,
+            'requires_rate_confirmation' => false,
         ];
     }
 
@@ -33,6 +34,13 @@ class ServiceFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_active' => false,
+        ]);
+    }
+
+    public function requiresRateConfirmation(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'requires_rate_confirmation' => true,
         ]);
     }
 }

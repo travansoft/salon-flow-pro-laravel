@@ -25,15 +25,22 @@
 
             <div class="sfp-split-2">
                 <div class="sfp-field">
-                    <label class="sfp-label">Slug</label>
-                    <input type="text" class="sfp-input" value="{{ $tenant->slug }}" disabled>
+                    <label class="sfp-label">Slug *</label>
+                    <input type="text" name="slug" class="sfp-input" value="{{ old('slug', $tenant->slug) }}">
+                    @error('slug')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div class="sfp-field">
-                    <label class="sfp-label">Subdomain</label>
-                    <input type="text" class="sfp-input" value="{{ $tenant->subdomain }}" disabled>
+                    <label class="sfp-label">Subdomain *</label>
+                    <input type="text" name="subdomain" class="sfp-input" value="{{ old('subdomain', $tenant->subdomain) }}">
+                    @error('subdomain')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
+            <p style="color: #66736F; font-size: 13px; margin-top: -8px;">Changing these updates this tenant's login URL — existing bookmarks and links using the old values will stop working.</p>
 
             <div class="sfp-field">
                 <label class="sfp-label">Custom domain</label>
