@@ -102,6 +102,22 @@ class TenantSettingsUpdateTest extends TestCase
         $this->assertSame('data:image/png;base64,abc123', $this->tenant->refresh()->print_logo);
     }
 
+    public function test_owner_can_update_a_single_field_without_sending_the_others(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $this->tenant->update(['default_gst_rate' => 18]);
+
+        $response = $this->actingAs($owner)->putToTenant('/settings', [
+            'print_logo' => UploadedFile::fake()->create('print-logo.png', 10, 'image/png'),
+        ]);
+
+        $response->assertRedirect();
+        $this->tenant->refresh();
+        $this->assertStringStartsWith('data:image/png;base64,', $this->tenant->print_logo);
+        $this->assertEquals(18, $this->tenant->default_gst_rate);
+    }
+
     public function test_oversized_logo_upload_is_rejected(): void
     {
         $owner = User::factory()->for($this->tenant)->create();
