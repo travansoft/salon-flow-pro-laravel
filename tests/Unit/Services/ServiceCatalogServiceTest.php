@@ -190,6 +190,54 @@ class ServiceCatalogServiceTest extends TestCase
         $this->assertCount(0, $existingService->fresh()->staff);
     }
 
+    public function test_create_persists_requires_rate_confirmation(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $tenantContext = app(TenantContext::class);
+        $tenantContext->set($tenant);
+        $owner = User::factory()->for($tenant)->create();
+
+        $repository = Mockery::mock(ServiceRepositoryInterface::class);
+        $repository->shouldReceive('create')
+            ->once()
+            ->andReturnUsing(fn (array $data) => Service::create($data));
+
+        $service = new ServiceCatalogService($repository, $tenantContext);
+
+        $created = $service->create([
+            'name' => 'Bridal Facial',
+            'price' => 1999,
+            'duration_minutes' => 60,
+            'requires_rate_confirmation' => true,
+        ], changedBy: $owner->id);
+
+        $this->assertTrue($created->requires_rate_confirmation);
+    }
+
+    public function test_update_persists_a_changed_requires_rate_confirmation_flag(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $tenantContext = app(TenantContext::class);
+        $tenantContext->set($tenant);
+        $owner = User::factory()->for($tenant)->create();
+
+        $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'requires_rate_confirmation' => false]);
+
+        $repository = Mockery::mock(ServiceRepositoryInterface::class);
+        $repository->shouldReceive('update')
+            ->once()
+            ->andReturnUsing(function ($svc, array $data) {
+                $svc->update($data);
+
+                return $svc;
+            });
+
+        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service->update($existingService, ['requires_rate_confirmation' => true], changedBy: $owner->id);
+
+        $this->assertTrue($existingService->fresh()->requires_rate_confirmation);
+    }
+
     public function test_deactivate_marks_service_inactive(): void
     {
         $tenant = Tenant::factory()->create();

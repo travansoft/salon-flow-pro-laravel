@@ -37,6 +37,12 @@
                     <span class="sfp-pill sfp-pill-neutral">Disabled</span>
                 @endif
             </div>
+            @if ($service->requires_rate_confirmation)
+                <div>
+                    <div class="sfp-label" style="margin-bottom:6px">Rate</div>
+                    <span class="sfp-pill sfp-pill-amber">Confirm at billing</span>
+                </div>
+            @endif
         </div>
     </div>
 

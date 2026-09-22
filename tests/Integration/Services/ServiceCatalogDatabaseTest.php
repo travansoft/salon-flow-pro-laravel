@@ -72,6 +72,17 @@ class ServiceCatalogDatabaseTest extends TestCase
         $this->assertDatabaseMissing('staff_service', ['staff_profile_id' => $staffProfile->id]);
     }
 
+    public function test_requires_rate_confirmation_persists_as_a_boolean_column(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+
+        $service = Service::factory()->create(['tenant_id' => $tenant->id, 'requires_rate_confirmation' => true]);
+
+        $this->assertDatabaseHas('services', ['id' => $service->id, 'requires_rate_confirmation' => true]);
+        $this->assertTrue($service->fresh()->requires_rate_confirmation);
+    }
+
     public function test_disabling_a_service_soft_deletes_neither_service_nor_its_price_history(): void
     {
         $tenant = Tenant::factory()->create();
