@@ -42,6 +42,7 @@ class ResolveTenant
 
             if ($subdomain === 'admin') {
                 $request->attributes->set('is_super_admin_request', true);
+                $this->tenantContext->bypass();
 
                 return $next($request);
             }
@@ -72,6 +73,7 @@ class ResolveTenant
 
         if ($slug === 'admin') {
             $request->attributes->set('is_super_admin_request', true);
+            $this->tenantContext->bypass();
 
             return $next($request);
         }

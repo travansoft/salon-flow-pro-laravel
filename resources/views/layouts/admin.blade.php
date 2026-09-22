@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('admin/css/styles.css') }}">
+    @yield('styles')
 </head>
 <body class="sfp-body">
     <div class="sfp-shell">
@@ -16,7 +17,11 @@
 
             <div class="sfp-topbar">
                 <div class="sfp-brand">
-                    <div class="sfp-brand-mark">{{ strtoupper(substr($tenant->name ?? 'S', 0, 1)) }}</div>
+                    @if ($tenant->ui_logo ?? null)
+                        <img src="{{ $tenant->ui_logo }}" alt="{{ $tenant->name }}" class="sfp-brand-logo">
+                    @else
+                        <div class="sfp-brand-mark">{{ strtoupper(substr($tenant->name ?? 'S', 0, 1)) }}</div>
+                    @endif
                     <div class="sfp-brand-text">
                         <div class="sfp-brand-name">{{ $tenant->name ?? 'SalonFlow Pro' }}</div>
                     </div>
@@ -49,6 +54,30 @@
                         </a>
                     @endcan
 
+                    @can('expenses.view')
+                        <a href="{{ $tenantUrl->route('expenses.index') }}" class="sfp-nav-item {{ request()->routeIs('expenses.*') || request()->routeIs('expenseCategories.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Expenses
+                        </a>
+                    @endcan
+
+                    @can('services.view')
+                        <a href="{{ $tenantUrl->route('services.index') }}" class="sfp-nav-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Services
+                        </a>
+                    @endcan
+
+                    @can('staff.view')
+                        <a href="{{ $tenantUrl->route('staff.index') }}" class="sfp-nav-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Staff &amp; roster
+                        </a>
+                    @endcan
+
+                    @can('clients.view')
+                        <a href="{{ $tenantUrl->route('clients.index') }}" class="sfp-nav-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Clients
+                        </a>
+                    @endcan
+
                     @can('appointments.view')
                         <a href="{{ $tenantUrl->route('appointments.index') }}" class="sfp-nav-item {{ request()->routeIs('appointments.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Appointments
@@ -58,18 +87,6 @@
                         </a>
                         <a href="{{ $tenantUrl->route('bridalEngagements.index') }}" class="sfp-nav-item {{ request()->routeIs('bridalEngagements.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Bridal &amp; events
-                        </a>
-                    @endcan
-
-                    @can('expenses.view')
-                        <a href="{{ $tenantUrl->route('expenses.index') }}" class="sfp-nav-item {{ request()->routeIs('expenses.*') || request()->routeIs('expenseCategories.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Expenses
-                        </a>
-                    @endcan
-
-                    @can('staff.view')
-                        <a href="{{ $tenantUrl->route('staff.index') }}" class="sfp-nav-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Staff &amp; roster
                         </a>
                     @endcan
 
@@ -85,21 +102,15 @@
                         </a>
                     @endcan
 
-                    @can('clients.view')
-                        <a href="{{ $tenantUrl->route('clients.index') }}" class="sfp-nav-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Clients
-                        </a>
-                    @endcan
-
-                    @can('services.view')
-                        <a href="{{ $tenantUrl->route('services.index') }}" class="sfp-nav-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Services
-                        </a>
-                    @endcan
-
                     @can('commissions.view')
                         <a href="{{ $tenantUrl->route('commissionEarnings.index') }}" class="sfp-nav-item {{ request()->routeIs('commissionEarnings.*') || request()->routeIs('commissionRates.*') || request()->routeIs('staffIncentives.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Commission
+                        </a>
+                    @endcan
+
+                    @can('settings.view')
+                        <a href="{{ $tenantUrl->route('settings.edit') }}" class="sfp-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Settings
                         </a>
                     @endcan
 
@@ -109,6 +120,17 @@
                 </nav>
 
                 <main class="sfp-content">
+                    @if (session('impersonator_platform_admin_name'))
+                        <div class="sfp-alert-success" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                            <span>Viewing as <strong>{{ auth()->user()->name }}</strong> — impersonated by {{ session('impersonator_platform_admin_name') }}.</span>
+                            <form action="{{ $tenantUrl->route('impersonation.stop') }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="sfp-btn-outline">Return to admin</button>
+                            </form>
+                        </div>
+                    @endif
+
                     @if (session('status'))
                         <div class="sfp-alert-success">{{ session('status') }}</div>
                     @endif

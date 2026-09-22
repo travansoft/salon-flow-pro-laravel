@@ -22,16 +22,17 @@
     </div>
 
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns:1fr 140px 120px 120px 80px">
+        <div class="sfp-table-head-row" style="grid-template-columns:1fr 140px 120px 110px 150px 80px">
             <span>Description</span>
             <span>Category</span>
             <span>Amount</span>
-            <span>Date</span>
+            <span>Expense date</span>
+            <span>Entered on</span>
             <span></span>
         </div>
 
         @forelse ($expenses as $expense)
-            <div class="sfp-table-row" style="grid-template-columns:1fr 140px 120px 120px 80px">
+            <div class="sfp-table-row" style="grid-template-columns:1fr 140px 120px 110px 150px 80px">
                 <div>
                     <div style="font-size:14.5px">{{ $expense->description }}</div>
                     @if ($expense->is_recurring)
@@ -41,6 +42,7 @@
                 <span style="font-size:13.5px;color:#66736F">{{ $expense->category?->name ?: 'Uncategorised' }}</span>
                 <span class="sfp-mono" style="font-size:13.5px">&#8377;{{ number_format($expense->amount, 2) }}</span>
                 <span style="font-size:13.5px;color:#66736F">{{ $expense->expense_date->format('d M Y') }}</span>
+                <span style="font-size:13.5px;color:#66736F">{{ $expense->created_at->format('d M Y, h:i A') }}</span>
                 <a href="{{ $tenantUrl->route('expenses.show', $expense) }}" style="font-size:12.5px;color:#1B4B8F">View</a>
             </div>
         @empty

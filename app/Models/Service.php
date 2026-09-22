@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'name', 'code', 'category_id', 'price', 'duration_minutes', 'is_active'])]
+#[Fillable(['tenant_id', 'name', 'code', 'category_id', 'price', 'duration_minutes', 'is_active', 'tax_rate', 'hsn_sac_code'])]
 #[ScopedBy([TenantScope::class])]
 class Service extends Model
 {
@@ -27,6 +27,7 @@ class Service extends Model
         return [
             'price' => 'decimal:2',
             'is_active' => 'boolean',
+            'tax_rate' => 'decimal:2',
         ];
     }
 
@@ -75,9 +76,39 @@ class Service extends Model
     /** @param Builder<Service> $query */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(function (Builder $query) use ($term): void {
-            $query->where('name', 'like', "%{$term}%")
-                ->orWhere('code', $term);
+        $needle = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(code) LIKE ?', [$needle]);
         });
+    }
+
+    public function effectiveTaxRate(float $tenantDefaultGstRate): string
+    {
+        return (string) ($this->tax_rate ?? $tenantDefaultGstRate);
+    }
+
+    /**
+     * Service::price is stored GST-inclusive, so this is the price itself.
+     * Kept as a named accessor so call sites read clearly and don't need to
+     * know that price is already tax-inclusive.
+     */
+    public function priceInclusiveOfTax(float $tenantDefaultGstRate): string
+    {
+        return (string) $this->price;
+    }
+
+    /**
+     * Derives the GST-exclusive base price from the stored inclusive price,
+     * for display only (e.g. "Base price + GST = inclusive"). Billing never
+     * uses this directly — it re-derives the exclusive amount from the
+     * inclusive line total to avoid rounding a per-unit price twice.
+     */
+    public function exclusivePriceForDisplay(float $tenantDefaultGstRate): string
+    {
+        $rate = $this->effectiveTaxRate($tenantDefaultGstRate);
+
+        return bcdiv((string) $this->price, bcadd('1', bcdiv($rate, '100', 4), 4), 2);
     }
 }

@@ -35,6 +35,7 @@ class StoreClientRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'family_link' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'gst_number' => ['nullable', 'string', 'regex:/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/'],
         ];
     }
 }

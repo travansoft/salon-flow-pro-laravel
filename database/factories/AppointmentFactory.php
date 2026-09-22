@@ -19,13 +19,11 @@ class AppointmentFactory extends Factory
      */
     public function definition(): array
     {
-        $tenant = Tenant::factory()->create();
-        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $start = now()->addDay()->setTime(10, 0);
 
         return [
-            'tenant_id' => $tenant->id,
-            'client_id' => $client->id,
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'client_id' => fn (array $attributes) => Client::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'start_at' => $start,
             'end_at' => $start->copy()->addMinutes(45),
             'status' => Appointment::StatusBooked,

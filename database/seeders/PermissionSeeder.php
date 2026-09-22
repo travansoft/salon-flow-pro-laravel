@@ -19,6 +19,7 @@ class PermissionSeeder extends Seeder
         'expenses',
         'dashboard',
         'commissions',
+        'settings',
     ];
 
     /** @var array<int, string> */

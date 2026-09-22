@@ -2,12 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Response;
+use App\Repositories\Contracts\PlatformAdminRepositoryInterface;
+use App\Repositories\Contracts\TenantRepositoryInterface;
+use Illuminate\View\View;
 
 class SuperAdminDashboardController extends Controller
 {
-    public function index(): Response
+    public function __construct(
+        private TenantRepositoryInterface $tenantRepository,
+        private PlatformAdminRepositoryInterface $platformAdminRepository,
+    ) {}
+
+    public function index(): View
     {
-        return response('Super admin dashboard');
+        return view('super-admin.dashboard', [
+            'tenants' => $this->tenantRepository->getAll(),
+            'platformAdmins' => $this->platformAdminRepository->getAll(),
+        ]);
     }
 }

@@ -21,8 +21,9 @@
     <div class="sfp-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">
             <div>
-                <div class="sfp-label" style="margin-bottom:6px">Price</div>
-                <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($service->price, 2) }}</div>
+                <div class="sfp-label" style="margin-bottom:6px">Price (incl. GST)</div>
+                <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($service->priceInclusiveOfTax((float) $tenant->default_gst_rate), 2) }}</div>
+                <div style="font-size:11.5px;color:#94A19D;margin-top:2px">&#8377;{{ number_format($service->exclusivePriceForDisplay((float) $tenant->default_gst_rate), 2) }} + {{ $service->effectiveTaxRate((float) $tenant->default_gst_rate) }}% GST</div>
             </div>
             <div>
                 <div class="sfp-label" style="margin-bottom:6px">Duration</div>
@@ -42,7 +43,7 @@
     <h2 class="sfp-card-title">Price history</h2>
     <div class="sfp-table-wrap">
         <div class="sfp-table-head-row" style="grid-template-columns:1fr 1fr 1fr">
-            <span>Price</span>
+            <span>Price (incl. GST)</span>
             <span>Effective from</span>
             <span>Changed by</span>
         </div>

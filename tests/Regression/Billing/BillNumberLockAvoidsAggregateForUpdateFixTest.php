@@ -31,7 +31,7 @@ class BillNumberLockAvoidsAggregateForUpdateFixTest extends TestCase
             $queries[] = $query->sql;
         });
 
-        app(BillRepository::class)->nextBillNumber($tenant->id);
+        app(BillRepository::class)->nextBillNumber($tenant->id, '2026-27');
 
         $lockingQueries = array_filter($queries, fn (string $sql) => str_contains(strtolower($sql), 'for update'));
 

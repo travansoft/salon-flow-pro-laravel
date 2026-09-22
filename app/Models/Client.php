@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'name', 'phone', 'email', 'family_link', 'notes', 'is_frequent_no_show'])]
+#[Fillable(['tenant_id', 'name', 'phone', 'email', 'family_link', 'notes', 'is_frequent_no_show', 'gst_number'])]
 #[ScopedBy([TenantScope::class])]
 class Client extends Model
 {
@@ -49,9 +49,11 @@ class Client extends Model
     /** @param Builder<Client> $query */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(function (Builder $query) use ($term): void {
-            $query->where('name', 'like', "%{$term}%")
-                ->orWhere('phone', 'like', "%{$term}%");
+        $needle = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(phone) LIKE ?', [$needle]);
         });
     }
 }

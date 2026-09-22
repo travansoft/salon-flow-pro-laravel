@@ -25,6 +25,7 @@ class TenantFactory extends Factory
             'subdomain' => $slug,
             'custom_domain' => null,
             'is_active' => true,
+            'default_gst_rate' => 18.00,
         ];
     }
 }

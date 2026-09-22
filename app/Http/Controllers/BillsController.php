@@ -32,10 +32,20 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $date = $request->query('date', now()->toDateString());
-        $bills = $this->billRepository->getForDate($date);
+        $fromDate = $request->query('from_date', now()->toDateString());
+        $toDate = $request->query('to_date', now()->toDateString());
+        $clientName = $request->query('client_name');
+        $clientPhone = $request->query('client_phone');
 
-        return view('admin.bills.index', ['bills' => $bills, 'date' => $date]);
+        $bills = $this->billRepository->search($fromDate, $toDate, $clientName, $clientPhone);
+
+        return view('admin.bills.index', [
+            'bills' => $bills,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'clientName' => $clientName,
+            'clientPhone' => $clientPhone,
+        ]);
     }
 
     public function create(Request $request): View
@@ -63,7 +73,14 @@ class BillsController extends Controller
         abort_unless($request->user()->can('billing.create'), 403);
 
         $data = $request->validated();
-        $bill = $this->billingService->createManualBill($data['client_id'], $request->user()->id, $data['items']);
+        $client = $this->quickBillService->resolveClient([
+            'client_id' => $data['client_id'] ?? null,
+            'name' => $data['client_name'] ?? null,
+            'phone' => $data['client_phone'] ?? null,
+            'gst_number' => $data['client_gst_number'] ?? null,
+        ]);
+
+        $bill = $this->billingService->createManualBill($client->id, $request->user()->id, $data['items'], (float) ($data['discount_percent'] ?? 0));
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill created.');
     }
@@ -77,9 +94,15 @@ class BillsController extends Controller
         try {
             $bill = $this->quickBillService->createAndSettle(
                 $data['items'],
-                $data['client_id'] ?? null,
+                [
+                    'client_id' => $data['client_id'] ?? null,
+                    'name' => $data['client_name'] ?? null,
+                    'phone' => $data['client_phone'] ?? null,
+                    'gst_number' => $data['client_gst_number'] ?? null,
+                ],
                 $data['payment_method'],
                 $request->user()->id,
+                (float) ($data['discount_percent'] ?? 0),
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
@@ -97,9 +120,18 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client']);
+        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy']);
 
         return view('admin.bills.show', ['bill' => $bill]);
+    }
+
+    public function print(Request $request, string $subdomain, Bill $bill): View
+    {
+        abort_unless($request->user()->can('billing.view'), 403);
+
+        $bill->load(['lineItems.service', 'client', 'tenant', 'createdBy']);
+
+        return view('admin.bills.print', ['bill' => $bill]);
     }
 
     public function recordPayment(RecordPaymentRequest $request, string $subdomain, Bill $bill): RedirectResponse

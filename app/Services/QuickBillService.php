@@ -36,15 +36,56 @@ class QuickBillService
     }
 
     /**
+     * Resolves the client for a bill from either a selected client id, freeform
+     * name/phone/GSTIN details typed for a new client, or nothing at all.
+     *
+     * @param  array{client_id?: int|null, name?: string|null, phone?: string|null, gst_number?: string|null}  $details
+     */
+    public function resolveClient(array $details): Client
+    {
+        if (! empty($details['client_id'])) {
+            return Client::query()->findOrFail($details['client_id']);
+        }
+
+        $name = trim((string) ($details['name'] ?? ''));
+        $phone = trim((string) ($details['phone'] ?? ''));
+        $gstNumber = trim((string) ($details['gst_number'] ?? ''));
+
+        if ($name === '' && $phone === '' && $gstNumber === '') {
+            return $this->walkInClient();
+        }
+
+        $tenant = $this->tenantContext->get();
+
+        if ($phone !== '') {
+            $existing = Client::query()->where('tenant_id', $tenant->id)->where('phone', $phone)->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        return Client::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => $name !== '' ? $name : self::WalkInClientName,
+            'phone' => $phone,
+            'gst_number' => $gstNumber !== '' ? $gstNumber : null,
+        ]);
+    }
+
+    /**
      * Creates a bill from resolved line items and settles it in full with a single payment.
      *
      * @param  array<int, array{service_id: int, staff_profile_id?: int|null, quantity?: int, description?: string, unit_price?: float}>  $items
+     * @param  array{client_id?: int|null, name?: string|null, phone?: string|null, gst_number?: string|null}  $clientDetails
      */
-    public function createAndSettle(array $items, ?int $clientId, string $paymentMethod, int $staffUserId): Bill
+    public function createAndSettle(array $items, array $clientDetails, string $paymentMethod, int $staffUserId, float $discountPercent = 0): Bill
     {
         if ($items === []) {
             throw new InvalidArgumentException('At least one line item is required.');
         }
+
+        $tenant = $this->tenantContext->get();
 
         $lineItems = [];
         foreach ($items as $item) {
@@ -67,7 +108,7 @@ class QuickBillService
                     'description' => $service->name,
                     'quantity' => $item['quantity'] ?? 1,
                     'unit_price' => (float) $service->price,
-                    'tax_rate' => 18.00,
+                    'tax_rate' => (float) ($service->tax_rate ?? $tenant->default_gst_rate),
                 ];
 
                 continue;
@@ -79,13 +120,13 @@ class QuickBillService
                 'description' => $item['description'] ?? 'Manual item',
                 'quantity' => $item['quantity'] ?? 1,
                 'unit_price' => (float) ($item['unit_price'] ?? 0),
-                'tax_rate' => 18.00,
+                'tax_rate' => (float) $tenant->default_gst_rate,
             ];
         }
 
-        $clientId ??= $this->walkInClient()->id;
+        $client = $this->resolveClient($clientDetails);
 
-        $bill = $this->billingService->createManualBill($clientId, $staffUserId, $lineItems);
+        $bill = $this->billingService->createManualBill($client->id, $staffUserId, $lineItems, $discountPercent);
 
         return $this->billingService->recordPayments($bill, [
             ['method' => $paymentMethod, 'amount' => (float) $bill->total],

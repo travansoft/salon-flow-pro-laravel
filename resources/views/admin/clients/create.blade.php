@@ -56,6 +56,14 @@
                 @enderror
             </div>
 
+            <div class="sfp-field">
+                <label class="sfp-label">GSTIN (optional)</label>
+                <input type="text" name="gst_number" class="sfp-input" value="{{ old('gst_number') }}" placeholder="For B2B invoices">
+                @error('gst_number')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div class="sfp-form-actions">
                 <button type="submit" class="sfp-btn-primary">Save</button>
                 <a href="{{ $tenantUrl->route('clients.index') }}" class="sfp-btn-outline">Cancel</a>

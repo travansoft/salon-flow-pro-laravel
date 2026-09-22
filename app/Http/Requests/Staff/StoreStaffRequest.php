@@ -39,12 +39,12 @@ class StoreStaffRequest extends FormRequest
             ],
             'is_active' => ['sometimes', 'boolean'],
 
-            'create_login' => ['sometimes', 'boolean'],
+            'create_login' => ['sometimes', 'nullable', 'boolean'],
             'username' => [
-                'required_if:create_login,1', 'string', 'max:255',
+                'required_if:create_login,1', 'nullable', 'string', 'max:255',
                 Rule::unique('users', 'username')->where('tenant_id', $tenantId),
             ],
-            'password' => ['required_if:create_login,1', 'string', 'min:8'],
+            'password' => ['required_if:create_login,1', 'nullable', 'string', 'min:8'],
             'roles' => ['sometimes', 'array'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
 

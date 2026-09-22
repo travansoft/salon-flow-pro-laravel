@@ -9,6 +9,7 @@ use App\Repositories\Contracts\ServiceCategoryRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\ServiceCatalogService;
+use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ class ServicesController extends Controller
         private StaffProfileRepositoryInterface $staffProfileRepository,
         private ServiceCatalogService $serviceCatalogService,
         private TenantUrl $tenantUrl,
+        private TenantContext $tenantContext,
     ) {}
 
     public function index(Request $request): View
@@ -31,7 +33,10 @@ class ServicesController extends Controller
 
         $services = $this->serviceRepository->getActive();
 
-        return view('admin.services.index', ['services' => $services]);
+        return view('admin.services.index', [
+            'services' => $services,
+            'tenant' => $this->tenantContext->get(),
+        ]);
     }
 
     public function create(Request $request): View
@@ -43,6 +48,7 @@ class ServicesController extends Controller
         return view('admin.services.create', [
             'categories' => $categories,
             'staff' => $this->staffProfileRepository->getActive(),
+            'tenant' => $this->tenantContext->get(),
         ]);
     }
 
@@ -59,7 +65,10 @@ class ServicesController extends Controller
     {
         abort_unless($request->user()->can('services.view'), 403);
 
-        return view('admin.services.show', ['service' => $service]);
+        return view('admin.services.show', [
+            'service' => $service,
+            'tenant' => $this->tenantContext->get(),
+        ]);
     }
 
     public function edit(Request $request, string $subdomain, Service $service): View
@@ -72,6 +81,7 @@ class ServicesController extends Controller
             'service' => $service,
             'categories' => $categories,
             'staff' => $this->staffProfileRepository->getActive(),
+            'tenant' => $this->tenantContext->get(),
         ]);
     }
 
@@ -118,6 +128,7 @@ class ServicesController extends Controller
         }
 
         $services = $this->serviceRepository->search($term);
+        $tenantDefaultGstRate = (float) $this->tenantContext->get()->default_gst_rate;
 
         return response()->json([
             'services' => $services->map(fn (Service $service) => [
@@ -125,6 +136,8 @@ class ServicesController extends Controller
                 'code' => $service->code,
                 'name' => $service->name,
                 'price' => (float) $service->price,
+                'tax_rate' => (float) $service->effectiveTaxRate($tenantDefaultGstRate),
+                'price_inclusive' => (float) $service->priceInclusiveOfTax($tenantDefaultGstRate),
             ])->values(),
         ]);
     }

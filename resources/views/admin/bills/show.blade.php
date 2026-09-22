@@ -15,10 +15,19 @@
 
     <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
-            <h1 style="font-family:'Bricolage Grotesque',Outfit,sans-serif;font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em">Bill &middot; {{ $bill->bill_number }}</h1>
-            <p style="font-size:13.5px;color:#66736F;margin:6px 0 0">{{ $bill->client->name }}</p>
+            <h1 style="font-family:'Bricolage Grotesque',Outfit,sans-serif;font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em">Bill &middot; {{ $bill->invoiceNumber() }}</h1>
+            <p style="font-size:13.5px;color:#66736F;margin:6px 0 0">
+                {{ $bill->client->name }}
+                &middot; {{ $bill->created_at->format('d M Y, h:i A') }}
+                @if ($bill->createdBy)
+                    &middot; Billed by {{ $bill->createdBy->name }}
+                @endif
+            </p>
         </div>
-        <span class="sfp-pill {{ $statusPillClass }}">{{ ucfirst($bill->status) }}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+            <a href="{{ $tenantUrl->route('bills.print', $bill) }}" target="_blank" class="sfp-btn-outline">Print</a>
+            <span class="sfp-pill {{ $statusPillClass }}">{{ ucfirst($bill->status) }}</span>
+        </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px">
@@ -54,10 +63,27 @@
                         <span style="color:#66736F">Subtotal</span>
                         <span class="sfp-mono">&#8377;{{ number_format($bill->subtotal, 2) }}</span>
                     </div>
-                    <div style="display:flex;justify-content:space-between">
-                        <span style="color:#66736F">Tax</span>
-                        <span class="sfp-mono">&#8377;{{ number_format($bill->tax_amount, 2) }}</span>
-                    </div>
+                    @if ($bill->discount_amount > 0)
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#A8506B">Discount ({{ number_format($bill->discount_percent, 2) }}%)</span>
+                            <span class="sfp-mono" style="color:#A8506B">&minus;&#8377;{{ number_format($bill->discount_amount, 2) }}</span>
+                        </div>
+                    @endif
+                    @if ($bill->igst_amount > 0)
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#66736F">IGST</span>
+                            <span class="sfp-mono">&#8377;{{ number_format($bill->igst_amount, 2) }}</span>
+                        </div>
+                    @else
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#66736F">CGST</span>
+                            <span class="sfp-mono">&#8377;{{ number_format($bill->cgst_amount, 2) }}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#66736F">SGST</span>
+                            <span class="sfp-mono">&#8377;{{ number_format($bill->sgst_amount, 2) }}</span>
+                        </div>
+                    @endif
                     <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:13px;margin-top:4px;border-top:1px solid #E3EAE8">
                         <span style="font-size:15px">Total payable</span>
                         <span style="font-family:'Bricolage Grotesque',Outfit,sans-serif;font-weight:600;font-size:30px">&#8377;{{ number_format($bill->total, 2) }}</span>
