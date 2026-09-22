@@ -92,6 +92,14 @@
                 @enderror
             </div>
 
+            <div class="sfp-field" style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+                <input type="checkbox" name="requires_rate_confirmation" value="1" id="requires_rate_confirmation" @checked(old('requires_rate_confirmation', $service->requires_rate_confirmation))>
+                <label class="sfp-label" for="requires_rate_confirmation" style="margin-bottom:0">Rate varies by client (e.g. skin type, hair length) &mdash; counter must confirm the price given by the specialist before billing</label>
+                @error('requires_rate_confirmation')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div class="sfp-card-title" style="margin-top: 24px;">Eligible staff</div>
             <p style="color: #66736F; font-size: 13px; margin-top: -8px;">Select which staff members can perform this service. Only mapped staff can be assigned to it when billing.</p>
 

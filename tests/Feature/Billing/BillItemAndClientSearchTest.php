@@ -73,6 +73,21 @@ class BillItemAndClientSearchTest extends TestCase
         $this->assertEquals(105.0, $response->json('services.0.price_inclusive'));
     }
 
+    public function test_service_search_flags_services_that_require_rate_confirmation(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Bridal Facial', 'requires_rate_confirmation' => true]);
+        Service::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Classic Haircut', 'requires_rate_confirmation' => false]);
+
+        $response = $this->actingAs($user)->getFromTenant('/services/search?q=a');
+
+        $response->assertOk();
+        $services = collect($response->json('services'))->keyBy('name');
+        $this->assertTrue($services['Bridal Facial']['requires_rate_confirmation']);
+        $this->assertFalse($services['Classic Haircut']['requires_rate_confirmation']);
+    }
+
     public function test_service_search_excludes_inactive_services(): void
     {
         $user = User::factory()->for($this->tenant)->create();
