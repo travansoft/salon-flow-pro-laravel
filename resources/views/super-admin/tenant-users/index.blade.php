@@ -13,8 +13,12 @@
         </div>
     </div>
 
+    <form action="{{ $superAdminUrl->route('superAdmin.tenants.users.index', $tenant) }}" method="GET" class="sfp-field" style="max-width: 360px;">
+        <input type="text" name="search" class="sfp-input" placeholder="Search by name, username or email" value="{{ $search }}">
+    </form>
+
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr;">
+        <div class="sfp-table-head-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr 2fr;">
             <div>Name</div>
             <div>Username</div>
             <div>Email</div>
@@ -23,7 +27,7 @@
         </div>
 
         @foreach ($users as $user)
-            <div class="sfp-table-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr;">
+            <div class="sfp-table-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr 2fr;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div class="sfp-avatar-chip">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
                     <span>{{ $user->name }}</span>
@@ -39,6 +43,12 @@
                 </div>
                 <div style="display: flex; gap: 12px; align-items: center;">
                     <a href="{{ $superAdminUrl->route('superAdmin.tenants.users.edit', [$tenant, $user]) }}" class="sfp-btn-outline">Edit</a>
+                    @if ($user->isLoginEnabled())
+                        <form action="{{ $superAdminUrl->route('superAdmin.tenants.users.impersonate', [$tenant, $user]) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="sfp-btn-outline">Log in as</button>
+                        </form>
+                    @endif
                     <form action="{{ $superAdminUrl->route('superAdmin.tenants.users.toggleLogin', [$tenant, $user]) }}" method="POST">
                         @csrf
                         @method('PUT')

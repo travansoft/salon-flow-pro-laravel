@@ -19,6 +19,7 @@ use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Repositories\Contracts\StaffIncentiveRepositoryInterface;
 use App\Repositories\Contracts\StaffLeaveRequestRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
+use App\Repositories\Contracts\SuperAdminActivityLogRepositoryInterface;
 use App\Repositories\Contracts\TenantRepositoryInterface;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
 use App\Repositories\Contracts\TimeSlotRepositoryInterface;
@@ -39,6 +40,7 @@ use App\Repositories\Eloquent\ServiceRepository;
 use App\Repositories\Eloquent\StaffIncentiveRepository;
 use App\Repositories\Eloquent\StaffLeaveRequestRepository;
 use App\Repositories\Eloquent\StaffProfileRepository;
+use App\Repositories\Eloquent\SuperAdminActivityLogRepository;
 use App\Repositories\Eloquent\TenantRepository;
 use App\Repositories\Eloquent\TenantUserRepository;
 use App\Repositories\Eloquent\TimeSlotRepository;
@@ -83,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ReminderChannelInterface::class, LogReminderChannel::class);
         $this->app->bind(TenantUserRepositoryInterface::class, TenantUserRepository::class);
         $this->app->bind(PlatformAdminRepositoryInterface::class, PlatformAdminRepository::class);
+        $this->app->bind(SuperAdminActivityLogRepositoryInterface::class, SuperAdminActivityLogRepository::class);
     }
 
     /**

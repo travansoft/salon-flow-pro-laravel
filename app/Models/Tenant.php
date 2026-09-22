@@ -48,4 +48,16 @@ class Tenant extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /** @param Builder<Tenant> $query */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $needle = '%'.mb_strtolower($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): void {
+            $query->whereRaw('LOWER(name) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(slug) LIKE ?', [$needle])
+                ->orWhereRaw('LOWER(subdomain) LIKE ?', [$needle]);
+        });
+    }
 }

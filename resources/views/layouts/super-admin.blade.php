@@ -46,6 +46,14 @@
                         <span class="sfp-nav-bar"></span>Admin users
                     </a>
 
+                    <a href="{{ $superAdminUrl->route('superAdmin.activity.index') }}" class="sfp-nav-item {{ request()->routeIs('superAdmin.activity.*') ? 'active' : '' }}">
+                        <span class="sfp-nav-bar"></span>Activity log
+                    </a>
+
+                    <a href="{{ $superAdminUrl->route('superAdmin.profile.edit') }}" class="sfp-nav-item {{ request()->routeIs('superAdmin.profile.*') ? 'active' : '' }}">
+                        <span class="sfp-nav-bar"></span>My profile
+                    </a>
+
                     <div class="sfp-sidebar-footer">
                         Signed in as <strong>{{ auth('super_admin')->user()->name ?? '—' }}</strong>
                     </div>

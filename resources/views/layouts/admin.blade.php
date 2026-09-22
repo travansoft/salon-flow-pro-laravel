@@ -120,6 +120,17 @@
                 </nav>
 
                 <main class="sfp-content">
+                    @if (session('impersonator_platform_admin_name'))
+                        <div class="sfp-alert-success" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                            <span>Viewing as <strong>{{ auth()->user()->name }}</strong> — impersonated by {{ session('impersonator_platform_admin_name') }}.</span>
+                            <form action="{{ $tenantUrl->route('impersonation.stop') }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="sfp-btn-outline">Return to admin</button>
+                            </form>
+                        </div>
+                    @endif
+
                     @if (session('status'))
                         <div class="sfp-alert-success">{{ session('status') }}</div>
                     @endif

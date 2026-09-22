@@ -21,6 +21,9 @@ interface TenantRepositoryInterface
     /** @return Collection<int, Tenant> */
     public function getAll(): Collection;
 
+    /** @return Collection<int, Tenant> */
+    public function search(string $term): Collection;
+
     /** @param array<string, mixed> $data */
     public function create(array $data): Tenant;
 

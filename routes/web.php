@@ -20,8 +20,12 @@ use App\Http\Controllers\StaffLeaveRequestsController;
 use App\Http\Controllers\StaffLoginController;
 use App\Http\Controllers\StaffsController;
 use App\Http\Controllers\StockAdjustmentsController;
+use App\Http\Controllers\StopImpersonationController;
 use App\Http\Controllers\SuperAdmin\PlatformAdminsController;
+use App\Http\Controllers\SuperAdmin\SuperAdminActivityLogsController;
+use App\Http\Controllers\SuperAdmin\SuperAdminProfileController;
 use App\Http\Controllers\SuperAdmin\TenantsController;
+use App\Http\Controllers\SuperAdmin\TenantUserImpersonationController;
 use App\Http\Controllers\SuperAdmin\TenantUsersController;
 use App\Http\Controllers\SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdminLoginController;
@@ -48,6 +52,8 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
     Route::middleware('auth')->group(function () use ($nameSuffix): void {
         Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name("tenant.dashboard{$nameSuffix}");
+
+        Route::delete('/impersonation', [StopImpersonationController::class, 'destroy'])->name("impersonation.stop{$nameSuffix}");
 
         Route::middleware('permission:staff.view')->group(function () use ($nameSuffix): void {
             Route::get('/staff', [StaffsController::class, 'index'])->name("staff.index{$nameSuffix}");
@@ -332,6 +338,13 @@ $registerSuperAdminRoutes = function (string $nameSuffix = ''): void {
         Route::get('/admins/{platformAdmin}/edit', [PlatformAdminsController::class, 'edit'])->name("superAdmin.platformAdmins.edit{$nameSuffix}");
         Route::put('/admins/{platformAdmin}', [PlatformAdminsController::class, 'update'])->name("superAdmin.platformAdmins.update{$nameSuffix}");
         Route::delete('/admins/{platformAdmin}', [PlatformAdminsController::class, 'destroy'])->name("superAdmin.platformAdmins.destroy{$nameSuffix}");
+
+        Route::get('/profile', [SuperAdminProfileController::class, 'edit'])->name("superAdmin.profile.edit{$nameSuffix}");
+        Route::put('/profile', [SuperAdminProfileController::class, 'update'])->name("superAdmin.profile.update{$nameSuffix}");
+
+        Route::get('/activity', [SuperAdminActivityLogsController::class, 'index'])->name("superAdmin.activity.index{$nameSuffix}");
+
+        Route::post('/tenants/{tenant}/users/{tenantUser}/impersonate', [TenantUserImpersonationController::class, 'store'])->name("superAdmin.tenants.users.impersonate{$nameSuffix}");
     });
 };
 

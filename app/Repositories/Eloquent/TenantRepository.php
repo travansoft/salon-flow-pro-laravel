@@ -42,6 +42,12 @@ class TenantRepository implements TenantRepositoryInterface
         return $this->model->orderBy('name')->get();
     }
 
+    /** @return Collection<int, Tenant> */
+    public function search(string $term): Collection
+    {
+        return $this->model->search($term)->orderBy('name')->get();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): Tenant
     {

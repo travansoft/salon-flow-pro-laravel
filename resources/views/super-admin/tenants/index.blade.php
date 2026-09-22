@@ -13,6 +13,10 @@
         </div>
     </div>
 
+    <form action="{{ $superAdminUrl->route('superAdmin.tenants.index') }}" method="GET" class="sfp-field" style="max-width: 360px;">
+        <input type="text" name="search" class="sfp-input" placeholder="Search by name, slug or subdomain" value="{{ $search }}">
+    </form>
+
     <div class="sfp-table-wrap">
         <div class="sfp-table-head-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr;">
             <div>Name</div>
