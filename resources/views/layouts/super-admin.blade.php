@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('admin/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('admin-assets/css/styles.css') }}">
     @yield('styles')
 </head>
 <body class="sfp-body">
@@ -71,7 +71,7 @@
         </div>
     </div>
 
-    <script src="{{ asset('admin/js/scripts.js') }}"></script>
+    <script src="{{ asset('admin-assets/js/scripts.js') }}"></script>
     @yield('scripts')
 </body>
 </html>
