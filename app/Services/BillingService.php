@@ -158,16 +158,24 @@ class BillingService
         return substr($clientGstNumber, 0, 2) === $tenantStateCode;
     }
 
-    /** @return array{0: string, 1: string, 2: string} */
+    /**
+     * Splits into CGST + SGST so the two halves always sum back to the exact
+     * tax amount. bcdiv truncates rather than rounds, so naively halving both
+     * sides can drop a paisa (e.g. 123.55 / 2 = 61.77 + 61.77 = 123.54); SGST
+     * is instead the remainder after rounding CGST, never the tax itself.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
     private function splitTax(string $taxAmount, bool $isIntraState): array
     {
         if (! $isIntraState) {
             return ['0.00', '0.00', $taxAmount];
         }
 
-        $half = bcdiv($taxAmount, '2', 2);
+        $cgst = bcadd(bcdiv($taxAmount, '2', 10), '0', 2);
+        $sgst = bcsub($taxAmount, $cgst, 2);
 
-        return [$half, $half, '0.00'];
+        return [$cgst, $sgst, '0.00'];
     }
 
     /**

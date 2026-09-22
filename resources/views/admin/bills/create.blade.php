@@ -465,6 +465,8 @@
     // ----- Line items -----
 
     function addServiceLine(service) {
+        const requiresRateConfirmation = Boolean(service.requires_rate_confirmation);
+
         lines.push({
             id: lineSeq++,
             serviceId: service.id,
@@ -473,12 +475,19 @@
             taxRate: Number(service.tax_rate),
             quantity: 1,
             staffProfileId: null,
+            requiresRateConfirmation,
         });
         renderLines();
         itemSearch.value = '';
         hideSuggestions(itemSuggestions);
-        itemSearch.focus();
-        setFeedback('', false);
+
+        if (requiresRateConfirmation) {
+            setFeedback(`${service.name} needs the consultation rate — confirm the price before billing.`, true);
+            itemsBox.querySelector(`[data-line-id="${lines[lines.length - 1].id}"] .bill-line-price`)?.focus();
+        } else {
+            itemSearch.focus();
+            setFeedback('', false);
+        }
     }
 
     async function loadEligibleStaff(line, select) {
@@ -508,13 +517,17 @@
         lines.forEach((line) => {
             const row = document.createElement('div');
             row.className = 'sfp-table-row';
+            row.dataset.lineId = line.id;
             row.style.gridTemplateColumns = '1.5fr 1.3fr 64px 100px 40px';
 
             row.innerHTML = `
-                <span class="bill-line-description-wrap"><span style="font-size:14px">${line.description}</span></span>
+                <span class="bill-line-description-wrap">
+                    <span style="font-size:14px">${line.description}</span>
+                    ${line.requiresRateConfirmation ? '<span class="sfp-pill sfp-pill-amber" style="margin-left:6px;font-size:10.5px">Confirm rate</span>' : ''}
+                </span>
                 <span></span>
                 <input type="number" min="1" value="${line.quantity}" class="sfp-table-control sfp-table-control--qty bill-line-qty">
-                <span class="bill-line-price-wrap"><span class="sfp-mono" style="text-align:right;font-size:13.5px">${money(line.priceInclusive)}</span></span>
+                <input type="number" min="0" step="0.01" value="${line.priceInclusive}" class="sfp-table-control bill-line-price" style="text-align:right${line.requiresRateConfirmation ? ';border-color:#C98A2C' : ''}">
                 <button type="button" class="sfp-table-remove bill-line-remove" title="Remove item" aria-label="Remove item">&times;</button>
             `;
 
@@ -528,6 +541,12 @@
 
             row.querySelector('.bill-line-qty').addEventListener('input', (event) => {
                 line.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
+                updateTotal();
+            });
+
+            row.querySelector('.bill-line-price').addEventListener('input', (event) => {
+                const value = parseFloat(event.target.value);
+                line.priceInclusive = Number.isFinite(value) && value >= 0 ? value : 0;
                 updateTotal();
             });
 
@@ -612,6 +631,14 @@
     function validateLines() {
         if (lines.length === 0) {
             setFeedback('Add at least one item before creating the bill.', true);
+            return false;
+        }
+
+        const unconfirmed = lines.find((line) => line.requiresRateConfirmation && !(Number(line.priceInclusive) > 0));
+
+        if (unconfirmed) {
+            setFeedback(`Enter the consultation rate for ${unconfirmed.description} before billing.`, true);
+            itemsBox.querySelector(`[data-line-id="${unconfirmed.id}"] .bill-line-price`)?.focus();
             return false;
         }
 
