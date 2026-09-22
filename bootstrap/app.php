@@ -36,6 +36,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
+            if ($request->attributes->get('is_super_admin_request')) {
+                $path = $request->getHost() === config('tenancy.main_domain') ? '/admin/login' : '/login';
+
+                return $request->getSchemeAndHttpHost().$path;
+            }
+
             if ($request->getHost() !== config('tenancy.main_domain')) {
                 return $request->getSchemeAndHttpHost().'/login';
             }

@@ -10,6 +10,11 @@ class TenantRepository implements TenantRepositoryInterface
 {
     public function __construct(private Tenant $model) {}
 
+    public function findById(int $id): ?Tenant
+    {
+        return $this->model->find($id);
+    }
+
     public function findActiveByCustomDomain(string $domain): ?Tenant
     {
         return $this->model->active()->where('custom_domain', $domain)->first();
@@ -29,6 +34,18 @@ class TenantRepository implements TenantRepositoryInterface
     public function getAllActive(): Collection
     {
         return $this->model->active()->get();
+    }
+
+    /** @return Collection<int, Tenant> */
+    public function getAll(): Collection
+    {
+        return $this->model->orderBy('name')->get();
+    }
+
+    /** @param array<string, mixed> $data */
+    public function create(array $data): Tenant
+    {
+        return $this->model->create($data);
     }
 
     /** @param array<string, mixed> $data */

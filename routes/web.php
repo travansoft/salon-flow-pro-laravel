@@ -20,7 +20,11 @@ use App\Http\Controllers\StaffLeaveRequestsController;
 use App\Http\Controllers\StaffLoginController;
 use App\Http\Controllers\StaffsController;
 use App\Http\Controllers\StockAdjustmentsController;
+use App\Http\Controllers\SuperAdmin\PlatformAdminsController;
+use App\Http\Controllers\SuperAdmin\TenantsController;
+use App\Http\Controllers\SuperAdmin\TenantUsersController;
 use App\Http\Controllers\SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdminLoginController;
 use App\Http\Controllers\TenantDashboardController;
 use App\Http\Controllers\TenantSettingsController;
 use App\Http\Controllers\TimeSlotsController;
@@ -293,8 +297,46 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
     });
 };
 
-Route::domain('admin.'.$mainDomain)->middleware('super_admin.only')->group(function (): void {
-    Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('superAdmin.dashboard');
+/**
+ * Registers the super-admin panel's routes. Called under the
+ * admin.{mainDomain} domain (bare names, e.g. "superAdmin.dashboard") and
+ * under mainDomain/admin (suffixed ".byPath", e.g. "superAdmin.dashboard.byPath"),
+ * mirroring the tenant route registration pattern above.
+ */
+$registerSuperAdminRoutes = function (string $nameSuffix = ''): void {
+    Route::get('/login', [SuperAdminLoginController::class, 'create'])->name("superAdmin.login{$nameSuffix}");
+    Route::post('/login', [SuperAdminLoginController::class, 'store'])->name("superAdmin.login.store{$nameSuffix}");
+    Route::post('/logout', [SuperAdminLoginController::class, 'destroy'])->middleware('auth:super_admin')->name("superAdmin.logout{$nameSuffix}");
+
+    Route::middleware('auth:super_admin')->group(function () use ($nameSuffix): void {
+        Route::get('/', [SuperAdminDashboardController::class, 'index'])->name("superAdmin.dashboard{$nameSuffix}");
+
+        Route::get('/tenants', [TenantsController::class, 'index'])->name("superAdmin.tenants.index{$nameSuffix}");
+        Route::get('/tenants/create', [TenantsController::class, 'create'])->name("superAdmin.tenants.create{$nameSuffix}");
+        Route::post('/tenants', [TenantsController::class, 'store'])->name("superAdmin.tenants.store{$nameSuffix}");
+        Route::get('/tenants/{tenant}', [TenantsController::class, 'show'])->name("superAdmin.tenants.show{$nameSuffix}");
+        Route::get('/tenants/{tenant}/edit', [TenantsController::class, 'edit'])->name("superAdmin.tenants.edit{$nameSuffix}");
+        Route::put('/tenants/{tenant}', [TenantsController::class, 'update'])->name("superAdmin.tenants.update{$nameSuffix}");
+        Route::delete('/tenants/{tenant}', [TenantsController::class, 'destroy'])->name("superAdmin.tenants.destroy{$nameSuffix}");
+
+        Route::get('/tenants/{tenant}/users', [TenantUsersController::class, 'index'])->name("superAdmin.tenants.users.index{$nameSuffix}");
+        Route::get('/tenants/{tenant}/users/create', [TenantUsersController::class, 'create'])->name("superAdmin.tenants.users.create{$nameSuffix}");
+        Route::post('/tenants/{tenant}/users', [TenantUsersController::class, 'store'])->name("superAdmin.tenants.users.store{$nameSuffix}");
+        Route::get('/tenants/{tenant}/users/{tenantUser}/edit', [TenantUsersController::class, 'edit'])->name("superAdmin.tenants.users.edit{$nameSuffix}");
+        Route::put('/tenants/{tenant}/users/{tenantUser}', [TenantUsersController::class, 'update'])->name("superAdmin.tenants.users.update{$nameSuffix}");
+        Route::put('/tenants/{tenant}/users/{tenantUser}/toggle-login', [TenantUsersController::class, 'destroy'])->name("superAdmin.tenants.users.toggleLogin{$nameSuffix}");
+
+        Route::get('/admins', [PlatformAdminsController::class, 'index'])->name("superAdmin.platformAdmins.index{$nameSuffix}");
+        Route::get('/admins/create', [PlatformAdminsController::class, 'create'])->name("superAdmin.platformAdmins.create{$nameSuffix}");
+        Route::post('/admins', [PlatformAdminsController::class, 'store'])->name("superAdmin.platformAdmins.store{$nameSuffix}");
+        Route::get('/admins/{platformAdmin}/edit', [PlatformAdminsController::class, 'edit'])->name("superAdmin.platformAdmins.edit{$nameSuffix}");
+        Route::put('/admins/{platformAdmin}', [PlatformAdminsController::class, 'update'])->name("superAdmin.platformAdmins.update{$nameSuffix}");
+        Route::delete('/admins/{platformAdmin}', [PlatformAdminsController::class, 'destroy'])->name("superAdmin.platformAdmins.destroy{$nameSuffix}");
+    });
+};
+
+Route::domain('admin.'.$mainDomain)->middleware('super_admin.only')->group(function () use ($registerSuperAdminRoutes): void {
+    $registerSuperAdminRoutes();
 });
 
 Route::domain('{subdomain}.'.$mainDomain)->middleware('tenant.only')->group(function () use ($registerTenantRoutes): void {
@@ -307,9 +349,10 @@ Route::domain('{subdomain}.'.$mainDomain)->middleware('tenant.only')->group(func
     $registerTenantRoutes();
 });
 
-Route::domain($mainDomain)->group(function () use ($registerTenantRoutes): void {
-    Route::middleware('super_admin.only')->get('/admin', [SuperAdminDashboardController::class, 'index'])
-        ->name('superAdmin.dashboard.byPath');
+Route::domain($mainDomain)->group(function () use ($registerTenantRoutes, $registerSuperAdminRoutes): void {
+    Route::middleware('super_admin.only')->prefix('/admin')->group(function () use ($registerSuperAdminRoutes): void {
+        $registerSuperAdminRoutes('.byPath');
+    });
 
     Route::middleware('tenant.only')->prefix('/{slug}')->where(['slug' => '(?!admin$|login$|register$)[a-z0-9-]+'])->group(function () use ($registerTenantRoutes): void {
         Route::middleware('auth')->get('/', [TenantDashboardController::class, 'index'])->name('tenant.dashboard.bySlugRoot');
