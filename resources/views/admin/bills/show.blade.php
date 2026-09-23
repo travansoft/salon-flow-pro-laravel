@@ -98,7 +98,12 @@
 
         <div style="display:grid;gap:14px;align-content:start">
             <div class="sfp-card">
-                <h2 class="sfp-card-title">Payments</h2>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <h2 class="sfp-card-title" style="margin:0">Payments</h2>
+                    @can('billing.create')
+                        <button type="button" class="sfp-action-link" style="background:none;border:none;cursor:pointer" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">Add payment</button>
+                    @endcan
+                </div>
 
                 @forelse ($bill->payments as $payment)
                     <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:13.5px">
@@ -106,30 +111,8 @@
                         <span class="sfp-mono">&#8377;{{ number_format($payment->amount, 2) }}</span>
                     </div>
                 @empty
-                    <p style="color:#66736F;font-size:13.5px;margin:0 0 10px">No payments recorded yet.</p>
+                    <p style="color:#66736F;font-size:13.5px;margin:0">No payments recorded yet.</p>
                 @endforelse
-
-                @can('billing.create')
-                    <form action="{{ $tenantUrl->route('bills.recordPayment', $bill) }}" method="POST" style="margin-top:16px">
-                        @csrf
-                        @method('PUT')
-                        <div class="sfp-field">
-                            <label class="sfp-label">Method</label>
-                            <select name="payments[0][method]" class="sfp-select">
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="upi">UPI</option>
-                            </select>
-                        </div>
-                        <div class="sfp-field">
-                            <label class="sfp-label">Amount</label>
-                            <input type="number" step="0.01" name="payments[0][amount]" class="sfp-input">
-                        </div>
-                        <div class="sfp-form-actions">
-                            <button type="submit" class="sfp-btn-primary">Record payment</button>
-                        </div>
-                    </form>
-                @endcan
             </div>
 
             @if ($bill->refunds->isNotEmpty())
@@ -150,25 +133,84 @@
 
             @can('billing.edit')
                 <div class="sfp-card">
-                    <h2 class="sfp-card-title">Issue refund</h2>
-
-                    <form action="{{ $tenantUrl->route('bills.refund', $bill) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="sfp-field">
-                            <label class="sfp-label">Refund amount</label>
-                            <input type="number" step="0.01" name="amount" class="sfp-input">
-                        </div>
-                        <div class="sfp-field">
-                            <label class="sfp-label">Reason</label>
-                            <input type="text" name="reason" class="sfp-input">
-                        </div>
-                        <div class="sfp-form-actions">
-                            <button type="submit" class="sfp-btn-outline" style="color:#A8506B;border-color:#F0D8DE">Issue refund</button>
-                        </div>
-                    </form>
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                        <h2 class="sfp-card-title" style="margin:0">Refunds</h2>
+                        <button type="button" class="sfp-action-link" style="background:none;border:none;cursor:pointer" data-bs-toggle="modal" data-bs-target="#issueRefundModal">Issue refund</button>
+                    </div>
                 </div>
             @endcan
         </div>
     </div>
+
+    @can('billing.create')
+        <div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('bills.recordPayment', $bill) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="recordPaymentModalLabel">Record payment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="sfp-field">
+                                <label class="sfp-label">Method</label>
+                                <select name="payments[0][method]" class="sfp-select">
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="upi">UPI</option>
+                                </select>
+                            </div>
+                            <div class="sfp-field">
+                                <label class="sfp-label">Amount</label>
+                                <input type="number" step="0.01" name="payments[0][amount]" class="sfp-input">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="sfp-btn-primary">Record payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    @can('billing.edit')
+        <div class="modal fade" id="issueRefundModal" tabindex="-1" aria-labelledby="issueRefundModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('bills.refund', $bill) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="issueRefundModalLabel">Issue refund</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="sfp-field">
+                                <label class="sfp-label">Refund amount</label>
+                                <input type="number" step="0.01" name="amount" class="sfp-input">
+                            </div>
+                            <div class="sfp-field">
+                                <label class="sfp-label">Reason</label>
+                                <input type="text" name="reason" class="sfp-input">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Issue refund</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
 @endsection
