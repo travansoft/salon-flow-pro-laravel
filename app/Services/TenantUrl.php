@@ -28,6 +28,8 @@ class TenantUrl
             return route($name.'.bySlug', ['slug' => $tenant->slug, ...$parameters]);
         }
 
-        return route($name, $parameters);
+        $path = parse_url(route($name, $parameters), PHP_URL_PATH);
+
+        return request()->getScheme().'://'.request()->getHost().$path;
     }
 }

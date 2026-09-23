@@ -11,10 +11,14 @@ class SuperAdminUrl
      */
     public function route(string $name, mixed $parameters = []): string
     {
-        if (request()->getHost() === config('tenancy.main_domain')) {
+        $host = request()->getHost();
+
+        if ($host === config('tenancy.main_domain')) {
             return route($name.'.byPath', $parameters);
         }
 
-        return route($name, $parameters);
+        $path = parse_url(route($name, $parameters), PHP_URL_PATH);
+
+        return request()->getScheme().'://'.$host.$path;
     }
 }
