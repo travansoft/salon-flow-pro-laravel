@@ -23,7 +23,7 @@ class StoreManualBillTest extends TestCase
         $this->seed(PermissionSeeder::class);
     }
 
-    public function test_front_desk_can_create_a_manual_bill_with_an_eligible_staff_member(): void
+    public function test_front_desk_can_create_and_settle_a_bill_with_an_eligible_staff_member(): void
     {
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
@@ -32,7 +32,7 @@ class StoreManualBillTest extends TestCase
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
         $service->staff()->sync([$staffProfile->id]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'items' => [
                 [
@@ -42,12 +42,16 @@ class StoreManualBillTest extends TestCase
                     'unit_price' => 500,
                 ],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('bill_line_items', [
             'service_id' => $service->id,
             'staff_profile_id' => $staffProfile->id,
+        ]);
+        $this->assertDatabaseHas('bill_payments', [
+            'method' => 'upi',
         ]);
     }
 
@@ -59,22 +63,23 @@ class StoreManualBillTest extends TestCase
         $service = Service::factory()->create([
             'tenant_id' => $this->tenant->id,
             'price' => 1500,
+            'tax_rate' => 0,
             'requires_rate_confirmation' => true,
         ]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'items' => [
                 [
                     'description' => $service->name,
                     'service_id' => $service->id,
                     'unit_price' => 2200,
-                    'tax_rate' => 0,
                 ],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('bill_line_items', [
             'service_id' => $service->id,
             'unit_price' => 2200,
@@ -89,7 +94,7 @@ class StoreManualBillTest extends TestCase
         $service = Service::factory()->create(['tenant_id' => $this->tenant->id, 'price' => 500]);
         $ineligibleStaffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'items' => [
                 [
@@ -99,9 +104,10 @@ class StoreManualBillTest extends TestCase
                     'unit_price' => 500,
                 ],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertSessionHasErrors('items.0.staff_profile_id');
+        $response->assertJsonValidationErrors('items.0.staff_profile_id');
     }
 
     public function test_manual_line_item_without_a_service_does_not_require_staff(): void
@@ -110,14 +116,15 @@ class StoreManualBillTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'items' => [
                 ['description' => 'Retail shampoo', 'unit_price' => 350],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('bill_line_items', [
             'description' => 'Retail shampoo',
             'staff_profile_id' => null,
@@ -129,13 +136,14 @@ class StoreManualBillTest extends TestCase
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'items' => [
                 ['description' => 'Retail shampoo', 'unit_price' => 350],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('clients', [
             'tenant_id' => $this->tenant->id,
             'name' => 'Walk-in customer',
@@ -147,16 +155,17 @@ class StoreManualBillTest extends TestCase
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_name' => 'Priya Nair',
             'client_phone' => '9876543210',
             'client_gst_number' => '32AAAAA0000A1Z5',
             'items' => [
                 ['description' => 'Retail shampoo', 'unit_price' => 350],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('clients', [
             'tenant_id' => $this->tenant->id,
             'name' => 'Priya Nair',
@@ -171,15 +180,16 @@ class StoreManualBillTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
         $existing = Client::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Priya Nair', 'phone' => '9876543210']);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_name' => 'Priya Nair',
             'client_phone' => '9876543210',
             'items' => [
                 ['description' => 'Retail shampoo', 'unit_price' => 350],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('bills', ['client_id' => $existing->id]);
         $this->assertSame(1, Client::query()->where('phone', '9876543210')->count());
     }
@@ -190,15 +200,16 @@ class StoreManualBillTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'discount_percent' => 10,
             'items' => [
                 ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertRedirect();
+        $response->assertOk();
         $this->assertDatabaseHas('bills', [
             'client_id' => $client->id,
             'discount_percent' => 10,
@@ -213,14 +224,15 @@ class StoreManualBillTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->actingAs($frontDesk)->postToTenant('/bills', [
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
             'discount_percent' => 150,
             'items' => [
                 ['description' => 'Hair Color', 'unit_price' => 1000],
             ],
+            'payment_method' => 'upi',
         ]);
 
-        $response->assertSessionHasErrors('discount_percent');
+        $response->assertJsonValidationErrors('discount_percent');
     }
 }

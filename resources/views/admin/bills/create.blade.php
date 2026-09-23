@@ -91,20 +91,19 @@
                 <span id="bill-total" class="sfp-heading" style="font-size:26px">&#8377;0.00</span>
             </div>
 
-            <div class="sfp-field" id="bill-payment-section" hidden style="margin-top:16px">
+            <div class="sfp-field" style="margin-top:16px">
                 <label class="sfp-label">Payment method &mdash; press 1, 2, or 3</label>
                 <div style="display:flex;gap:8px">
-                    <button type="button" class="sfp-btn-outline bill-method active" data-method="cash" style="flex:1">1 &middot; Cash</button>
+                    <button type="button" class="sfp-btn-outline bill-method" data-method="cash" style="flex:1">1 &middot; Cash</button>
                     <button type="button" class="sfp-btn-outline bill-method" data-method="card" style="flex:1">2 &middot; Card</button>
-                    <button type="button" class="sfp-btn-outline bill-method" data-method="upi" style="flex:1">3 &middot; UPI</button>
+                    <button type="button" class="sfp-btn-outline bill-method active" data-method="upi" style="flex:1">3 &middot; UPI</button>
                 </div>
             </div>
 
             <div id="bill-feedback" style="font-size:13px;margin:10px 0;min-height:18px"></div>
 
             <div class="sfp-form-actions">
-                <button type="button" id="bill-create" class="sfp-btn-outline">Create bill</button>
-                <button type="button" id="bill-settle" class="sfp-btn-primary">Create &amp; settle</button>
+                <button type="button" id="bill-settle" class="sfp-btn-primary">Create bill</button>
                 <a href="{{ $tenantUrl->route('bills.index') }}" class="sfp-btn-outline">Cancel</a>
             </div>
         </form>
@@ -210,15 +209,13 @@
     const discountAmountEl = document.getElementById('bill-discount-amount');
     const totalEl = document.getElementById('bill-total');
 
-    const paymentSection = document.getElementById('bill-payment-section');
     const methodButtons = [...document.querySelectorAll('.bill-method')];
     const feedback = document.getElementById('bill-feedback');
-    const createBtn = document.getElementById('bill-create');
     const settleBtn = document.getElementById('bill-settle');
 
     let lines = [];
     let lineSeq = 0;
-    let paymentMethod = 'cash';
+    let paymentMethod = 'upi';
     let clientSelection = null;
 
     const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -592,10 +589,6 @@
     });
 
     document.addEventListener('keydown', (event) => {
-        if (paymentSection.hidden) {
-            return;
-        }
-
         const active = document.activeElement;
         const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active === discountInput || active?.classList?.contains('bill-line-qty');
 
@@ -645,54 +638,7 @@
         return true;
     }
 
-    async function createBill() {
-        if (!validateLines()) {
-            return;
-        }
-
-        createBtn.disabled = true;
-        setFeedback('Creating bill…', false);
-
-        try {
-            const response = await fetch('{{ route("bills.storeManual") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify({
-                    ...buildClientPayload(),
-                    items: buildItemsPayload(),
-                }),
-            });
-
-            if (response.redirected) {
-                window.location.href = response.url;
-                return;
-            }
-
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                setFeedback(data.message || 'Could not create the bill.', true);
-                createBtn.disabled = false;
-                return;
-            }
-
-            window.location.href = data.redirect || '{{ $tenantUrl->route("bills.index") }}';
-        } catch (error) {
-            setFeedback('Network error creating the bill.', true);
-            createBtn.disabled = false;
-        }
-    }
-
     async function createAndSettle() {
-        if (paymentSection.hidden) {
-            paymentSection.hidden = false;
-            return;
-        }
-
         if (!validateLines()) {
             return;
         }
@@ -731,7 +677,6 @@
         }
     }
 
-    createBtn.addEventListener('click', createBill);
     settleBtn.addEventListener('click', createAndSettle);
 
     renderLines();

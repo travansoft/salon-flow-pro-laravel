@@ -6,7 +6,6 @@ use App\Http\Requests\Billing\GenerateBillFromAppointmentRequest;
 use App\Http\Requests\Billing\RecordPaymentRequest;
 use App\Http\Requests\Billing\RefundBillRequest;
 use App\Http\Requests\Billing\SettleQuickBillRequest;
-use App\Http\Requests\Billing\StoreManualBillRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
@@ -66,23 +65,6 @@ class BillsController extends Controller
         );
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill generated.');
-    }
-
-    public function storeManual(StoreManualBillRequest $request): RedirectResponse
-    {
-        abort_unless($request->user()->can('billing.create'), 403);
-
-        $data = $request->validated();
-        $client = $this->quickBillService->resolveClient([
-            'client_id' => $data['client_id'] ?? null,
-            'name' => $data['client_name'] ?? null,
-            'phone' => $data['client_phone'] ?? null,
-            'gst_number' => $data['client_gst_number'] ?? null,
-        ]);
-
-        $bill = $this->billingService->createManualBill($client->id, $request->user()->id, $data['items'], (float) ($data['discount_percent'] ?? 0));
-
-        return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill created.');
     }
 
     public function settle(SettleQuickBillRequest $request): JsonResponse
