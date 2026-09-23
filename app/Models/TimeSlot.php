@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'start_time', 'end_time', 'is_active'])]
+#[Fillable(['tenant_id', 'branch_id', 'start_time', 'end_time', 'is_active'])]
 #[ScopedBy([TenantScope::class])]
 class TimeSlot extends Model
 {
@@ -31,6 +31,12 @@ class TimeSlot extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @param Builder<TimeSlot> $query */

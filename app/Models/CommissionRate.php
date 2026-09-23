@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'staff_profile_id', 'service_category_id', 'rate_percent', 'effective_from'])]
+#[Fillable(['tenant_id', 'branch_id', 'staff_profile_id', 'service_category_id', 'rate_percent', 'effective_from'])]
 #[ScopedBy([TenantScope::class])]
 class CommissionRate extends Model
 {
@@ -32,6 +32,12 @@ class CommissionRate extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<StaffProfile, $this> */

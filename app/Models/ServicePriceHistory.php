@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'service_id', 'price', 'effective_from', 'changed_by'])]
+#[Fillable(['tenant_id', 'branch_id', 'service_id', 'price', 'effective_from', 'changed_by'])]
 #[ScopedBy([TenantScope::class])]
 class ServicePriceHistory extends Model
 {
@@ -30,6 +30,12 @@ class ServicePriceHistory extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Service, $this> */

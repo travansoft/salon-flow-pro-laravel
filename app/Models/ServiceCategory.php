@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'name', 'is_active'])]
+#[Fillable(['tenant_id', 'branch_id', 'name', 'is_active'])]
 #[ScopedBy([TenantScope::class])]
 class ServiceCategory extends Model
 {
@@ -32,6 +32,12 @@ class ServiceCategory extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return HasMany<Service, $this> */

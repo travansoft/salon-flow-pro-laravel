@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'staff_profile_id', 'day_of_week', 'override_date', 'start_time', 'end_time', 'is_working'])]
+#[Fillable(['tenant_id', 'branch_id', 'staff_profile_id', 'day_of_week', 'override_date', 'start_time', 'end_time', 'is_working'])]
 #[ScopedBy([TenantScope::class])]
 class StaffShift extends Model
 {
@@ -31,6 +31,12 @@ class StaffShift extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<StaffProfile, $this> */

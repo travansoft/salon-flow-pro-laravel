@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 
 #[Fillable([
     'tenant_id',
+    'branch_id',
     'category_id',
     'description',
     'amount',
@@ -44,6 +45,12 @@ class Expense extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<ExpenseCategory, $this> */

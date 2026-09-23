@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'client_id', 'name', 'phone', 'service_id', 'assigned_staff_profile_id', 'appointment_id', 'status', 'joined_at'])]
+#[Fillable(['tenant_id', 'branch_id', 'client_id', 'name', 'phone', 'service_id', 'assigned_staff_profile_id', 'appointment_id', 'status', 'joined_at'])]
 #[ScopedBy([TenantScope::class])]
 class WalkIn extends Model
 {
@@ -38,6 +38,12 @@ class WalkIn extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Client, $this> */

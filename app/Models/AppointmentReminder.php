@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'appointment_id', 'type', 'channel', 'scheduled_for', 'sent_at', 'status'])]
+#[Fillable(['tenant_id', 'branch_id', 'appointment_id', 'type', 'channel', 'scheduled_for', 'sent_at', 'status'])]
 #[ScopedBy([TenantScope::class])]
 class AppointmentReminder extends Model
 {
@@ -43,6 +43,12 @@ class AppointmentReminder extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Appointment, $this> */

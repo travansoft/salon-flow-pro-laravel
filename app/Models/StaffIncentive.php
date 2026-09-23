@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'staff_profile_id', 'amount', 'reason', 'awarded_date', 'awarded_by'])]
+#[Fillable(['tenant_id', 'branch_id', 'staff_profile_id', 'amount', 'reason', 'awarded_date', 'awarded_by'])]
 #[ScopedBy([TenantScope::class])]
 class StaffIncentive extends Model
 {
@@ -30,6 +30,12 @@ class StaffIncentive extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<StaffProfile, $this> */

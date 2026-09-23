@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'tenant_id', 'bill_id', 'service_id', 'staff_profile_id', 'description', 'quantity', 'unit_price',
+    'tenant_id', 'branch_id', 'bill_id', 'service_id', 'staff_profile_id', 'description', 'quantity', 'unit_price',
     'tax_rate', 'line_total', 'discount_amount', 'cgst_amount', 'sgst_amount', 'igst_amount',
 ])]
 #[ScopedBy([TenantScope::class])]
@@ -38,6 +38,12 @@ class BillLineItem extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Bill, $this> */
