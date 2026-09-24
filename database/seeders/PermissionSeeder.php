@@ -20,6 +20,7 @@ class PermissionSeeder extends Seeder
         'dashboard',
         'commissions',
         'settings',
+        'branches',
     ];
 
     /** @var array<int, string> */

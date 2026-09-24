@@ -43,6 +43,7 @@ class StaffService
                 ]);
 
                 $user->syncRoles($data['roles'] ?? []);
+                $user->branches()->sync($data['branch_ids'] ?? []);
 
                 $profileData['user_id'] = $user->id;
             }
@@ -71,6 +72,10 @@ class StaffService
 
             if ($staffProfile->hasLogin() && array_key_exists('roles', $data)) {
                 $staffProfile->user->syncRoles($data['roles']);
+            }
+
+            if ($staffProfile->hasLogin() && array_key_exists('branch_ids', $data)) {
+                $staffProfile->user->branches()->sync($data['branch_ids']);
             }
 
             return $staffProfile->refresh();

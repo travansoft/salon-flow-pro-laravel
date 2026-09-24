@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureBranchRequest;
 use App\Http\Middleware\EnsureSuperAdminRequest;
 use App\Http\Middleware\EnsureTenantRequest;
 use App\Http\Middleware\EnsureUserBelongsToTenant;
+use App\Http\Middleware\ResolveBranch;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,11 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             EnsureUserBelongsToTenant::class,
+            ResolveBranch::class,
         ]);
 
         $middleware->alias([
             'super_admin.only' => EnsureSuperAdminRequest::class,
             'tenant.only' => EnsureTenantRequest::class,
+            'branch.only' => EnsureBranchRequest::class,
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
         ]);
