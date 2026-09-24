@@ -6,6 +6,7 @@ use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class BillRepository implements BillRepositoryInterface
@@ -51,6 +52,22 @@ class BillRepository implements BillRepositoryInterface
             ->with(['client', 'payments', 'createdBy'])
             ->orderBy('bill_number')
             ->get();
+    }
+
+    /** @return Collection<int, Bill> */
+    public function forDateRange(Carbon $from, Carbon $to): Collection
+    {
+        return $this->model->where('status', '!=', Bill::StatusVoid)
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->with(['lineItems.service', 'lineItems.staffProfile', 'payments'])
+            ->get();
+    }
+
+    public function totalForDate(Carbon $date): string
+    {
+        return (string) $this->model->where('status', '!=', Bill::StatusVoid)
+            ->whereDate('created_at', $date)
+            ->sum('total');
     }
 
     /** @param array<string, mixed> $data */

@@ -294,6 +294,10 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/reports', [ReportsController::class, 'index'])->name("reports.index{$nameSuffix}");
         });
 
+        Route::middleware('permission:reports.consolidated.view')->group(function () use ($nameSuffix): void {
+            Route::get('/reports/consolidated', [ReportsController::class, 'consolidated'])->name("reports.consolidated{$nameSuffix}");
+        });
+
         Route::middleware('permission:settings.view')->group(function () use ($nameSuffix): void {
             Route::get('/settings', [TenantSettingsController::class, 'edit'])->name("settings.edit{$nameSuffix}");
         });

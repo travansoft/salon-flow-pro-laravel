@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Bill;
+use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -10,17 +11,14 @@ use Illuminate\Support\Collection;
 class ReportService
 {
     public function __construct(
+        private BillRepositoryInterface $billRepository,
         private ProductRepositoryInterface $productRepository,
     ) {}
 
     /** @return array<string, mixed> */
     public function reportFor(Carbon $from, Carbon $to): array
     {
-        $paidBills = Bill::query()
-            ->where('status', '!=', Bill::StatusVoid)
-            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
-            ->with(['lineItems.service', 'lineItems.staffProfile', 'payments'])
-            ->get();
+        $paidBills = $this->billRepository->forDateRange($from, $to);
 
         return [
             'totalRevenue' => $this->totalRevenue($paidBills),
@@ -47,10 +45,7 @@ class ReportService
         for ($i = 9; $i >= 0; $i--) {
             $day = $to->copy()->subDays($i);
 
-            $amount = Bill::query()
-                ->where('status', '!=', Bill::StatusVoid)
-                ->whereDate('created_at', $day)
-                ->sum('total');
+            $amount = $this->billRepository->totalForDate($day);
 
             $trend[] = [
                 'label' => $day->format('d M'),

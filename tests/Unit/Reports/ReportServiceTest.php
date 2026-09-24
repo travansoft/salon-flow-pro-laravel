@@ -8,6 +8,7 @@ use App\Models\BillPayment;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\BranchContext;
 use App\Services\ReportService;
@@ -59,7 +60,7 @@ class ReportServiceTest extends TestCase
         $productRepository = Mockery::mock(ProductRepositoryInterface::class);
         $productRepository->shouldReceive('getLowStock')->once()->andReturn(new Collection);
 
-        $service = new ReportService($productRepository);
+        $service = new ReportService(app(BillRepositoryInterface::class), $productRepository);
         $report = $service->reportFor($today, $today);
 
         $this->assertSame('590.00', $report['totalRevenue']);
@@ -80,9 +81,35 @@ class ReportServiceTest extends TestCase
             Product::factory()->make(),
         ]));
 
-        $service = new ReportService($productRepository);
+        $service = new ReportService(app(BillRepositoryInterface::class), $productRepository);
         $report = $service->reportFor(Carbon::today(), Carbon::today());
 
         $this->assertSame(2, $report['lowStockCount']);
+    }
+
+    public function test_report_for_sums_across_branches_when_branch_context_is_bypassed(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        $branchB = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        $today = Carbon::today();
+
+        app(BranchContext::class)->set($branchA);
+        Bill::factory()->paid()->create(['tenant_id' => $tenant->id, 'branch_id' => $branchA->id, 'total' => 500, 'created_at' => $today]);
+
+        app(BranchContext::class)->set($branchB);
+        Bill::factory()->paid()->create(['tenant_id' => $tenant->id, 'branch_id' => $branchB->id, 'total' => 300, 'created_at' => $today]);
+
+        app(BranchContext::class)->bypass();
+
+        $productRepository = Mockery::mock(ProductRepositoryInterface::class);
+        $productRepository->shouldReceive('getLowStock')->once()->andReturn(new Collection);
+
+        $service = new ReportService(app(BillRepositoryInterface::class), $productRepository);
+        $report = $service->reportFor($today, $today);
+
+        $this->assertSame('800.00', $report['totalRevenue']);
+        $this->assertSame(2, $report['billCount']);
     }
 }

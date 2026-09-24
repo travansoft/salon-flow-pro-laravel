@@ -1,27 +1,24 @@
 @extends('layouts.admin')
 
-@section('title', 'Reports')
+@section('title', 'Consolidated Reports')
 
 @section('content')
     <div class="sfp-page-header">
         <div>
-            <h1 class="sfp-page-title">Reports</h1>
-            <p class="sfp-page-subtitle">Figures update as bills are settled.</p>
+            <h1 class="sfp-page-title">Consolidated reports</h1>
+            <p class="sfp-page-subtitle">Combined figures across all branches. Figures update as bills are settled.</p>
         </div>
         <div style="display:flex;gap:8px">
             @foreach (['today' => 'Today', 'week' => 'This week', 'month' => 'This month'] as $value => $label)
-                <a href="{{ $tenantUrl->route('reports.index').'?period='.$value }}"
+                <a href="{{ $tenantUrl->route('reports.consolidated').'?period='.$value }}"
                    class="{{ $period === $value ? 'sfp-btn-primary' : 'sfp-btn-outline' }}">{{ $label }}</a>
             @endforeach
-            @can('reports.consolidated.view')
-                <a href="{{ $tenantUrl->route('reports.consolidated') }}" class="sfp-btn-outline">All branches</a>
-            @endcan
         </div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;margin-bottom:14px">
         <div class="sfp-card">
-            <div class="sfp-label" style="margin-bottom:12px">Revenue</div>
+            <div class="sfp-label" style="margin-bottom:12px">Revenue (all branches)</div>
             <div class="sfp-heading" style="font-size:32px;line-height:1">&#8377;{{ number_format((float) $totalRevenue, 2) }}</div>
         </div>
         <div class="sfp-card">
