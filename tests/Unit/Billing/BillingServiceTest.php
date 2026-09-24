@@ -4,12 +4,14 @@ namespace Tests\Unit\Billing;
 
 use App\Models\Appointment;
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
@@ -23,6 +25,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -39,6 +43,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -56,6 +62,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -68,6 +76,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
@@ -85,6 +95,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -99,6 +111,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -120,6 +134,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -138,6 +154,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -155,6 +173,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -173,6 +193,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['gst_state_code' => '32']);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'gst_number' => '32AAAAA0000A1Z5']);
         $user = User::factory()->for($tenant)->create();
 
@@ -189,6 +211,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['gst_state_code' => '32']);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'gst_number' => '27AAAAA0000A1Z5']);
         $user = User::factory()->for($tenant)->create();
 
@@ -205,6 +229,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['gst_state_code' => '32']);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'gst_number' => null]);
         $user = User::factory()->for($tenant)->create();
 
@@ -220,6 +246,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['default_gst_rate' => 12]);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 1000, 'tax_rate' => null]);
@@ -243,6 +271,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['default_gst_rate' => 12]);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 1000, 'tax_rate' => 5]);
@@ -266,6 +296,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -284,6 +316,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -299,6 +333,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -313,6 +349,8 @@ class BillingServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffProfile;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,6 +34,8 @@ class ToggleStaffLoginTest extends TestCase
 
         $response->assertRedirect();
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
         $this->assertNotNull($staffProfile->user->fresh()->disabled_at);
     }
 
@@ -41,11 +45,15 @@ class ToggleStaffLoginTest extends TestCase
         $owner->assignRole('Owner');
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile->user->update(['disabled_at' => now()]);
 
         $response = $this->actingAs($owner)->putToTenant("/staff/{$staffProfile->id}/login/enable");
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
         $response->assertRedirect();
         $this->assertNull($staffProfile->user->fresh()->disabled_at);
     }

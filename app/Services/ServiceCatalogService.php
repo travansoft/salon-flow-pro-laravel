@@ -11,16 +11,19 @@ class ServiceCatalogService
     public function __construct(
         private ServiceRepositoryInterface $serviceRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data, int $changedBy): Service
     {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
-        return DB::transaction(function () use ($data, $tenant, $changedBy): Service {
+        return DB::transaction(function () use ($data, $tenant, $branch, $changedBy): Service {
             $service = $this->serviceRepository->create([
                 'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'name' => $data['name'],
                 'code' => $data['code'] ?? null,
                 'category_id' => $data['category_id'] ?? null,
@@ -81,6 +84,7 @@ class ServiceCatalogService
     {
         $service->priceHistories()->create([
             'tenant_id' => $service->tenant_id,
+            'branch_id' => $service->branch_id,
             'price' => $price,
             'effective_from' => now(),
             'changed_by' => $changedBy,

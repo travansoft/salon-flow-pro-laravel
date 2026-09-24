@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'tenant_id', 'branch_id', 'client_id', 'start_at', 'end_at', 'status', 'notes', 'cancellation_reason',
     'is_on_location', 'venue_address', 'bridal_engagement_id', 'engagement_role',
 ])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Appointment extends Model
 {
     /** @use HasFactory<AppointmentFactory> */

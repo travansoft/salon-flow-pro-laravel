@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffLeaveRequest;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Repositories\Contracts\StaffLeaveRequestRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\LeaveRequestService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,6 +24,9 @@ class LeaveRequestServiceTest extends TestCase
 
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $decidedBy = $staffProfile->user_id;
@@ -42,7 +47,7 @@ class LeaveRequestServiceTest extends TestCase
                 return $request;
             });
 
-        $service = new LeaveRequestService($repository, $tenantContext);
+        $service = new LeaveRequestService($repository, $tenantContext, $branchContext);
 
         $service->approve($leaveRequest, $decidedBy, 'Approved for vacation');
 
@@ -66,6 +71,9 @@ class LeaveRequestServiceTest extends TestCase
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
 
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
+
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $decidedBy = $staffProfile->user_id;
 
@@ -83,7 +91,7 @@ class LeaveRequestServiceTest extends TestCase
                 return $request;
             });
 
-        $service = new LeaveRequestService($repository, $tenantContext);
+        $service = new LeaveRequestService($repository, $tenantContext, $branchContext);
 
         $service->reject($leaveRequest, $decidedBy);
 

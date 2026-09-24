@@ -5,9 +5,11 @@ namespace Tests\Unit\Reports;
 use App\Models\Bill;
 use App\Models\BillLineItem;
 use App\Models\BillPayment;
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\ReportService;
 use App\Services\TenantContext;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,6 +26,8 @@ class ReportServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $today = Carbon::today();
 
@@ -67,6 +71,8 @@ class ReportServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $productRepository = Mockery::mock(ProductRepositoryInterface::class);
         $productRepository->shouldReceive('getLowStock')->once()->andReturn(new Collection([

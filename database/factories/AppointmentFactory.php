@@ -3,8 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Appointment;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,6 +25,15 @@ class AppointmentFactory extends Factory
 
         return [
             'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'client_id' => fn (array $attributes) => Client::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'start_at' => $start,
             'end_at' => $start->copy()->addMinutes(45),

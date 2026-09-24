@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\BillFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'cgst_amount', 'sgst_amount', 'igst_amount', 'discount_percent', 'discount_amount',
     'amount_paid', 'amount_refunded', 'status', 'created_by',
 ])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Bill extends Model
 {
     /** @use HasFactory<BillFactory> */

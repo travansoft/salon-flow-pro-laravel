@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Billing;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,6 +31,9 @@ class BillPrintTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $frontDesk->branches()->sync([$branch->id]);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $bill = app(BillingService::class)->createManualBill($client->id, $frontDesk->id, [
             ['description' => 'Haircut', 'unit_price' => 500],
@@ -46,6 +51,9 @@ class BillPrintTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $frontDesk->branches()->sync([$branch->id]);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $bill = app(BillingService::class)->createManualBill($client->id, $frontDesk->id, [
             ['description' => 'Haircut', 'unit_price' => 200, 'tax_rate' => 18],
@@ -66,6 +74,9 @@ class BillPrintTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $frontDesk->branches()->sync([$branch->id]);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $singleRateBill = app(BillingService::class)->createManualBill($client->id, $frontDesk->id, [
             ['description' => 'Haircut', 'unit_price' => 500, 'tax_rate' => 18],
@@ -93,6 +104,9 @@ class BillPrintTest extends TestCase
         $frontDesk->assignRole('FrontDesk');
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $frontDesk->branches()->sync([$branch->id]);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $bill = app(BillingService::class)->createManualBill($client->id, $frontDesk->id, [
             ['description' => 'Haircut', 'unit_price' => 500],
@@ -111,6 +125,9 @@ class BillPrintTest extends TestCase
         $stylist->assignRole('Stylist');
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $stylist->branches()->sync([$branch->id]);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $owner = User::factory()->for($this->tenant)->create();
         $bill = app(BillingService::class)->createManualBill($client->id, $owner->id, [
@@ -125,6 +142,8 @@ class BillPrintTest extends TestCase
     public function test_guest_is_redirected_to_login(): void
     {
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
         $owner = User::factory()->for($this->tenant)->create();
         $bill = app(BillingService::class)->createManualBill($client->id, $owner->id, [

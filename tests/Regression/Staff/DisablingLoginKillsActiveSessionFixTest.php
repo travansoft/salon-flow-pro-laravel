@@ -2,7 +2,9 @@
 
 namespace Tests\Regression\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffProfile;
+use App\Services\BranchContext;
 use App\Services\StaffService;
 use App\Services\TenantContext;
 use Database\Seeders\PermissionSeeder;
@@ -29,6 +31,8 @@ class DisablingLoginKillsActiveSessionFixTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         app(TenantContext::class)->set($this->tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $this->actingAs($staffProfile->user)->getFromTenant('/dashboard')->assertOk();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\WalkInFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['tenant_id', 'branch_id', 'client_id', 'name', 'phone', 'service_id', 'assigned_staff_profile_id', 'appointment_id', 'status', 'joined_at'])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class WalkIn extends Model
 {
     /** @use HasFactory<WalkInFactory> */

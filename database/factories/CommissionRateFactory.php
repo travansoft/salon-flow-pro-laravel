@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +21,16 @@ class CommissionRateFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'staff_profile_id' => null,
             'service_category_id' => null,
             'rate_percent' => fake()->randomElement([5, 10, 12.5, 15, 20]),

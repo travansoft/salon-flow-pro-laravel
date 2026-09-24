@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\StaffLeaveRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['tenant_id', 'branch_id', 'staff_profile_id', 'start_date', 'end_date', 'reason', 'status', 'decided_by', 'decided_at', 'decision_note'])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class StaffLeaveRequest extends Model
 {
     /** @use HasFactory<StaffLeaveRequestFactory> */

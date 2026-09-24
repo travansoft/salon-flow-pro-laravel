@@ -5,6 +5,7 @@ namespace Tests\Integration\Commission;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\BillLineItem;
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -12,6 +13,7 @@ use App\Models\StaffIncentive;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\CommissionService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +28,8 @@ class CommissionEarningsCalculationIntegrationTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $hairCategory = ServiceCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Hair']);

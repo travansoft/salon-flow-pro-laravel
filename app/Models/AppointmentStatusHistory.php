@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\AppointmentStatusHistoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['tenant_id', 'branch_id', 'appointment_id', 'from_status', 'to_status', 'reason', 'changed_by'])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class AppointmentStatusHistory extends Model
 {
     /** @use HasFactory<AppointmentStatusHistoryFactory> */

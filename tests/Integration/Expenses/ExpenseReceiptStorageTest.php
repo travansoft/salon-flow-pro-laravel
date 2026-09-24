@@ -2,10 +2,12 @@
 
 namespace Tests\Integration\Expenses;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Eloquent\ExpenseCategoryRepository;
 use App\Repositories\Eloquent\ExpenseRepository;
+use App\Services\BranchContext;
 use App\Services\ExpenseService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,12 +26,15 @@ class ExpenseReceiptStorageTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $service = new ExpenseService(
             app(ExpenseRepository::class),
             app(ExpenseCategoryRepository::class),
             $tenantContext,
+            $branchContext,
         );
 
         $receipt = UploadedFile::fake()->image('receipt.jpg');
@@ -53,12 +58,15 @@ class ExpenseReceiptStorageTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $service = new ExpenseService(
             app(ExpenseRepository::class),
             app(ExpenseCategoryRepository::class),
             $tenantContext,
+            $branchContext,
         );
 
         $expense = $service->create([

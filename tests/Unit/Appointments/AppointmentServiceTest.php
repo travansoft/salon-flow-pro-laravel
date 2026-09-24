@@ -4,6 +4,7 @@ namespace Tests\Unit\Appointments;
 
 use App\Exceptions\StaffUnavailableException;
 use App\Models\Appointment;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
@@ -11,6 +12,7 @@ use App\Models\StaffShift;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\AppointmentService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -40,6 +42,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(10, 0);
         $staffProfile = $this->setUpWorkingStaff($tenant, $start);
@@ -60,6 +64,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(10, 0);
         $staffProfile = $this->setUpWorkingStaff($tenant, $start);
@@ -85,6 +91,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(10, 0);
         $staffA = $this->setUpWorkingStaff($tenant, $start);
@@ -114,6 +122,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(20, 0);
         $staffProfile = $this->setUpWorkingStaff($tenant, $start);
@@ -129,6 +139,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(10, 0);
         $staffProfile = $this->setUpWorkingStaff($tenant, $start);
@@ -149,6 +161,8 @@ class AppointmentServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();

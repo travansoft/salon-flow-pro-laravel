@@ -2,8 +2,10 @@
 
 namespace Tests\Regression\Services;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,6 +29,8 @@ class SoftDeletedServiceCodeCanBeReusedFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $original = Service::factory()->create(['tenant_id' => $tenant->id, 'code' => '205']);
         $original->delete();

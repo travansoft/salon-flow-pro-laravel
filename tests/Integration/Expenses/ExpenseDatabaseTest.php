@@ -2,10 +2,12 @@
 
 namespace Tests\Integration\Expenses;
 
+use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +20,8 @@ class ExpenseDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id, 'category_id' => $category->id]);
@@ -30,6 +34,8 @@ class ExpenseDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $user = User::factory()->for($tenant)->create();
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id, 'created_by' => $user->id]);
@@ -46,6 +52,8 @@ class ExpenseDatabaseTest extends TestCase
         Expense::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, Expense::count());
     }
@@ -54,6 +62,8 @@ class ExpenseDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id]);
         $expense->delete();
@@ -66,6 +76,8 @@ class ExpenseDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id, 'category_id' => $category->id]);

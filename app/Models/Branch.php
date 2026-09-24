@@ -45,4 +45,17 @@ class Branch extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Resolves the tenant's default branch, creating it if none exists yet.
+     * Bypasses TenantScope since callers (e.g. factories building fixtures
+     * for a specific tenant_id) may run before any TenantContext is set.
+     */
+    public static function defaultForTenant(int $tenantId): self
+    {
+        return static::withoutGlobalScopes()->firstOrCreate(
+            ['tenant_id' => $tenantId, 'slug' => 'main'],
+            ['name' => 'Main Branch', 'invoice_prefix' => 'INV', 'is_active' => true]
+        );
+    }
 }

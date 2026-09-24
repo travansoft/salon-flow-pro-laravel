@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Billing;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +20,8 @@ class BillGstBreakdownTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -36,6 +40,8 @@ class BillGstBreakdownTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -55,6 +61,8 @@ class BillGstBreakdownTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 

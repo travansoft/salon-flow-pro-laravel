@@ -2,8 +2,10 @@
 
 namespace Tests\Integration\TimeSlots;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\TimeSlot;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,6 +23,8 @@ class TimeSlotDatabaseTest extends TestCase
         TimeSlot::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $this->assertSame(1, TimeSlot::count());
     }
 
@@ -28,6 +32,8 @@ class TimeSlotDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $slot = TimeSlot::factory()->create([
             'tenant_id' => $tenant->id,
             'start_time' => '09:00:00',
@@ -41,6 +47,8 @@ class TimeSlotDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $slot = TimeSlot::factory()->create(['tenant_id' => $tenant->id]);
 
         $slot->delete();

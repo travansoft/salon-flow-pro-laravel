@@ -6,6 +6,7 @@ use App\Http\Requests\ServiceCategories\StoreServiceCategoryRequest;
 use App\Http\Requests\ServiceCategories\UpdateServiceCategoryRequest;
 use App\Models\ServiceCategory;
 use App\Repositories\Contracts\ServiceCategoryRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,7 @@ class ServiceCategoriesController extends Controller
     public function __construct(
         private ServiceCategoryRepositoryInterface $categoryRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -43,6 +45,7 @@ class ServiceCategoriesController extends Controller
         $this->categoryRepository->create([
             ...$request->validated(),
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
         ]);
 
         return redirect($this->tenantUrl->route('serviceCategories.index'))->with('status', 'Category created.');

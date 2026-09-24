@@ -2,9 +2,11 @@
 
 namespace Tests\Integration\ServiceCategories;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,6 +24,8 @@ class ServiceCategoryDatabaseTest extends TestCase
         ServiceCategory::factory()->create(['tenant_id' => $tenantB->id, 'name' => 'Hair']);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $this->assertSame(1, ServiceCategory::count());
     }
 
@@ -29,6 +33,8 @@ class ServiceCategoryDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Bridal']);
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'category_id' => $category->id]);
 
@@ -39,6 +45,8 @@ class ServiceCategoryDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'category_id' => $category->id]);
 

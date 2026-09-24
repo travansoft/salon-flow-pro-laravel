@@ -3,9 +3,11 @@
 namespace Tests\Integration\Dashboard;
 
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\DashboardService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,6 +44,8 @@ class DashboardDatabaseTest extends TestCase
         ]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $summary = app(DashboardService::class)->summaryFor(Carbon::today());
 
         $this->assertSame('500.00', $summary['todaysRevenue']);

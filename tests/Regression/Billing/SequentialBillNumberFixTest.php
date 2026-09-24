@@ -2,10 +2,12 @@
 
 namespace Tests\Regression\Billing;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,6 +28,8 @@ class SequentialBillNumberFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
 
@@ -47,6 +51,8 @@ class SequentialBillNumberFixTest extends TestCase
         $tenantB = Tenant::factory()->create();
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $clientA = Client::factory()->create(['tenant_id' => $tenantA->id]);
         $userA = User::factory()->for($tenantA)->create();
         $billA = app(BillingService::class)->createManualBill($clientA->id, $userA->id, [
@@ -54,6 +60,8 @@ class SequentialBillNumberFixTest extends TestCase
         ]);
 
         app(TenantContext::class)->set($tenantB);
+        $branchB = Branch::factory()->create(['tenant_id' => $tenantB->id]);
+        app(BranchContext::class)->set($branchB);
         $clientB = Client::factory()->create(['tenant_id' => $tenantB->id]);
         $userB = User::factory()->for($tenantB)->create();
         $billB = app(BillingService::class)->createManualBill($clientB->id, $userB->id, [

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -44,5 +45,19 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /** @return Factory<User> */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            if ($user->branches()->withoutGlobalScopes()->exists()) {
+                return;
+            }
+
+            $branch = Branch::defaultForTenant($user->tenant_id);
+
+            $user->branches()->attach($branch->id);
+        });
     }
 }

@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Services;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\ServiceCatalogService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,6 +24,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $repository = Mockery::mock(ServiceRepositoryInterface::class);
@@ -29,7 +33,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -46,6 +50,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 499]);
@@ -59,7 +65,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $service->update($existingService, ['name' => 'Renamed'], changedBy: $owner->id);
         $this->assertSame(0, $existingService->priceHistories()->count());
@@ -73,6 +79,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $repository = Mockery::mock(ServiceRepositoryInterface::class);
@@ -80,7 +88,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -97,6 +105,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'code' => '101']);
@@ -110,7 +120,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
         $service->update($existingService, ['code' => '205'], changedBy: $owner->id);
 
         $this->assertSame('205', $existingService->fresh()->code);
@@ -121,6 +131,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -129,7 +141,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -146,6 +158,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -159,7 +173,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
         $service->update($existingService, ['staff_ids' => [$staffProfile->id]], changedBy: $owner->id);
 
         $this->assertTrue($existingService->fresh()->staff->contains($staffProfile));
@@ -170,6 +184,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -184,7 +200,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
         $service->update($existingService, ['staff_ids' => []], changedBy: $owner->id);
 
         $this->assertCount(0, $existingService->fresh()->staff);
@@ -195,6 +211,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $repository = Mockery::mock(ServiceRepositoryInterface::class);
@@ -202,7 +220,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'name' => 'Bridal Facial',
@@ -219,6 +237,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'requires_rate_confirmation' => false]);
@@ -232,7 +252,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
         $service->update($existingService, ['requires_rate_confirmation' => true], changedBy: $owner->id);
 
         $this->assertTrue($existingService->fresh()->requires_rate_confirmation);
@@ -243,6 +263,8 @@ class ServiceCatalogServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -255,7 +277,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
         $service->deactivate($existingService);
 
         $this->assertFalse($existingService->fresh()->is_active);

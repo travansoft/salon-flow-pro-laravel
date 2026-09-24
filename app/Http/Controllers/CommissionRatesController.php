@@ -8,6 +8,7 @@ use App\Models\CommissionRate;
 use App\Repositories\Contracts\CommissionRateRepositoryInterface;
 use App\Repositories\Contracts\ServiceCategoryRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\CommissionService;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
@@ -23,6 +24,7 @@ class CommissionRatesController extends Controller
         private ServiceCategoryRepositoryInterface $categoryRepository,
         private CommissionService $commissionService,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -53,6 +55,7 @@ class CommissionRatesController extends Controller
         $this->commissionService->setRate([
             ...$request->validated(),
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
         ]);
 
         return redirect($this->tenantUrl->route('commissionRates.index'))->with('status', 'Commission rate created.');

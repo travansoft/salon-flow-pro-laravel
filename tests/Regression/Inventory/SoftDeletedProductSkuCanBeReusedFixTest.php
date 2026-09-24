@@ -2,8 +2,10 @@
 
 namespace Tests\Regression\Inventory;
 
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,6 +24,8 @@ class SoftDeletedProductSkuCanBeReusedFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $original = Product::factory()->create(['tenant_id' => $tenant->id, 'sku' => 'SKU-500']);
         $original->delete();

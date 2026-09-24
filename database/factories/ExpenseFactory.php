@@ -2,9 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +22,16 @@ class ExpenseFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'category_id' => null,
             'description' => fake()->randomElement(['Monthly rent', 'Electricity bill', 'Hair product restock', 'Salary payout', 'Social media ads']),
             'amount' => fake()->randomElement([499, 999, 1999, 4999, 9999]),

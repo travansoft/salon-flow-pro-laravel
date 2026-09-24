@@ -2,9 +2,11 @@
 
 namespace Tests\Integration\Services;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class ServiceCatalogDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 499]);
         $service->priceHistories()->create([
@@ -37,6 +41,8 @@ class ServiceCatalogDatabaseTest extends TestCase
         Service::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, Service::count());
     }
@@ -45,6 +51,8 @@ class ServiceCatalogDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -62,6 +70,8 @@ class ServiceCatalogDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -76,6 +86,8 @@ class ServiceCatalogDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'requires_rate_confirmation' => true]);
 
@@ -87,6 +99,8 @@ class ServiceCatalogDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $service->priceHistories()->create([

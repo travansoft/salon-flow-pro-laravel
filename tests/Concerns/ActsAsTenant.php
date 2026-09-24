@@ -2,8 +2,10 @@
 
 namespace Tests\Concerns;
 
+use App\Models\Branch;
 use App\Models\MainDomain;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Testing\TestResponse;
 
 trait ActsAsTenant
@@ -11,6 +13,8 @@ trait ActsAsTenant
     protected ?Tenant $tenant = null;
 
     protected ?MainDomain $mainDomain = null;
+
+    protected ?Branch $branch = null;
 
     protected function setUpTenant(): Tenant
     {
@@ -23,6 +27,25 @@ trait ActsAsTenant
         ]);
 
         return $this->tenant;
+    }
+
+    /**
+     * Creates a branch for the current tenant. Branch-scoped models require a
+     * resolved BranchContext (set for real by ResolveBranch middleware during
+     * an actual HTTP request, mirroring how TenantContext is resolved), which
+     * in turn requires the acting user to be assigned to a branch — call
+     * assignToBranch() with that user after this.
+     */
+    protected function setUpBranch(): Branch
+    {
+        $this->branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        return $this->branch;
+    }
+
+    protected function assignToBranch(User $user, ?Branch $branch = null): void
+    {
+        $user->branches()->syncWithoutDetaching([($branch ?? $this->branch)->id]);
     }
 
     protected function tenantUrl(string $uri): string

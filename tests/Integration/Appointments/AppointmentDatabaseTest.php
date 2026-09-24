@@ -3,12 +3,14 @@
 namespace Tests\Integration\Appointments;
 
 use App\Models\Appointment;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
 use App\Models\Tenant;
 use App\Services\AppointmentService;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,6 +23,8 @@ class AppointmentDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $start = now()->next(1)->setTime(10, 0);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -52,6 +56,8 @@ class AppointmentDatabaseTest extends TestCase
         Appointment::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, Appointment::count());
     }
@@ -60,6 +66,8 @@ class AppointmentDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $appointment = Appointment::factory()->create(['tenant_id' => $tenant->id]);
         $appointment->statusHistories()->create([

@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\Inventory;
 
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ProductRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -29,6 +33,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new ProductRepository(new Product);
 
@@ -39,6 +45,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         Product::factory()->create(['tenant_id' => $tenant->id]);
         Product::factory()->inactive()->create(['tenant_id' => $tenant->id]);
@@ -52,6 +60,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         Product::factory()->lowStock()->create(['tenant_id' => $tenant->id]);
         Product::factory()->create(['tenant_id' => $tenant->id, 'quantity_on_hand' => 100, 'reorder_level' => 10]);
@@ -65,11 +75,14 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new ProductRepository(new Product);
 
         $product = $repository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'name' => 'Conditioner',
             'quantity_on_hand' => 5,
             'reorder_level' => 1,
@@ -83,6 +96,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -96,6 +111,8 @@ class ProductRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id]);
 

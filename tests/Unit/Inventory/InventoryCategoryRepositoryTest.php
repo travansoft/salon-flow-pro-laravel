@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\Inventory;
 
+use App\Models\Branch;
 use App\Models\InventoryCategory;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\InventoryCategoryRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = InventoryCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -29,6 +33,8 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         InventoryCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Zeta']);
         InventoryCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Alpha']);
@@ -43,6 +49,8 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         InventoryCategory::factory()->create(['tenant_id' => $tenant->id]);
         InventoryCategory::factory()->inactive()->create(['tenant_id' => $tenant->id]);
@@ -56,9 +64,11 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new InventoryCategoryRepository(new InventoryCategory);
-        $category = $repository->create(['tenant_id' => $tenant->id, 'name' => 'Tools']);
+        $category = $repository->create(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'Tools']);
 
         $this->assertDatabaseHas('inventory_categories', ['id' => $category->id, 'name' => 'Tools']);
     }
@@ -67,6 +77,8 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = InventoryCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -80,6 +92,8 @@ class InventoryCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = InventoryCategory::factory()->create(['tenant_id' => $tenant->id]);
 

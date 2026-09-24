@@ -2,9 +2,11 @@
 
 namespace Tests\Regression\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\StaffService;
 use App\Services\TenantContext;
 use Database\Seeders\PermissionSeeder;
@@ -33,6 +35,8 @@ class StaffProfileTenantConsistencyFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = app(StaffService::class)->create([
             'name' => 'Anjali Menon',
@@ -51,6 +55,8 @@ class StaffProfileTenantConsistencyFixTest extends TestCase
         $staffProfile = StaffProfile::factory()->create();
 
         app(TenantContext::class)->set(Tenant::find($staffProfile->tenant_id));
+        $branch = Branch::factory()->create(['tenant_id' => $staffProfile->tenant_id]);
+        app(BranchContext::class)->set($branch);
 
         $this->assertSame(
             $staffProfile->tenant_id,

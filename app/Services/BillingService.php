@@ -14,6 +14,7 @@ class BillingService
     public function __construct(
         private BillRepositoryInterface $billRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /**
@@ -57,11 +58,17 @@ class BillingService
         }
 
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
+
+        if (! $branch) {
+            throw new InvalidArgumentException('A branch must be selected before a bill can be created.');
+        }
+
         $client = Client::query()->findOrFail($clientId);
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
         $discountRate = (string) $discountPercent;
 
-        return DB::transaction(function () use ($tenant, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate): Bill {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate): Bill {
             $subtotal = '0';
             $discountAmount = '0';
             $taxAmount = '0';
@@ -120,6 +127,7 @@ class BillingService
 
             $bill = $this->billRepository->create([
                 'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'client_id' => $clientId,
                 'appointment_id' => $appointmentId,
                 'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $financialYear),
@@ -137,7 +145,7 @@ class BillingService
             ]);
 
             foreach ($resolvedItems as $item) {
-                $bill->lineItems()->create(['tenant_id' => $tenant->id, ...$item]);
+                $bill->lineItems()->create(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, ...$item]);
             }
 
             return $bill->load('lineItems');

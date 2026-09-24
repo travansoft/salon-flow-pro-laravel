@@ -10,6 +10,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 
@@ -30,6 +31,19 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureUserBelongsToTenant::class,
             ResolveBranch::class,
         ]);
+
+        // Branch-scoped models resolve implicit route-model-bindings (e.g.
+        // {category}, {product}) through SubstituteBindings, so BranchContext
+        // must already be set by then — custom middleware isn't in Laravel's
+        // default priority list otherwise, so it would run after bindings.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: EnsureUserBelongsToTenant::class,
+        );
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ResolveBranch::class,
+        );
 
         $middleware->alias([
             'super_admin.only' => EnsureSuperAdminRequest::class,

@@ -2,11 +2,13 @@
 
 namespace Tests\Regression\Billing;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\BranchContext;
 use App\Services\QuickBillService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +32,8 @@ class InclusivePriceNoLongerLosesAPaisaFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['default_gst_rate' => 18]);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 250, 'tax_rate' => null]);
@@ -45,6 +49,8 @@ class InclusivePriceNoLongerLosesAPaisaFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['default_gst_rate' => 18]);
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $user = User::factory()->for($tenant)->create();
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 250, 'tax_rate' => null]);

@@ -2,12 +2,14 @@
 
 namespace Tests\Unit\Inventory;
 
+use App\Models\Branch;
 use App\Models\InventoryCategory;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\InventoryCategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\InventoryService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,6 +25,8 @@ class InventoryServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $productRepository = Mockery::mock(ProductRepositoryInterface::class);
         $productRepository->shouldReceive('create')
@@ -32,7 +36,7 @@ class InventoryServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(InventoryCategoryRepositoryInterface::class);
 
-        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext);
+        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext, app(BranchContext::class));
 
         $created = $service->createProduct(['name' => 'Shampoo', 'quantity_on_hand' => 10, 'reorder_level' => 2]);
 
@@ -44,6 +48,8 @@ class InventoryServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Original']);
 
@@ -58,7 +64,7 @@ class InventoryServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(InventoryCategoryRepositoryInterface::class);
 
-        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext);
+        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext, app(BranchContext::class));
         $service->updateProduct($product, ['reorder_level' => 5]);
 
         $this->assertSame('Original', $product->fresh()->name);
@@ -70,6 +76,8 @@ class InventoryServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -78,7 +86,7 @@ class InventoryServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(InventoryCategoryRepositoryInterface::class);
 
-        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext);
+        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext, app(BranchContext::class));
 
         $this->assertTrue($service->deleteProduct($product));
     }
@@ -87,6 +95,8 @@ class InventoryServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $user = User::factory()->for($tenant)->create();
 
         $productRepository = app(ProductRepositoryInterface::class);
@@ -94,7 +104,7 @@ class InventoryServiceTest extends TestCase
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id, 'quantity_on_hand' => 10]);
 
-        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class));
+        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class), app(BranchContext::class));
         $updated = $service->adjustStock($product, 5, 'Restock', $user->id);
 
         $this->assertSame('15.00', $updated->quantity_on_hand);
@@ -105,6 +115,8 @@ class InventoryServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $user = User::factory()->for($tenant)->create();
 
         $productRepository = app(ProductRepositoryInterface::class);
@@ -112,7 +124,7 @@ class InventoryServiceTest extends TestCase
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id, 'quantity_on_hand' => 10]);
 
-        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class));
+        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class), app(BranchContext::class));
         $updated = $service->adjustStock($product, -4, 'Damaged', $user->id);
 
         $this->assertSame('6.00', $updated->quantity_on_hand);
@@ -127,6 +139,8 @@ class InventoryServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $categoryRepository = Mockery::mock(InventoryCategoryRepositoryInterface::class);
         $categoryRepository->shouldReceive('create')
@@ -136,7 +150,7 @@ class InventoryServiceTest extends TestCase
 
         $productRepository = Mockery::mock(ProductRepositoryInterface::class);
 
-        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext);
+        $service = new InventoryService($productRepository, $categoryRepository, $tenantContext, app(BranchContext::class));
         $created = $service->createCategory(['name' => 'Skincare']);
 
         $this->assertSame('Skincare', $created->name);
@@ -146,6 +160,8 @@ class InventoryServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = InventoryCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -154,7 +170,7 @@ class InventoryServiceTest extends TestCase
 
         $productRepository = Mockery::mock(ProductRepositoryInterface::class);
 
-        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class));
+        $service = new InventoryService($productRepository, $categoryRepository, app(TenantContext::class), app(BranchContext::class));
 
         $this->assertTrue($service->deleteCategory($category));
     }

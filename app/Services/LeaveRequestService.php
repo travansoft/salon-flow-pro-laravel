@@ -12,15 +12,18 @@ class LeaveRequestService
     public function __construct(
         private StaffLeaveRequestRepositoryInterface $leaveRequestRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /** @param array<string, mixed> $data */
     public function request(array $data): StaffLeaveRequest
     {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
         return $this->leaveRequestRepository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'staff_profile_id' => $data['staff_profile_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
@@ -65,6 +68,7 @@ class LeaveRequestService
             StaffShift::query()->updateOrCreate(
                 [
                     'tenant_id' => $tenant->id,
+                    'branch_id' => $leaveRequest->branch_id,
                     'staff_profile_id' => $leaveRequest->staff_profile_id,
                     'override_date' => $date->toDateString(),
                 ],

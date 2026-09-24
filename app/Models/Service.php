@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['tenant_id', 'branch_id', 'name', 'code', 'category_id', 'price', 'requires_rate_confirmation', 'duration_minutes', 'is_active', 'tax_rate', 'hsn_sac_code'])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */

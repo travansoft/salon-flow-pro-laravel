@@ -2,9 +2,11 @@
 
 namespace Tests\Integration\Staff;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class StaffDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
@@ -36,6 +40,8 @@ class StaffDatabaseTest extends TestCase
         StaffProfile::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, StaffProfile::count());
     }
@@ -54,6 +60,8 @@ class StaffDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id, 'is_active' => true]);
 
         $staffProfile->user->update(['disabled_at' => now()]);

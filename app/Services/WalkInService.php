@@ -10,15 +10,18 @@ class WalkInService
     public function __construct(
         private AppointmentService $appointmentService,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /** @param array<string, mixed> $data */
     public function join(array $data): WalkIn
     {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
         return WalkIn::create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'client_id' => $data['client_id'] ?? null,
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,

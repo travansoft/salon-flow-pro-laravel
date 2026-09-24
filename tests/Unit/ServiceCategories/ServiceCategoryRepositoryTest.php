@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\ServiceCategories;
 
+use App\Models\Branch;
 use App\Models\ServiceCategory;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ServiceCategoryRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class ServiceCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         ServiceCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Hair']);
         ServiceCategory::factory()->inactive()->create(['tenant_id' => $tenant->id, 'name' => 'Retired']);
 
@@ -32,6 +36,8 @@ class ServiceCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         ServiceCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Skin']);
         ServiceCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Hair']);
 
@@ -46,6 +52,8 @@ class ServiceCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
         $repository = app(ServiceCategoryRepository::class);

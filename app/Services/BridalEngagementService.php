@@ -13,6 +13,7 @@ class BridalEngagementService
         private BridalEngagementRepositoryInterface $bridalEngagementRepository,
         private AppointmentService $appointmentService,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /**
@@ -34,15 +35,17 @@ class BridalEngagementService
         bool $eventIsOnLocation = true,
     ): BridalEngagement {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
         return DB::transaction(function () use (
-            $tenant, $clientId, $eventDate, $venue,
+            $tenant, $branch, $clientId, $eventDate, $venue,
             $trialStaffProfileId, $trialStartAt, $trialLineItems,
             $eventStaffProfileId, $eventStartAt, $eventLineItems,
             $travelingStaffProfileIds, $eventIsOnLocation,
         ): BridalEngagement {
             $engagement = $this->bridalEngagementRepository->create([
                 'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'client_id' => $clientId,
                 'event_date' => $eventDate->toDateString(),
                 'venue' => $venue,

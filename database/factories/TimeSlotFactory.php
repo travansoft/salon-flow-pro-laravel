@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\TimeSlot;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -28,7 +30,16 @@ class TimeSlotFactory extends Factory
             : sprintf('%02d:%02d:00', $hour, $endMinute);
 
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'start_time' => $start,
             'end_time' => $end,
             'is_active' => true,

@@ -28,6 +28,7 @@ class UpdateServicePriceTest extends TestCase
         $service = Service::factory()->create(['tenant_id' => $this->tenant->id, 'price' => 499]);
         $service->priceHistories()->create([
             'tenant_id' => $this->tenant->id,
+            'branch_id' => $service->branch_id,
             'price' => 499,
             'effective_from' => now()->subDays(10),
         ]);

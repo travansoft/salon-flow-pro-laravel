@@ -3,7 +3,9 @@
 namespace Tests\Unit\Appointments;
 
 use App\Models\AppointmentReminder;
+use App\Models\Branch;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\Contracts\ReminderChannelInterface;
 use App\Services\ReminderDispatchService;
 use App\Services\TenantContext;
@@ -19,6 +21,8 @@ class ReminderDispatchServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $due = AppointmentReminder::factory()->due()->create(['tenant_id' => $tenant->id]);
         AppointmentReminder::factory()->create(['tenant_id' => $tenant->id, 'scheduled_for' => now()->addHour()]);
@@ -36,6 +40,8 @@ class ReminderDispatchServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $due = AppointmentReminder::factory()->due()->create(['tenant_id' => $tenant->id]);
 

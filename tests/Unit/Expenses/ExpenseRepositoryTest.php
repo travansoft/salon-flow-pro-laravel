@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Expenses;
 
+use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Eloquent\ExpenseRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -19,6 +21,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -31,6 +35,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new ExpenseRepository(new Expense);
 
@@ -41,6 +47,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $older = Expense::factory()->create(['tenant_id' => $tenant->id, 'expense_date' => '2026-01-01']);
         $newer = Expense::factory()->create(['tenant_id' => $tenant->id, 'expense_date' => '2026-06-01']);
@@ -57,6 +65,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $inRange = Expense::factory()->create(['tenant_id' => $tenant->id, 'expense_date' => '2026-08-10']);
         Expense::factory()->create(['tenant_id' => $tenant->id, 'expense_date' => '2026-09-10']);
@@ -73,11 +83,14 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new ExpenseRepository(new Expense);
 
         $created = $repository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'description' => 'Test expense',
             'amount' => 100,
             'expense_date' => '2026-08-01',
@@ -91,6 +104,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id, 'description' => 'Original']);
 
@@ -104,6 +119,8 @@ class ExpenseRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id]);
 
