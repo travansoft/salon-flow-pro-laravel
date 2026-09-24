@@ -40,6 +40,7 @@ class PermissionSeeder extends Seeder
         }
 
         $permissions[] = 'reports.consolidated.view';
+        $permissions[] = 'billing.backfill';
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);

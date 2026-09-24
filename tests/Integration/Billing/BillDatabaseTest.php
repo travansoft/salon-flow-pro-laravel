@@ -24,8 +24,7 @@ class BillDatabaseTest extends TestCase
         Bill::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
-        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
-        app(BranchContext::class)->set($branchA);
+        app(BranchContext::class)->set(Branch::defaultForTenant($tenantA->id));
 
         $this->assertSame(1, Bill::count());
     }
@@ -57,6 +56,7 @@ class BillDatabaseTest extends TestCase
         $bill = Bill::factory()->create(['tenant_id' => $tenant->id]);
         $lineItem = $bill->lineItems()->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $bill->branch_id,
             'staff_profile_id' => $staffProfile->id,
             'description' => 'Haircut',
             'unit_price' => 500,

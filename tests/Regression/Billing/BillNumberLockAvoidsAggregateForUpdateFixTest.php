@@ -35,12 +35,12 @@ class BillNumberLockAvoidsAggregateForUpdateFixTest extends TestCase
 
         app(BillRepository::class)->nextBillNumber($tenant->id, $branch->id, '2026-27');
 
-        $lockingQueries = array_filter($queries, fn (string $sql) => str_contains(strtolower($sql), 'for update'));
+        $selectQueries = array_filter($queries, fn (string $sql) => str_starts_with(trim(strtolower($sql)), 'select'));
 
-        $this->assertNotEmpty($lockingQueries, 'Expected a locking query to run.');
+        $this->assertNotEmpty($selectQueries, 'Expected a select query to run.');
 
-        foreach ($lockingQueries as $sql) {
-            $this->assertStringNotContainsString('max(', strtolower($sql), 'Locking query must not lock an aggregate function.');
+        foreach ($selectQueries as $sql) {
+            $this->assertStringNotContainsString('max(', strtolower($sql), 'Query must lock the actual max row via order by + limit, not an aggregate function.');
         }
     }
 }

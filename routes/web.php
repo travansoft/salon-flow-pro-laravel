@@ -232,6 +232,11 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::put('/bills/{bill}/payments', [BillsController::class, 'recordPayment'])->name("bills.recordPayment{$nameSuffix}");
         });
 
+        Route::middleware('permission:billing.backfill')->group(function () use ($nameSuffix): void {
+            Route::get('/bills/backfill', [BillsController::class, 'backfillCreate'])->name("bills.backfillCreate{$nameSuffix}");
+            Route::post('/bills/backfill', [BillsController::class, 'backfillStore'])->name("bills.backfillStore{$nameSuffix}");
+        });
+
         Route::middleware('permission:billing.edit')->group(function () use ($nameSuffix): void {
             Route::put('/bills/{bill}/refund', [BillsController::class, 'refund'])->name("bills.refund{$nameSuffix}");
         });

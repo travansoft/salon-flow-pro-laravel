@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Billing\BackfillBillRequest;
 use App\Http\Requests\Billing\GenerateBillFromAppointmentRequest;
 use App\Http\Requests\Billing\RecordPaymentRequest;
 use App\Http\Requests\Billing\RefundBillRequest;
@@ -15,6 +16,7 @@ use App\Services\TenantUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use InvalidArgumentException;
 
@@ -52,6 +54,47 @@ class BillsController extends Controller
         abort_unless($request->user()->can('billing.create'), 403);
 
         return view('admin.bills.create');
+    }
+
+    public function backfillCreate(Request $request): View
+    {
+        abort_unless($request->user()->can('billing.backfill'), 403);
+
+        return view('admin.bills.backfill');
+    }
+
+    public function backfillStore(BackfillBillRequest $request): JsonResponse
+    {
+        abort_unless($request->user()->can('billing.backfill'), 403);
+
+        $data = $request->validated();
+        $client = $this->quickBillService->resolveClient([
+            'client_id' => $data['client_id'] ?? null,
+            'name' => $data['client_name'] ?? null,
+            'phone' => $data['client_phone'] ?? null,
+            'gst_number' => $data['client_gst_number'] ?? null,
+        ]);
+
+        $billDate = Carbon::parse($data['bill_date'])->startOfDay();
+
+        $bill = $this->billingService->createManualBill(
+            $client->id,
+            $request->user()->id,
+            $data['items'],
+            (float) ($data['discount_percent'] ?? 0),
+            $billDate,
+        );
+
+        $this->billingService->recordPayments($bill, [
+            ['method' => $data['payment_method'], 'amount' => (float) $bill->total],
+        ], $request->user()->id);
+
+        return response()->json([
+            'bill_id' => $bill->id,
+            'bill_number' => $bill->bill_number,
+            'total' => (float) $bill->total,
+            'redirect' => $this->tenantUrl->route('bills.show', ['bill' => $bill]),
+        ]);
     }
 
     public function generateFromAppointment(GenerateBillFromAppointmentRequest $request, string $subdomain, Appointment $appointment): RedirectResponse
