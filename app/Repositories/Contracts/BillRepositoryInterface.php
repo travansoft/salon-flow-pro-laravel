@@ -9,7 +9,7 @@ interface BillRepositoryInterface
 {
     public function findById(int $id): ?Bill;
 
-    public function nextBillNumber(int $tenantId, string $financialYear): int;
+    public function nextBillNumber(int $tenantId, int $branchId, string $financialYear): int;
 
     /** @return Collection<int, Bill> */
     public function search(string $fromDate, string $toDate, ?string $clientName, ?string $clientPhone): Collection;

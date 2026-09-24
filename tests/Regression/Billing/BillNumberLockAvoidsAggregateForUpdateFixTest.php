@@ -2,6 +2,7 @@
 
 namespace Tests\Regression\Billing;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\BillRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,13 +26,14 @@ class BillNumberLockAvoidsAggregateForUpdateFixTest extends TestCase
     public function test_next_bill_number_locks_a_row_not_an_aggregate(): void
     {
         $tenant = Tenant::factory()->create();
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
 
         $queries = [];
         DB::listen(function ($query) use (&$queries): void {
             $queries[] = $query->sql;
         });
 
-        app(BillRepository::class)->nextBillNumber($tenant->id, '2026-27');
+        app(BillRepository::class)->nextBillNumber($tenant->id, $branch->id, '2026-27');
 
         $lockingQueries = array_filter($queries, fn (string $sql) => str_contains(strtolower($sql), 'for update'));
 

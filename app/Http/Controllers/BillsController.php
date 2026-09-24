@@ -102,7 +102,7 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy']);
+        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy', 'branch']);
 
         return view('admin.bills.show', ['bill' => $bill]);
     }
@@ -111,7 +111,7 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $bill->load(['lineItems.service', 'client', 'tenant', 'createdBy']);
+        $bill->load(['lineItems.service', 'client', 'tenant', 'createdBy', 'branch']);
 
         return view('admin.bills.print', ['bill' => $bill]);
     }

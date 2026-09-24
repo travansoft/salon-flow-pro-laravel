@@ -109,7 +109,9 @@ class Bill extends Model
             return (string) $this->bill_number;
         }
 
-        return "INV/{$this->financial_year}/".str_pad((string) $this->bill_number, 5, '0', STR_PAD_LEFT);
+        $prefix = $this->branch?->invoice_prefix ?? 'INV';
+
+        return "{$prefix}/{$this->financial_year}/".str_pad((string) $this->bill_number, 5, '0', STR_PAD_LEFT);
     }
 
     /** @param Builder<Bill> $query */

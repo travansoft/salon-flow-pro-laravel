@@ -130,7 +130,7 @@ class BillingService
                 'branch_id' => $branch->id,
                 'client_id' => $clientId,
                 'appointment_id' => $appointmentId,
-                'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $financialYear),
+                'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $branch->id, $financialYear),
                 'financial_year' => $financialYear,
                 'subtotal' => $subtotal,
                 'discount_percent' => $discountRate,
