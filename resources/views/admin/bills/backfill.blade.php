@@ -15,12 +15,8 @@
             @csrf
 
             <div class="sfp-field">
-                <label class="sfp-label">Bill date</label>
-                <div style="display:flex;gap:8px">
-                    <select id="backfill-day" class="sfp-input"></select>
-                    <select id="backfill-month" class="sfp-input"></select>
-                    <select id="backfill-year" class="sfp-input"></select>
-                </div>
+                <label class="sfp-label" for="backfill-date">Bill date</label>
+                <input type="date" id="backfill-date" class="sfp-input" max="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}">
                 @error('bill_date')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
@@ -104,12 +100,12 @@
             </div>
 
             <div class="sfp-field" style="margin-top:16px">
-                <label class="sfp-label">Amount already collected on &mdash; press 1, 2, or 3</label>
-                <div style="display:flex;gap:8px">
-                    <button type="button" class="sfp-btn-outline bill-method" data-method="cash" style="flex:1">1 &middot; Cash</button>
-                    <button type="button" class="sfp-btn-outline bill-method" data-method="card" style="flex:1">2 &middot; Card</button>
-                    <button type="button" class="sfp-btn-outline bill-method active" data-method="upi" style="flex:1">3 &middot; UPI</button>
-                </div>
+                <label class="sfp-label" for="bill-payment-method">Amount already collected via</label>
+                <select id="bill-payment-method" class="sfp-input">
+                    <option value="upi" selected>UPI</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                </select>
             </div>
 
             <div id="bill-feedback" style="font-size:13px;margin:10px 0;min-height:18px"></div>
@@ -202,9 +198,7 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     const eligibleStaffUrlTemplate = '{{ $tenantUrl->route('services.eligibleStaff', '__SERVICE_ID__') }}';
 
-    const dayInput = document.getElementById('backfill-day');
-    const monthInput = document.getElementById('backfill-month');
-    const yearInput = document.getElementById('backfill-year');
+    const billDateInput = document.getElementById('backfill-date');
 
     const clientSearch = document.getElementById('bill-client-search');
     const clientIdInput = document.getElementById('bill-client-id');
@@ -225,67 +219,18 @@
     const discountAmountEl = document.getElementById('bill-discount-amount');
     const totalEl = document.getElementById('bill-total');
 
-    const methodButtons = [...document.querySelectorAll('.bill-method')];
+    const paymentMethodSelect = document.getElementById('bill-payment-method');
     const feedback = document.getElementById('bill-feedback');
     const settleBtn = document.getElementById('bill-settle');
 
     let lines = [];
     let lineSeq = 0;
-    let paymentMethod = 'upi';
     let clientSelection = null;
 
     const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // ----- Date select boxes -----
-
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const today = new Date();
-
-    monthNames.forEach((name, index) => {
-        const option = document.createElement('option');
-        option.value = String(index + 1).padStart(2, '0');
-        option.textContent = name;
-        monthInput.appendChild(option);
-    });
-
-    for (let year = today.getFullYear(); year >= today.getFullYear() - 5; year--) {
-        const option = document.createElement('option');
-        option.value = String(year);
-        option.textContent = String(year);
-        yearInput.appendChild(option);
-    }
-
-    function daysInMonth(month, year) {
-        return new Date(Number(year), Number(month), 0).getDate();
-    }
-
-    function populateDays() {
-        const selected = dayInput.value;
-        const total = daysInMonth(monthInput.value, yearInput.value);
-
-        dayInput.innerHTML = '';
-        for (let day = 1; day <= total; day++) {
-            const option = document.createElement('option');
-            option.value = String(day).padStart(2, '0');
-            option.textContent = String(day);
-            dayInput.appendChild(option);
-        }
-
-        if (selected && Number(selected) <= total) {
-            dayInput.value = selected;
-        }
-    }
-
-    monthInput.value = String(today.getMonth() + 1).padStart(2, '0');
-    yearInput.value = String(today.getFullYear());
-    populateDays();
-    dayInput.value = String(today.getDate()).padStart(2, '0');
-
-    monthInput.addEventListener('change', populateDays);
-    yearInput.addEventListener('change', populateDays);
-
     function selectedBillDate() {
-        return `${yearInput.value}-${monthInput.value}-${dayInput.value}`;
+        return billDateInput.value;
     }
 
     function debounce(fn, delay) {
@@ -635,27 +580,6 @@
 
     discountInput.addEventListener('input', updateTotal);
 
-    // ----- Payment method -----
-
-    function selectMethod(method) {
-        paymentMethod = method;
-        methodButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.method === method));
-    }
-
-    methodButtons.forEach((btn) => {
-        btn.addEventListener('click', () => selectMethod(btn.dataset.method));
-    });
-
-    document.addEventListener('keydown', (event) => {
-        const active = document.activeElement;
-        const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active === discountInput || active?.classList?.contains('bill-line-qty');
-
-        if (!inFormField && (event.key === '1' || event.key === '2' || event.key === '3')) {
-            const map = { '1': 'cash', '2': 'card', '3': 'upi' };
-            selectMethod(map[event.key]);
-        }
-    });
-
     // ----- Submission -----
 
     function buildClientPayload() {
@@ -708,7 +632,7 @@
                     bill_date: selectedBillDate(),
                     ...buildClientPayload(),
                     items: buildItemsPayload(),
-                    payment_method: paymentMethod,
+                    payment_method: paymentMethodSelect.value,
                 }),
             });
 

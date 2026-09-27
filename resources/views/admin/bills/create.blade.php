@@ -92,12 +92,12 @@
             </div>
 
             <div class="sfp-field" style="margin-top:16px">
-                <label class="sfp-label">Payment method &mdash; press 1, 2, or 3</label>
-                <div style="display:flex;gap:8px">
-                    <button type="button" class="sfp-btn-outline bill-method" data-method="cash" style="flex:1">1 &middot; Cash</button>
-                    <button type="button" class="sfp-btn-outline bill-method" data-method="card" style="flex:1">2 &middot; Card</button>
-                    <button type="button" class="sfp-btn-outline bill-method active" data-method="upi" style="flex:1">3 &middot; UPI</button>
-                </div>
+                <label class="sfp-label" for="bill-payment-method">Payment method</label>
+                <select id="bill-payment-method" class="sfp-input">
+                    <option value="upi" selected>UPI</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                </select>
             </div>
 
             <div id="bill-feedback" style="font-size:13px;margin:10px 0;min-height:18px"></div>
@@ -209,13 +209,12 @@
     const discountAmountEl = document.getElementById('bill-discount-amount');
     const totalEl = document.getElementById('bill-total');
 
-    const methodButtons = [...document.querySelectorAll('.bill-method')];
+    const paymentMethodSelect = document.getElementById('bill-payment-method');
     const feedback = document.getElementById('bill-feedback');
     const settleBtn = document.getElementById('bill-settle');
 
     let lines = [];
     let lineSeq = 0;
-    let paymentMethod = 'upi';
     let clientSelection = null;
 
     const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -577,27 +576,6 @@
 
     discountInput.addEventListener('input', updateTotal);
 
-    // ----- Payment method -----
-
-    function selectMethod(method) {
-        paymentMethod = method;
-        methodButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.method === method));
-    }
-
-    methodButtons.forEach((btn) => {
-        btn.addEventListener('click', () => selectMethod(btn.dataset.method));
-    });
-
-    document.addEventListener('keydown', (event) => {
-        const active = document.activeElement;
-        const inFormField = active === clientSearch || active === clientPhoneInput || active === clientGstInput || active === itemSearch || active === discountInput || active?.classList?.contains('bill-line-qty');
-
-        if (!inFormField && (event.key === '1' || event.key === '2' || event.key === '3')) {
-            const map = { '1': 'cash', '2': 'card', '3': 'upi' };
-            selectMethod(map[event.key]);
-        }
-    });
-
     // ----- Submission -----
 
     function buildClientPayload() {
@@ -657,7 +635,7 @@
                 body: JSON.stringify({
                     ...buildClientPayload(),
                     items: buildItemsPayload(),
-                    payment_method: paymentMethod,
+                    payment_method: paymentMethodSelect.value,
                 }),
             });
 
