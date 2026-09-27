@@ -239,6 +239,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:billing.edit')->group(function () use ($nameSuffix): void {
             Route::put('/bills/{bill}/refund', [BillsController::class, 'refund'])->name("bills.refund{$nameSuffix}");
+            Route::put('/bills/{bill}/notes', [BillsController::class, 'updateNotes'])->name("bills.updateNotes{$nameSuffix}");
         });
 
         Route::middleware('permission:billing.view')->group(function () use ($nameSuffix): void {

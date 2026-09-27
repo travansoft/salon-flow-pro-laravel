@@ -166,7 +166,7 @@
         <thead>
             <tr>
                 <th>No</th>
-                <th>Name of product</th>
+                <th>Name of service</th>
                 <th class="num">Qty</th>
                 <th class="num">Rate</th>
                 <th class="num">Total</th>

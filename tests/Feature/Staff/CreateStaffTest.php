@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Staff;
 
+use App\Models\Branch;
 use App\Models\Designation;
 use App\Models\Service;
 use App\Models\User;
@@ -28,6 +29,7 @@ class CreateStaffTest extends TestCase
         $owner->assignRole('Owner');
         $service = Service::factory()->create(['tenant_id' => $this->tenant->id]);
         $designation = Designation::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Senior Stylist']);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $response = $this->actingAs($owner)->postToTenant('/staff', [
             'name' => 'Priya Nair',
@@ -38,6 +40,7 @@ class CreateStaffTest extends TestCase
             'password' => 'password123',
             'roles' => ['Stylist'],
             'service_ids' => [$service->id],
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertRedirect();
@@ -47,6 +50,8 @@ class CreateStaffTest extends TestCase
             'designation_id' => $designation->id,
             'tenant_id' => $this->tenant->id,
         ]);
+        $user = User::where('username', 'priya')->first();
+        $this->assertTrue($user->branches()->where('branches.id', $branch->id)->exists());
     }
 
     public function test_owner_can_create_staff_member_without_a_login(): void
@@ -72,6 +77,7 @@ class CreateStaffTest extends TestCase
         $owner = User::factory()->for($this->tenant)->create();
         $owner->assignRole('Owner');
         User::factory()->for($this->tenant)->create(['username' => 'priya']);
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
 
         $response = $this->actingAs($owner)->postToTenant('/staff', [
             'name' => 'Priya Nair',
@@ -79,6 +85,7 @@ class CreateStaffTest extends TestCase
             'username' => 'priya',
             'password' => 'password123',
             'roles' => ['Stylist'],
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertSessionHasErrors('username');
@@ -89,12 +96,15 @@ class CreateStaffTest extends TestCase
         $owner = User::factory()->for($this->tenant)->create();
         $owner->assignRole('Owner');
 
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
         $response = $this->actingAs($owner)->postToTenant('/staff', [
             'name' => 'Priya Nair',
             'create_login' => true,
             'username' => 'priya',
             'password' => 'password123',
             'roles' => ['NotARole'],
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertSessionHasErrors('roles.0');
@@ -110,6 +120,6 @@ class CreateStaffTest extends TestCase
             'create_login' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['username', 'password']);
+        $response->assertSessionHasErrors(['username', 'password', 'branch_ids']);
     }
 }

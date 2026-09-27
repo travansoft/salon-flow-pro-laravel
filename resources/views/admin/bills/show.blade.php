@@ -139,6 +139,21 @@
                     </div>
                 </div>
             @endcan
+
+            <div class="sfp-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <h2 class="sfp-card-title" style="margin:0">Note <span style="color:#94A19D;font-weight:400;font-size:11.5px">(internal, not printed)</span></h2>
+                    @can('billing.edit')
+                        <button type="button" class="sfp-action-link" style="background:none;border:none;cursor:pointer" data-bs-toggle="modal" data-bs-target="#editNoteModal">{{ $bill->notes ? 'Edit' : 'Add note' }}</button>
+                    @endcan
+                </div>
+
+                @if ($bill->notes)
+                    <p style="color:#66736F;font-size:13.5px;margin:0;white-space:pre-wrap">{{ $bill->notes }}</p>
+                @else
+                    <p style="color:#94A19D;font-size:13.5px;margin:0">No note added.</p>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -207,6 +222,36 @@
                         <div class="modal-footer">
                             <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Issue refund</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    @can('billing.edit')
+        <div class="modal fade" id="editNoteModal" tabindex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('bills.updateNotes', $bill) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editNoteModalLabel">Internal note</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="sfp-field">
+                                <label class="sfp-label">Note <span style="color:#94A19D;font-weight:400">(visible only in the system, never on the printed receipt)</span></label>
+                                <textarea name="notes" class="sfp-input" rows="4" maxlength="2000">{{ $bill->notes }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="sfp-btn-primary">Save note</button>
                         </div>
                     </form>
                 </div>

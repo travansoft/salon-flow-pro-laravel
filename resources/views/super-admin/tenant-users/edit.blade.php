@@ -59,6 +59,19 @@
                 @enderror
             </div>
 
+            <div class="sfp-field">
+                <label class="sfp-label">Branches *</label>
+                @foreach ($branches as $branch)
+                    <div class="form-check">
+                        <input type="checkbox" name="branch_ids[]" value="{{ $branch->id }}" id="branch-{{ $branch->id }}" class="form-check-input" @checked(collect(old('branch_ids', $assignedBranchIds))->contains($branch->id))>
+                        <label class="form-check-label" for="branch-{{ $branch->id }}">{{ $branch->name }}</label>
+                    </div>
+                @endforeach
+                @error('branch_ids')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div class="sfp-form-actions">
                 <button type="submit" class="sfp-btn-primary">Save</button>
             </div>

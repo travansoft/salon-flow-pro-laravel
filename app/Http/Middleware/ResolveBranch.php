@@ -52,6 +52,8 @@ class ResolveBranch
         if ($assignedBranchIds->isEmpty()) {
             $this->branchContext->markNoneResolved();
 
+            $request->session()->flash('no_branch_assigned', true);
+
             return $next($request);
         }
 
