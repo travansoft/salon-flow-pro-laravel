@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Repositories\Contracts\TenantRepositoryInterface;
 use App\Services\SuperAdmin\SuperAdminActivityLogger;
 use App\Services\SuperAdmin\TenantService;
+use App\Services\SuperAdminUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,6 +20,7 @@ class TenantsController extends Controller
         private TenantRepositoryInterface $tenantRepository,
         private TenantService $tenantService,
         private SuperAdminActivityLogger $activityLogger,
+        private SuperAdminUrl $superAdminUrl,
     ) {}
 
     public function index(Request $request): View
@@ -42,7 +44,7 @@ class TenantsController extends Controller
 
         $this->activityLogger->log('tenant.created', "Created tenant \"{$tenant->name}\"", $tenant);
 
-        return redirect()->route('superAdmin.tenants.show', $tenant)->with('status', 'Tenant created.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.show', $tenant))->with('status', 'Tenant created.');
     }
 
     public function show(Tenant $tenant): View
@@ -61,7 +63,7 @@ class TenantsController extends Controller
 
         $this->activityLogger->log('tenant.updated', "Updated tenant \"{$tenant->name}\"", $tenant);
 
-        return redirect()->route('superAdmin.tenants.show', $tenant)->with('status', 'Tenant updated.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.show', $tenant))->with('status', 'Tenant updated.');
     }
 
     public function destroy(Tenant $tenant): RedirectResponse
@@ -71,6 +73,6 @@ class TenantsController extends Controller
         $action = $tenant->is_active ? 'tenant.activated' : 'tenant.deactivated';
         $this->activityLogger->log($action, ($tenant->is_active ? 'Activated' : 'Deactivated')." tenant \"{$tenant->name}\"", $tenant);
 
-        return redirect()->route('superAdmin.tenants.index')->with('status', $tenant->is_active ? 'Tenant activated.' : 'Tenant deactivated.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.index'))->with('status', $tenant->is_active ? 'Tenant activated.' : 'Tenant deactivated.');
     }
 }

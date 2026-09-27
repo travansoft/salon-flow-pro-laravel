@@ -21,6 +21,11 @@ trait ActsAsSuperAdmin
         return 'http://admin.salonflow.test'.$uri;
     }
 
+    protected function superAdminByPathUrl(string $uri): string
+    {
+        return 'http://salonflow.test/admin'.$uri;
+    }
+
     protected function getFromSuperAdmin(string $uri): TestResponse
     {
         return $this->get($this->superAdminUrl($uri));
@@ -39,5 +44,10 @@ trait ActsAsSuperAdmin
     protected function deleteFromSuperAdmin(string $uri): TestResponse
     {
         return $this->delete($this->superAdminUrl($uri));
+    }
+
+    protected function postToSuperAdminByPath(string $uri, array $data = []): TestResponse
+    {
+        return $this->post($this->superAdminByPathUrl($uri), $data);
     }
 }
