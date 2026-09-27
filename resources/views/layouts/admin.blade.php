@@ -117,12 +117,6 @@
                         </a>
                     @endcan
 
-                    @can('branches.view')
-                        <a href="{{ $tenantUrl->route('branches.index') }}" class="sfp-nav-item {{ request()->routeIs('branches.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Branches
-                        </a>
-                    @endcan
-
                     <div class="sfp-sidebar-footer">
                         Role: <strong>{{ auth()->user()->getRoleNames()->first() ?? '—' }}</strong>
                     </div>

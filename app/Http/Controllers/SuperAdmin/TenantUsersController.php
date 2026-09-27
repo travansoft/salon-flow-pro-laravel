@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
 use App\Services\SuperAdmin\SuperAdminActivityLogger;
 use App\Services\SuperAdmin\TenantUserService;
+use App\Services\SuperAdminUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,6 +22,7 @@ class TenantUsersController extends Controller
         private TenantUserRepositoryInterface $tenantUserRepository,
         private TenantUserService $tenantUserService,
         private SuperAdminActivityLogger $activityLogger,
+        private SuperAdminUrl $superAdminUrl,
     ) {}
 
     public function index(Request $request, Tenant $tenant): View
@@ -51,7 +53,7 @@ class TenantUsersController extends Controller
 
         $this->activityLogger->log('tenant_user.created', "Created user \"{$user->username}\" for tenant \"{$tenant->name}\"", $user);
 
-        return redirect()->route('superAdmin.tenants.users.index', $tenant)->with('status', 'User created.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.users.index', $tenant))->with('status', 'User created.');
     }
 
     public function edit(Tenant $tenant, User $tenantUser): View
@@ -73,7 +75,7 @@ class TenantUsersController extends Controller
 
         $this->activityLogger->log('tenant_user.updated', "Updated user \"{$tenantUser->username}\" for tenant \"{$tenant->name}\"", $tenantUser);
 
-        return redirect()->route('superAdmin.tenants.users.index', $tenant)->with('status', 'User updated.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.users.index', $tenant))->with('status', 'User updated.');
     }
 
     public function destroy(Tenant $tenant, User $tenantUser): RedirectResponse
@@ -88,6 +90,6 @@ class TenantUsersController extends Controller
             $this->activityLogger->log('tenant_user.login_enabled', "Enabled login for \"{$tenantUser->username}\" ({$tenant->name})", $tenantUser);
         }
 
-        return redirect()->route('superAdmin.tenants.users.index', $tenant)->with('status', 'User login access updated.');
+        return redirect($this->superAdminUrl->route('superAdmin.tenants.users.index', $tenant))->with('status', 'User login access updated.');
     }
 }
