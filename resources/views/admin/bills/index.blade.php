@@ -9,6 +9,9 @@
             <p class="sfp-page-subtitle">Bills from {{ $fromDate }} to {{ $toDate }}.</p>
         </div>
         <div class="sfp-row">
+            @can('billing.backfill')
+                <a href="{{ $tenantUrl->route('bills.backfillCreate') }}" class="sfp-btn-outline">Backfill old bill</a>
+            @endcan
             @can('billing.create')
                 <a href="{{ $tenantUrl->route('bills.create') }}" class="sfp-btn-primary">New bill</a>
             @endcan

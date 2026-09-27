@@ -69,6 +69,12 @@ class UpdateStaffRequest extends FormRequest
                 'integer',
                 Rule::exists('services', 'id')->where('tenant_id', $tenantId),
             ],
+
+            'branch_ids' => ['sometimes', 'array'],
+            'branch_ids.*' => [
+                'integer',
+                Rule::exists('branches', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
+            ],
         ];
     }
 }

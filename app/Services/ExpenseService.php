@@ -16,15 +16,18 @@ class ExpenseService
         private ExpenseRepositoryInterface $expenseRepository,
         private ExpenseCategoryRepositoryInterface $expenseCategoryRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data): Expense
     {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
         return $this->expenseRepository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'category_id' => $data['category_id'] ?? null,
             'description' => $data['description'],
             'amount' => $data['amount'],

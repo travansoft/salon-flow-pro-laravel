@@ -27,6 +27,9 @@
                     </div>
                 </div>
                 <div class="sfp-topbar-actions">
+                    @if (auth()->user()->branches()->count() > 1)
+                        <x-branch-switcher :branches="auth()->user()->branches" :current="$currentBranch ?? null" />
+                    @endif
                     @can('billing.create')
                         <a href="{{ $tenantUrl->route('bills.create') }}" class="sfp-btn-dark">+ New bill</a>
                     @endcan
@@ -111,6 +114,12 @@
                     @can('settings.view')
                         <a href="{{ $tenantUrl->route('settings.edit') }}" class="sfp-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Settings
+                        </a>
+                    @endcan
+
+                    @can('branches.view')
+                        <a href="{{ $tenantUrl->route('branches.index') }}" class="sfp-nav-item {{ request()->routeIs('branches.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Branches
                         </a>
                     @endcan
 

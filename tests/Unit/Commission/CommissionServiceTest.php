@@ -4,6 +4,7 @@ namespace Tests\Unit\Commission;
 
 use App\Models\Bill;
 use App\Models\BillLineItem;
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\ServiceCategory;
 use App\Models\StaffIncentive;
@@ -11,6 +12,7 @@ use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Repositories\Contracts\CommissionRateRepositoryInterface;
 use App\Repositories\Contracts\StaffIncentiveRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\CommissionService;
 use App\Services\TenantContext;
 use Illuminate\Database\Eloquent\Collection;
@@ -27,6 +29,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -70,6 +74,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -99,6 +105,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -128,6 +136,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         $service = $this->serviceWithMockedIncentives();
@@ -141,6 +151,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         CommissionRate::factory()->create([
@@ -169,6 +181,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         CommissionRate::factory()->create([
@@ -197,6 +211,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         CommissionRate::factory()->create([
@@ -253,6 +269,8 @@ class CommissionServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         $staffIncentiveRepository = Mockery::mock(StaffIncentiveRepositoryInterface::class);

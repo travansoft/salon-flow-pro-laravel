@@ -2,9 +2,11 @@
 
 namespace Tests\Integration\Designations;
 
+use App\Models\Branch;
 use App\Models\Designation;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,6 +24,8 @@ class DesignationDatabaseTest extends TestCase
         Designation::factory()->create(['tenant_id' => $tenantB->id, 'name' => 'Manager']);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $this->assertSame(1, Designation::count());
     }
 
@@ -29,6 +33,8 @@ class DesignationDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $designation = Designation::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Manager']);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id, 'designation_id' => $designation->id]);
 
@@ -39,6 +45,8 @@ class DesignationDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $designation = Designation::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id, 'designation_id' => $designation->id]);
 

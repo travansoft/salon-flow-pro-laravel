@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\BridalEngagementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'client_id', 'event_date', 'venue', 'notes', 'status'])]
-#[ScopedBy([TenantScope::class])]
+#[Fillable(['tenant_id', 'branch_id', 'client_id', 'event_date', 'venue', 'notes', 'status'])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class BridalEngagement extends Model
 {
     /** @use HasFactory<BridalEngagementFactory> */
@@ -44,6 +45,12 @@ class BridalEngagement extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Client, $this> */

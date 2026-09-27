@@ -20,6 +20,7 @@ class PermissionSeeder extends Seeder
         'dashboard',
         'commissions',
         'settings',
+        'branches',
     ];
 
     /** @var array<int, string> */
@@ -37,6 +38,9 @@ class PermissionSeeder extends Seeder
                 $permissions[] = "{$module}.{$action}";
             }
         }
+
+        $permissions[] = 'reports.consolidated.view';
+        $permissions[] = 'billing.backfill';
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);

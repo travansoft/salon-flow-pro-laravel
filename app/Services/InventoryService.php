@@ -14,6 +14,7 @@ class InventoryService
         private ProductRepositoryInterface $productRepository,
         private InventoryCategoryRepositoryInterface $categoryRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -21,6 +22,7 @@ class InventoryService
     {
         return $this->productRepository->create([
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
             'category_id' => $data['category_id'] ?? null,
             'name' => $data['name'],
             'sku' => $data['sku'] ?? null,
@@ -54,6 +56,7 @@ class InventoryService
         return DB::transaction(function () use ($product, $quantityDelta, $reason, $adjustedById): Product {
             $product->stockAdjustments()->create([
                 'tenant_id' => $product->tenant_id,
+                'branch_id' => $product->branch_id,
                 'adjusted_by' => $adjustedById,
                 'quantity_delta' => $quantityDelta,
                 'reason' => $reason,
@@ -72,6 +75,7 @@ class InventoryService
     {
         return $this->categoryRepository->create([
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
             'name' => $data['name'],
             'is_active' => $data['is_active'] ?? true,
         ]);

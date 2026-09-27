@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\StaffIncentiveFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -10,8 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'staff_profile_id', 'amount', 'reason', 'awarded_date', 'awarded_by'])]
-#[ScopedBy([TenantScope::class])]
+#[Fillable(['tenant_id', 'branch_id', 'staff_profile_id', 'amount', 'reason', 'awarded_date', 'awarded_by'])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class StaffIncentive extends Model
 {
     /** @use HasFactory<StaffIncentiveFactory> */
@@ -30,6 +31,12 @@ class StaffIncentive extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<StaffProfile, $this> */

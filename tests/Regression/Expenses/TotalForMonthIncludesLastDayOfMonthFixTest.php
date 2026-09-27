@@ -2,10 +2,12 @@
 
 namespace Tests\Regression\Expenses;
 
+use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ExpenseCategoryRepository;
 use App\Repositories\Eloquent\ExpenseRepository;
+use App\Services\BranchContext;
 use App\Services\ExpenseService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,6 +30,8 @@ class TotalForMonthIncludesLastDayOfMonthFixTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         Expense::factory()->create(['tenant_id' => $tenant->id, 'amount' => 100, 'expense_date' => '2026-02-01']);
         Expense::factory()->create(['tenant_id' => $tenant->id, 'amount' => 50, 'expense_date' => '2026-02-28']);
@@ -36,6 +40,7 @@ class TotalForMonthIncludesLastDayOfMonthFixTest extends TestCase
             app(ExpenseRepository::class),
             app(ExpenseCategoryRepository::class),
             $tenantContext,
+            $branchContext,
         );
 
         $total = $service->totalForMonth(Carbon::parse('2026-02-15'));
@@ -53,6 +58,8 @@ class TotalForMonthIncludesLastDayOfMonthFixTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         Expense::factory()->create(['tenant_id' => $tenant->id, 'amount' => 75, 'expense_date' => '2026-03-01']);
 
@@ -60,6 +67,7 @@ class TotalForMonthIncludesLastDayOfMonthFixTest extends TestCase
             app(ExpenseRepository::class),
             app(ExpenseCategoryRepository::class),
             $tenantContext,
+            $branchContext,
         );
 
         $total = $service->totalForMonth(Carbon::parse('2026-03-01'));

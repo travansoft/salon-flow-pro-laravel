@@ -3,8 +3,10 @@
 namespace Tests\Integration\Billing;
 
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,6 +24,7 @@ class BillDatabaseTest extends TestCase
         Bill::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        app(BranchContext::class)->set(Branch::defaultForTenant($tenantA->id));
 
         $this->assertSame(1, Bill::count());
     }
@@ -30,6 +33,8 @@ class BillDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $bill = Bill::factory()->create(['tenant_id' => $tenant->id]);
         $bill->payments()->create(['tenant_id' => $tenant->id, 'method' => 'cash', 'amount' => 500]);
@@ -44,11 +49,14 @@ class BillDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $bill = Bill::factory()->create(['tenant_id' => $tenant->id]);
         $lineItem = $bill->lineItems()->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $bill->branch_id,
             'staff_profile_id' => $staffProfile->id,
             'description' => 'Haircut',
             'unit_price' => 500,

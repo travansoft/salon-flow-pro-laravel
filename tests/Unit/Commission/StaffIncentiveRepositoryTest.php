@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Commission;
 
+use App\Models\Branch;
 use App\Models\StaffIncentive;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Eloquent\StaffIncentiveRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -20,6 +22,8 @@ class StaffIncentiveRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $awardedBy = User::factory()->for($tenant)->create();
 
@@ -27,6 +31,7 @@ class StaffIncentiveRepositoryTest extends TestCase
 
         $incentive = $repository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'staff_profile_id' => $staff->id,
             'amount' => 500,
             'reason' => 'Client praise',
@@ -45,6 +50,8 @@ class StaffIncentiveRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $otherStaff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 

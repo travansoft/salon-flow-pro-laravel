@@ -2,10 +2,12 @@
 
 namespace Tests\Regression\Commission;
 
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\ServiceCategory;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\CommissionService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +32,8 @@ class StaffSpecificRateWinsOverNewerCategoryRateFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 

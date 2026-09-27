@@ -2,8 +2,10 @@
 
 namespace Tests\Integration\BridalEngagements;
 
+use App\Models\Branch;
 use App\Models\BridalEngagement;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,6 +23,8 @@ class BridalEngagementDatabaseTest extends TestCase
         BridalEngagement::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, BridalEngagement::count());
     }
@@ -29,6 +33,8 @@ class BridalEngagementDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $engagement = BridalEngagement::factory()->create(['tenant_id' => $tenant->id]);
 

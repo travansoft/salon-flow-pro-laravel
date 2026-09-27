@@ -2,10 +2,12 @@
 
 namespace Tests\Regression\Services;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\ServiceCatalogService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +32,8 @@ class PriceHistoryNotSkippedFixTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 499]);
@@ -43,7 +47,7 @@ class PriceHistoryNotSkippedFixTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $service->update($existingService, ['price' => '499.01'], changedBy: $owner->id);
 
@@ -55,6 +59,8 @@ class PriceHistoryNotSkippedFixTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $existingService = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 500]);
@@ -68,7 +74,7 @@ class PriceHistoryNotSkippedFixTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
 
         $service->update($existingService, ['price' => '500.00'], changedBy: $owner->id);
 

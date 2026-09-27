@@ -2,9 +2,11 @@
 
 namespace Tests\Integration\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffLeaveRequest;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\LeaveRequestService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +22,8 @@ class LeaveRequestShiftBlockingTest extends TestCase
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $leaveRequest = StaffLeaveRequest::factory()->create([
             'tenant_id' => $tenant->id,

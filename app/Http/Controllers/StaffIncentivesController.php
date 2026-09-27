@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Commission\StoreStaffIncentiveRequest;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\CommissionService;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
@@ -17,6 +18,7 @@ class StaffIncentivesController extends Controller
         private StaffProfileRepositoryInterface $staffProfileRepository,
         private CommissionService $commissionService,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -36,6 +38,7 @@ class StaffIncentivesController extends Controller
         $this->commissionService->awardIncentive([
             ...$request->validated(),
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
             'awarded_by' => $request->user()->id,
         ]);
 

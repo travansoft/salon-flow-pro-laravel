@@ -3,9 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,6 +24,15 @@ class BillFactory extends Factory
     {
         return [
             'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'client_id' => fn (array $attributes) => Client::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'bill_number' => fake()->unique()->numberBetween(1, 100000),
             'subtotal' => 500,

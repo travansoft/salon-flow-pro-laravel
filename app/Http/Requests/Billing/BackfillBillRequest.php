@@ -9,26 +9,20 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreManualBillRequest extends FormRequest
+class BackfillBillRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         $tenantId = app(TenantContext::class)->get()->id;
 
         return [
+            'bill_date' => ['required', 'date', 'before_or_equal:today'],
             'client_id' => [
                 'nullable', 'integer',
                 Rule::exists('clients', 'id')->where('tenant_id', $tenantId),
@@ -65,6 +59,7 @@ class StoreManualBillRequest extends FormRequest
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.quantity' => ['sometimes', 'integer', 'min:1'],
             'items.*.tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'payment_method' => ['required', Rule::in(['cash', 'card', 'upi'])],
         ];
     }
 }

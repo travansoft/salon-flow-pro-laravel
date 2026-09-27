@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\BillFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,11 +15,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'tenant_id', 'client_id', 'appointment_id', 'bill_number', 'financial_year', 'subtotal', 'tax_amount', 'total',
+    'tenant_id', 'branch_id', 'client_id', 'appointment_id', 'bill_number', 'financial_year', 'subtotal', 'tax_amount', 'total',
     'cgst_amount', 'sgst_amount', 'igst_amount', 'discount_percent', 'discount_amount',
     'amount_paid', 'amount_refunded', 'status', 'created_by',
 ])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Bill extends Model
 {
     /** @use HasFactory<BillFactory> */
@@ -53,6 +54,12 @@ class Bill extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Client, $this> */
@@ -102,7 +109,9 @@ class Bill extends Model
             return (string) $this->bill_number;
         }
 
-        return "INV/{$this->financial_year}/".str_pad((string) $this->bill_number, 5, '0', STR_PAD_LEFT);
+        $prefix = $this->branch?->invoice_prefix ?? 'INV';
+
+        return "{$prefix}/{$this->financial_year}/".str_pad((string) $this->bill_number, 5, '0', STR_PAD_LEFT);
     }
 
     /** @param Builder<Bill> $query */

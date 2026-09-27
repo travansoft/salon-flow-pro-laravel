@@ -3,11 +3,13 @@
 namespace Tests\Unit\Appointments;
 
 use App\Models\Appointment;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\StaffAvailabilityService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +28,8 @@ class StaffAvailabilityServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $monday = now()->next(1)->setTime(10, 0);
@@ -48,6 +52,8 @@ class StaffAvailabilityServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $monday = now()->next(1)->setTime(20, 0);
@@ -70,6 +76,8 @@ class StaffAvailabilityServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $monday = now()->next(1)->setTime(10, 0);
@@ -102,6 +110,8 @@ class StaffAvailabilityServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $monday = now()->next(1)->setTime(10, 0);

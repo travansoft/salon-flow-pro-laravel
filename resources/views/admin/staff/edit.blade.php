@@ -75,8 +75,21 @@
                         <span class="sfp-invalid-feedback">{{ $message }}</span>
                     @enderror
                 </div>
+
+                <div class="sfp-card-title" style="margin-top: 24px;">Branches</div>
+                <div class="sfp-field">
+                    @foreach ($branches as $branch)
+                        <div class="form-check">
+                            <input type="checkbox" name="branch_ids[]" value="{{ $branch->id }}" id="branch-{{ $branch->id }}" class="form-check-input" @checked(collect(old('branch_ids', $staff->user->branches->pluck('id')))->contains($branch->id))>
+                            <label class="form-check-label" for="branch-{{ $branch->id }}">{{ $branch->name }}</label>
+                        </div>
+                    @endforeach
+                    @error('branch_ids')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
             @else
-                <p style="color: #94A19D; font-size: 13px; margin-top: 16px;">This staff member has no login. Roles apply only to staff with system access.</p>
+                <p style="color: #94A19D; font-size: 13px; margin-top: 16px;">This staff member has no login. Roles and branch access apply only to staff with system access.</p>
             @endif
 
             <div class="sfp-card-title" style="margin-top: 24px;">Services</div>

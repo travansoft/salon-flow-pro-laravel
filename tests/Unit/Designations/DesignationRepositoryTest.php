@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\Designations;
 
+use App\Models\Branch;
 use App\Models\Designation;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\DesignationRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class DesignationRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         Designation::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Senior Stylist']);
         Designation::factory()->inactive()->create(['tenant_id' => $tenant->id, 'name' => 'Retired Role']);
 
@@ -32,6 +36,8 @@ class DesignationRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         Designation::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Stylist']);
         Designation::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Front Desk']);
 
@@ -46,6 +52,8 @@ class DesignationRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $designation = Designation::factory()->create(['tenant_id' => $tenant->id]);
 
         $repository = app(DesignationRepository::class);

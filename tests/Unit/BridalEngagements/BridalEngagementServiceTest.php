@@ -2,12 +2,14 @@
 
 namespace Tests\Unit\BridalEngagements;
 
+use App\Models\Branch;
 use App\Models\BridalEngagement;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\BridalEngagementService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,6 +40,8 @@ class BridalEngagementServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $trialStart = now()->next(1)->setTime(10, 0);
@@ -69,6 +73,8 @@ class BridalEngagementServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $trialStart = now()->next(1)->setTime(10, 0);
@@ -98,6 +104,8 @@ class BridalEngagementServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $trialStart = now()->next(1)->setTime(10, 0);

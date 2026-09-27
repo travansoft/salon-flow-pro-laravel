@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
 
 #[Fillable([
     'tenant_id',
+    'branch_id',
     'category_id',
     'description',
     'amount',
@@ -24,7 +26,7 @@ use Illuminate\Support\Carbon;
     'receipt_path',
     'created_by',
 ])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Expense extends Model
 {
     /** @use HasFactory<ExpenseFactory> */
@@ -44,6 +46,12 @@ class Expense extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<ExpenseCategory, $this> */

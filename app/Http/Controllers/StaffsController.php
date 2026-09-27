@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Models\StaffProfile;
+use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\DesignationRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
@@ -21,6 +22,7 @@ class StaffsController extends Controller
         private StaffProfileRepositoryInterface $staffProfileRepository,
         private DesignationRepositoryInterface $designationRepository,
         private ServiceRepositoryInterface $serviceRepository,
+        private BranchRepositoryInterface $branchRepository,
         private StaffService $staffService,
         private TenantUrl $tenantUrl,
     ) {}
@@ -42,6 +44,7 @@ class StaffsController extends Controller
             'designations' => $this->designationRepository->getActive(),
             'roles' => Role::all(),
             'services' => $this->serviceRepository->getActive(),
+            'branches' => $this->branchRepository->getActive(),
         ]);
     }
 
@@ -70,6 +73,7 @@ class StaffsController extends Controller
             'designations' => $this->designationRepository->getActive(),
             'roles' => Role::all(),
             'services' => $this->serviceRepository->getActive(),
+            'branches' => $this->branchRepository->getActive(),
         ]);
     }
 

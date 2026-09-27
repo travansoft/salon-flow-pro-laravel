@@ -2,9 +2,11 @@
 
 namespace Tests\Regression\Services;
 
+use App\Models\Branch;
 use App\Models\Service;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ServiceRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,6 +28,8 @@ class SearchMatchesPartialCodeCaseInsensitiveFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         Service::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Gents Haircut', 'code' => '101']);
         Service::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Hydra Facial', 'code' => '102']);

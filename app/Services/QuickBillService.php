@@ -107,7 +107,7 @@ class QuickBillService
                     'staff_profile_id' => $staffProfileId,
                     'description' => $service->name,
                     'quantity' => $item['quantity'] ?? 1,
-                    'unit_price' => (float) $service->price,
+                    'unit_price' => isset($item['unit_price']) ? (float) $item['unit_price'] : (float) $service->price,
                     'tax_rate' => (float) ($service->tax_rate ?? $tenant->default_gst_rate),
                 ];
 

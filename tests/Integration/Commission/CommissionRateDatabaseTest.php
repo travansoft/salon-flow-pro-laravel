@@ -2,10 +2,12 @@
 
 namespace Tests\Integration\Commission;
 
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\ServiceCategory;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +20,8 @@ class CommissionRateDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -48,6 +52,8 @@ class CommissionRateDatabaseTest extends TestCase
         CommissionRate::factory()->create(['tenant_id' => $tenantB->id]);
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
 
         $this->assertSame(1, CommissionRate::count());
     }
@@ -56,6 +62,8 @@ class CommissionRateDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $rate = CommissionRate::factory()->create(['tenant_id' => $tenant->id]);
 
         $rate->delete();
@@ -69,6 +77,8 @@ class CommissionRateDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $rate = CommissionRate::factory()->create([
             'tenant_id' => $tenant->id,

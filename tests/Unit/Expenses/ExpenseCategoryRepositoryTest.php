@@ -2,9 +2,11 @@
 
 namespace Tests\Unit\Expenses;
 
+use App\Models\Branch;
 use App\Models\ExpenseCategory;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ExpenseCategoryRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +19,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -29,6 +33,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         ExpenseCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Utilities']);
         ExpenseCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Marketing']);
@@ -44,6 +50,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
         ExpenseCategory::factory()->inactive()->create(['tenant_id' => $tenant->id]);
@@ -57,6 +65,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $repository = new ExpenseCategoryRepository(new ExpenseCategory);
 
@@ -69,6 +79,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Original']);
 
@@ -82,6 +94,8 @@ class ExpenseCategoryRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
 

@@ -17,6 +17,7 @@ class AppointmentService
         private AppointmentRepositoryInterface $appointmentRepository,
         private StaffAvailabilityService $availabilityService,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /**
@@ -25,6 +26,7 @@ class AppointmentService
     public function book(int $clientId, Carbon $startAt, array $lineItems, ?string $notes = null): Appointment
     {
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
 
         $resolvedLineItems = $this->resolveLineItems($startAt, $lineItems);
         $endAt = collect($resolvedLineItems)->max('end_at');
@@ -39,9 +41,10 @@ class AppointmentService
             }
         }
 
-        return DB::transaction(function () use ($tenant, $clientId, $startAt, $endAt, $resolvedLineItems, $notes): Appointment {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $startAt, $endAt, $resolvedLineItems, $notes): Appointment {
             $appointment = $this->appointmentRepository->create([
                 'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'client_id' => $clientId,
                 'start_at' => $startAt,
                 'end_at' => $endAt,
@@ -183,6 +186,7 @@ class AppointmentService
     {
         $appointment->statusHistories()->create([
             'tenant_id' => $appointment->tenant_id,
+            'branch_id' => $appointment->branch_id,
             'from_status' => $fromStatus,
             'to_status' => $toStatus,
             'reason' => $reason,
@@ -196,6 +200,7 @@ class AppointmentService
 
         $appointment->reminders()->create([
             'tenant_id' => $appointment->tenant_id,
+            'branch_id' => $appointment->branch_id,
             'type' => AppointmentReminder::TypeConfirmation,
             'channel' => 'whatsapp',
             'scheduled_for' => now(),
@@ -204,6 +209,7 @@ class AppointmentService
 
         $appointment->reminders()->create([
             'tenant_id' => $appointment->tenant_id,
+            'branch_id' => $appointment->branch_id,
             'type' => AppointmentReminder::TypeReminder,
             'channel' => 'whatsapp',
             'scheduled_for' => $appointment->start_at->copy()->subHours(2),

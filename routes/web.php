@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\BillsController;
+use App\Http\Controllers\BranchesController;
+use App\Http\Controllers\BranchSwitcherController;
 use App\Http\Controllers\BridalEngagementsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CommissionEarningsController;
@@ -226,9 +228,13 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/bills/create', [BillsController::class, 'create'])->name("bills.create{$nameSuffix}");
             Route::get('/services/{service}/eligible-staff', [ServicesController::class, 'eligibleStaff'])->name("services.eligibleStaff{$nameSuffix}");
             Route::post('/appointments/{appointment}/bill', [BillsController::class, 'generateFromAppointment'])->name("bills.generateFromAppointment{$nameSuffix}");
-            Route::post('/bills', [BillsController::class, 'storeManual'])->name("bills.storeManual{$nameSuffix}");
             Route::post('/bills/settle', [BillsController::class, 'settle'])->name("bills.settle{$nameSuffix}");
             Route::put('/bills/{bill}/payments', [BillsController::class, 'recordPayment'])->name("bills.recordPayment{$nameSuffix}");
+        });
+
+        Route::middleware('permission:billing.backfill')->group(function () use ($nameSuffix): void {
+            Route::get('/bills/backfill', [BillsController::class, 'backfillCreate'])->name("bills.backfillCreate{$nameSuffix}");
+            Route::post('/bills/backfill', [BillsController::class, 'backfillStore'])->name("bills.backfillStore{$nameSuffix}");
         });
 
         Route::middleware('permission:billing.edit')->group(function () use ($nameSuffix): void {
@@ -293,6 +299,10 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/reports', [ReportsController::class, 'index'])->name("reports.index{$nameSuffix}");
         });
 
+        Route::middleware('permission:reports.consolidated.view')->group(function () use ($nameSuffix): void {
+            Route::get('/reports/consolidated', [ReportsController::class, 'consolidated'])->name("reports.consolidated{$nameSuffix}");
+        });
+
         Route::middleware('permission:settings.view')->group(function () use ($nameSuffix): void {
             Route::get('/settings', [TenantSettingsController::class, 'edit'])->name("settings.edit{$nameSuffix}");
         });
@@ -300,6 +310,30 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
         Route::middleware('permission:settings.edit')->group(function () use ($nameSuffix): void {
             Route::put('/settings', [TenantSettingsController::class, 'update'])->name("settings.update{$nameSuffix}");
         });
+
+        Route::middleware('permission:branches.view')->group(function () use ($nameSuffix): void {
+            Route::get('/branches', [BranchesController::class, 'index'])->name("branches.index{$nameSuffix}");
+        });
+
+        Route::middleware('permission:branches.create')->group(function () use ($nameSuffix): void {
+            Route::get('/branches/create', [BranchesController::class, 'create'])->name("branches.create{$nameSuffix}");
+            Route::post('/branches', [BranchesController::class, 'store'])->name("branches.store{$nameSuffix}");
+        });
+
+        Route::middleware('permission:branches.edit')->group(function () use ($nameSuffix): void {
+            Route::get('/branches/{branch}/edit', [BranchesController::class, 'edit'])->name("branches.edit{$nameSuffix}");
+            Route::put('/branches/{branch}', [BranchesController::class, 'update'])->name("branches.update{$nameSuffix}");
+        });
+
+        Route::middleware('permission:branches.view')->group(function () use ($nameSuffix): void {
+            Route::get('/branches/{branch}', [BranchesController::class, 'show'])->name("branches.show{$nameSuffix}");
+        });
+
+        Route::middleware('permission:branches.delete')->group(function () use ($nameSuffix): void {
+            Route::delete('/branches/{branch}', [BranchesController::class, 'destroy'])->name("branches.destroy{$nameSuffix}");
+        });
+
+        Route::put('/branch-switch', [BranchSwitcherController::class, 'update'])->name("branchSwitcher.update{$nameSuffix}");
     });
 };
 

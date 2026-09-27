@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Repositories\Contracts\AppointmentRepositoryInterface;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\BridalEngagementRepositoryInterface;
 use App\Repositories\Contracts\ClientRepositoryInterface;
 use App\Repositories\Contracts\CommissionRateRepositoryInterface;
@@ -25,6 +26,7 @@ use App\Repositories\Contracts\TenantUserRepositoryInterface;
 use App\Repositories\Contracts\TimeSlotRepositoryInterface;
 use App\Repositories\Eloquent\AppointmentRepository;
 use App\Repositories\Eloquent\BillRepository;
+use App\Repositories\Eloquent\BranchRepository;
 use App\Repositories\Eloquent\BridalEngagementRepository;
 use App\Repositories\Eloquent\ClientRepository;
 use App\Repositories\Eloquent\CommissionRateRepository;
@@ -44,6 +46,7 @@ use App\Repositories\Eloquent\SuperAdminActivityLogRepository;
 use App\Repositories\Eloquent\TenantRepository;
 use App\Repositories\Eloquent\TenantUserRepository;
 use App\Repositories\Eloquent\TimeSlotRepository;
+use App\Services\BranchContext;
 use App\Services\Contracts\ReminderChannelInterface;
 use App\Services\LogReminderChannel;
 use App\Services\SuperAdminUrl;
@@ -61,9 +64,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(TenantContext::class);
+        $this->app->singleton(BranchContext::class);
         $this->app->singleton(TenantUrl::class);
         $this->app->singleton(SuperAdminUrl::class);
 
+        $this->app->bind(BranchRepositoryInterface::class, BranchRepository::class);
         $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
         $this->app->bind(MainDomainRepositoryInterface::class, MainDomainRepository::class);
         $this->app->bind(StaffProfileRepositoryInterface::class, StaffProfileRepository::class);
@@ -99,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.admin', function ($view): void {
             $view->with('tenant', $this->app->make(TenantContext::class)->get());
+            $view->with('currentBranch', $this->app->make(BranchContext::class)->get());
         });
 
         View::composer('*', function ($view): void {

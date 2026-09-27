@@ -13,6 +13,9 @@
                 <a href="{{ $tenantUrl->route('reports.index').'?period='.$value }}"
                    class="{{ $period === $value ? 'sfp-btn-primary' : 'sfp-btn-outline' }}">{{ $label }}</a>
             @endforeach
+            @can('reports.consolidated.view')
+                <a href="{{ $tenantUrl->route('reports.consolidated') }}" class="sfp-btn-outline">All branches</a>
+            @endcan
         </div>
     </div>
 

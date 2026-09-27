@@ -2,12 +2,14 @@
 
 namespace Tests\Unit\Appointments;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
 use App\Models\Tenant;
 use App\Models\WalkIn;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use App\Services\WalkInService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +23,8 @@ class WalkInServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $walkIn = app(WalkInService::class)->join(['name' => 'Imran', 'phone' => '9999999999']);
 
@@ -32,6 +36,8 @@ class WalkInServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
@@ -47,6 +53,8 @@ class WalkInServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         StaffShift::factory()->create([

@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Commission;
 
+use App\Models\Branch;
 use App\Models\CommissionRate;
 use App\Models\ServiceCategory;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\CommissionRateRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,6 +21,8 @@ class CommissionRateRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         CommissionRate::factory()->create(['tenant_id' => $tenant->id, 'rate_percent' => 10, 'effective_from' => '2026-01-01']);
         CommissionRate::factory()->create(['tenant_id' => $tenant->id, 'rate_percent' => 15, 'effective_from' => '2026-06-01']);
@@ -34,6 +38,8 @@ class CommissionRateRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         $category = ServiceCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -41,6 +47,7 @@ class CommissionRateRepositoryTest extends TestCase
 
         $rate = $repository->create([
             'tenant_id' => $tenant->id,
+            'branch_id' => $branch->id,
             'staff_profile_id' => $staff->id,
             'service_category_id' => $category->id,
             'rate_percent' => 20,
@@ -58,6 +65,8 @@ class CommissionRateRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $rate = CommissionRate::factory()->create(['tenant_id' => $tenant->id, 'rate_percent' => 10]);
 
         $repository = app(CommissionRateRepository::class);
@@ -70,6 +79,8 @@ class CommissionRateRepositoryTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $rate = CommissionRate::factory()->create(['tenant_id' => $tenant->id]);
 
         $repository = app(CommissionRateRepository::class);

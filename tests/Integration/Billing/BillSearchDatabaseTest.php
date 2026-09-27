@@ -3,9 +3,11 @@
 namespace Tests\Integration\Billing;
 
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,6 +20,8 @@ class BillSearchDatabaseTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Divya Menon', 'phone' => '9876543210']);
         $otherClient = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Sarath Kumar', 'phone' => '9123456780']);

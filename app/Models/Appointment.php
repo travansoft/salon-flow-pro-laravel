@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,10 +16,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'tenant_id', 'client_id', 'start_at', 'end_at', 'status', 'notes', 'cancellation_reason',
+    'tenant_id', 'branch_id', 'client_id', 'start_at', 'end_at', 'status', 'notes', 'cancellation_reason',
     'is_on_location', 'venue_address', 'bridal_engagement_id', 'engagement_role',
 ])]
-#[ScopedBy([TenantScope::class])]
+#[ScopedBy([TenantScope::class, BranchScope::class])]
 class Appointment extends Model
 {
     /** @use HasFactory<AppointmentFactory> */
@@ -48,6 +49,12 @@ class Appointment extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /** @return BelongsTo<Client, $this> */

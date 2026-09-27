@@ -6,6 +6,7 @@ use App\Http\Requests\Appointments\StoreTimeSlotRequest;
 use App\Http\Requests\Appointments\UpdateTimeSlotRequest;
 use App\Models\TimeSlot;
 use App\Repositories\Contracts\TimeSlotRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,7 @@ class TimeSlotsController extends Controller
     public function __construct(
         private TimeSlotRepositoryInterface $timeSlotRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -44,6 +46,7 @@ class TimeSlotsController extends Controller
 
         $this->timeSlotRepository->create([
             'tenant_id' => $this->tenantContext->get()->id,
+            'branch_id' => $this->branchContext->get()->id,
             'start_time' => $data['start_time'].':00',
             'end_time' => $data['end_time'].':00',
             'is_active' => $data['is_active'] ?? true,

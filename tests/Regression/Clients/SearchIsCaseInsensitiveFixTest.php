@@ -2,9 +2,11 @@
 
 namespace Tests\Regression\Clients;
 
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
 use App\Repositories\Eloquent\ClientRepository;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,6 +26,8 @@ class SearchIsCaseInsensitiveFixTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Priya Nair', 'phone' => '9000000001']);
 

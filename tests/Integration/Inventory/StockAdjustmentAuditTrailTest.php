@@ -2,10 +2,12 @@
 
 namespace Tests\Integration\Inventory;
 
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\InventoryService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +21,8 @@ class StockAdjustmentAuditTrailTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $user = User::factory()->for($tenant)->create();
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id, 'quantity_on_hand' => 20]);
@@ -44,6 +48,8 @@ class StockAdjustmentAuditTrailTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $user = User::factory()->for($tenant)->create();
 
         $product = Product::factory()->create(['tenant_id' => $tenant->id, 'quantity_on_hand' => 10]);
@@ -62,6 +68,8 @@ class StockAdjustmentAuditTrailTest extends TestCase
         $tenantB = Tenant::factory()->create();
 
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         $userA = User::factory()->for($tenantA)->create();
         $productA = Product::factory()->create(['tenant_id' => $tenantA->id]);
 
@@ -69,6 +77,8 @@ class StockAdjustmentAuditTrailTest extends TestCase
         $service->adjustStock($productA, 5, 'Restock', $userA->id);
 
         app(TenantContext::class)->set($tenantB);
+        $branchB = Branch::factory()->create(['tenant_id' => $tenantB->id]);
+        app(BranchContext::class)->set($branchB);
 
         $this->assertSame(0, StockAdjustment::count());
     }

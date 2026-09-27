@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\Client;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -14,6 +15,7 @@ class BillingService
     public function __construct(
         private BillRepositoryInterface $billRepository,
         private TenantContext $tenantContext,
+        private BranchContext $branchContext,
     ) {}
 
     /**
@@ -38,15 +40,15 @@ class BillingService
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0): Bill
+    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null): Bill
     {
-        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent);
+        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0): Bill
+    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null): Bill
     {
         if ($lineItems === []) {
             throw new InvalidArgumentException('A bill must have at least one line item.');
@@ -57,11 +59,17 @@ class BillingService
         }
 
         $tenant = $this->tenantContext->get();
+        $branch = $this->branchContext->get();
+
+        if (! $branch) {
+            throw new InvalidArgumentException('A branch must be selected before a bill can be created.');
+        }
+
         $client = Client::query()->findOrFail($clientId);
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
         $discountRate = (string) $discountPercent;
 
-        return DB::transaction(function () use ($tenant, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate): Bill {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate, $billDate): Bill {
             $subtotal = '0';
             $discountAmount = '0';
             $taxAmount = '0';
@@ -116,13 +124,15 @@ class BillingService
             }
 
             $total = bcadd(bcsub($subtotal, $discountAmount, 2), $taxAmount, 2);
-            $financialYear = FinancialYear::forDate(now());
+            $effectiveDate = $billDate ?? now();
+            $financialYear = FinancialYear::forDate($effectiveDate);
 
             $bill = $this->billRepository->create([
                 'tenant_id' => $tenant->id,
+                'branch_id' => $branch->id,
                 'client_id' => $clientId,
                 'appointment_id' => $appointmentId,
-                'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $financialYear),
+                'bill_number' => $this->billRepository->nextBillNumber($tenant->id, $branch->id, $financialYear),
                 'financial_year' => $financialYear,
                 'subtotal' => $subtotal,
                 'discount_percent' => $discountRate,
@@ -136,8 +146,12 @@ class BillingService
                 'created_by' => $createdBy,
             ]);
 
+            if ($billDate) {
+                $bill->forceFill(['created_at' => $billDate, 'updated_at' => $billDate])->save();
+            }
+
             foreach ($resolvedItems as $item) {
-                $bill->lineItems()->create(['tenant_id' => $tenant->id, ...$item]);
+                $bill->lineItems()->create(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, ...$item]);
             }
 
             return $bill->load('lineItems');

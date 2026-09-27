@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,6 +24,15 @@ class StaffShiftFactory extends Factory
 
         return [
             'tenant_id' => $staffProfile->tenant_id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'staff_profile_id' => $staffProfile->id,
             'day_of_week' => fake()->numberBetween(0, 6),
             'start_time' => '09:00',

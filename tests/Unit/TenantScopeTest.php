@@ -3,8 +3,10 @@
 namespace Tests\Unit;
 
 use App\Exceptions\NoTenantContextException;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,6 +34,8 @@ class TenantScopeTest extends TestCase
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
         app(TenantContext::class)->set($tenantA);
+        $branchA = Branch::factory()->create(['tenant_id' => $tenantA->id]);
+        app(BranchContext::class)->set($branchA);
         Client::factory()->create(['tenant_id' => $tenantA->id]);
         Client::factory()->create(['tenant_id' => $tenantB->id]);
 

@@ -6,10 +6,12 @@ use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\BillLineItem;
 use App\Models\BillPayment;
+use App\Models\Branch;
 use App\Models\Product;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\ReportService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,6 +26,8 @@ class ReportServiceCalculationIntegrationTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $today = Carbon::today();
 

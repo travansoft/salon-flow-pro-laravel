@@ -3,8 +3,10 @@
 namespace Tests\Unit;
 
 use App\Http\Middleware\EnsureUserBelongsToTenant;
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -23,9 +25,13 @@ class EnsureUserBelongsToTenantTest extends TestCase
         $user = User::factory()->for($ownTenant)->create();
 
         app(TenantContext::class)->set($ownTenant);
+        $ownBranch = Branch::factory()->create(['tenant_id' => $ownTenant->id]);
+        app(BranchContext::class)->set($ownBranch);
         Auth::login($user);
 
         app(TenantContext::class)->set($otherTenant);
+        $otherBranch = Branch::factory()->create(['tenant_id' => $otherTenant->id]);
+        app(BranchContext::class)->set($otherBranch);
         $request = Request::create('http://other.salonflow.test/dashboard');
         $this->attachSession($request);
 
@@ -43,6 +49,8 @@ class EnsureUserBelongsToTenantTest extends TestCase
         $user = User::factory()->for($tenant)->create();
 
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         Auth::login($user);
 
         $request = Request::create('http://mejora.salonflow.test/dashboard');
@@ -59,6 +67,8 @@ class EnsureUserBelongsToTenantTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $request = Request::create('http://mejora.salonflow.test/login');
         $this->attachSession($request);

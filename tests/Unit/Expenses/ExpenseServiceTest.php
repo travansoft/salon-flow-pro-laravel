@@ -2,12 +2,14 @@
 
 namespace Tests\Unit\Expenses;
 
+use App\Models\Branch;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\ExpenseCategoryRepositoryInterface;
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
+use App\Services\BranchContext;
 use App\Services\ExpenseService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,6 +28,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $expenseRepository = Mockery::mock(ExpenseRepositoryInterface::class);
@@ -36,7 +40,7 @@ class ExpenseServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'description' => 'Monthly rent',
@@ -54,6 +58,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $expenseRepository = Mockery::mock(ExpenseRepositoryInterface::class);
@@ -63,7 +69,7 @@ class ExpenseServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $created = $service->create([
             'description' => 'One-off purchase',
@@ -84,6 +90,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
         $owner = User::factory()->for($tenant)->create();
 
         $expenseRepository = Mockery::mock(ExpenseRepositoryInterface::class);
@@ -93,7 +101,7 @@ class ExpenseServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $receipt = UploadedFile::fake()->create('receipt.pdf', 100);
 
@@ -114,6 +122,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $expense = Expense::factory()->recurring('monthly')->create(['tenant_id' => $tenant->id]);
 
@@ -128,7 +138,7 @@ class ExpenseServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $service->update($expense, ['is_recurring' => false]);
 
@@ -141,6 +151,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $expense = Expense::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -149,7 +161,7 @@ class ExpenseServiceTest extends TestCase
 
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $this->assertTrue($service->delete($expense));
     }
@@ -159,6 +171,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         Expense::factory()->create(['tenant_id' => $tenant->id, 'amount' => 100, 'expense_date' => '2026-08-05']);
         Expense::factory()->create(['tenant_id' => $tenant->id, 'amount' => 250.50, 'expense_date' => '2026-08-20']);
@@ -168,7 +182,7 @@ class ExpenseServiceTest extends TestCase
         $expenseRepository = app(ExpenseRepositoryInterface::class);
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $total = $service->totalForMonth(Carbon::parse('2026-08-15'));
 
@@ -180,6 +194,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $expenseRepository = Mockery::mock(ExpenseRepositoryInterface::class);
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
@@ -188,7 +204,7 @@ class ExpenseServiceTest extends TestCase
             ->with(Mockery::on(fn (array $data) => $data['tenant_id'] === $tenant->id && $data['name'] === 'Rent'))
             ->andReturnUsing(fn (array $data) => ExpenseCategory::create($data));
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $created = $service->createCategory(['name' => 'Rent']);
 
@@ -200,6 +216,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -213,7 +231,7 @@ class ExpenseServiceTest extends TestCase
                 return $model;
             });
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $service->updateCategory($category, ['name' => 'Renamed']);
 
@@ -225,6 +243,8 @@ class ExpenseServiceTest extends TestCase
         $tenant = Tenant::factory()->create();
         $tenantContext = app(TenantContext::class);
         $tenantContext->set($tenant);
+        $branchContext = app(BranchContext::class);
+        $branchContext->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
         $category = ExpenseCategory::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -232,7 +252,7 @@ class ExpenseServiceTest extends TestCase
         $categoryRepository = Mockery::mock(ExpenseCategoryRepositoryInterface::class);
         $categoryRepository->shouldReceive('delete')->once()->with($category)->andReturn(true);
 
-        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext);
+        $service = new ExpenseService($expenseRepository, $categoryRepository, $tenantContext, $branchContext);
 
         $this->assertTrue($service->deleteCategory($category));
     }

@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\WalkIn;
+use App\Services\BranchContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +21,16 @@ class WalkInFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => fn () => Tenant::factory()->create()->id,
+            'branch_id' => function (array $attributes) {
+                $branch = app(BranchContext::class)->get();
+
+                if ($branch && $branch->tenant_id === $attributes['tenant_id']) {
+                    return $branch->id;
+                }
+
+                return Branch::defaultForTenant($attributes['tenant_id'])->id;
+            },
             'name' => fake()->name(),
             'phone' => fake()->numerify('9#########'),
             'status' => WalkIn::StatusWaiting,

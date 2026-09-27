@@ -3,11 +3,13 @@
 namespace Tests\Unit\Billing;
 
 use App\Models\Bill;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BranchContext;
 use App\Services\QuickBillService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,6 +24,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 500]);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
@@ -43,6 +47,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 
@@ -60,6 +66,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 
@@ -73,6 +81,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id, 'price' => 200]);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
@@ -91,6 +101,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 
@@ -109,6 +121,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 
@@ -121,6 +135,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 
@@ -133,6 +149,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -153,6 +171,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $service = Service::factory()->create(['tenant_id' => $tenant->id]);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $ineligibleStaffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
@@ -172,6 +192,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = app(QuickBillService::class)->resolveClient(['name' => '', 'phone' => '', 'gst_number' => '']);
 
@@ -182,6 +204,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
 
         $client = app(QuickBillService::class)->resolveClient([
             'name' => 'Priya Nair',
@@ -202,6 +226,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $existing = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Priya Nair', 'phone' => '9876543210']);
 
         $resolved = app(QuickBillService::class)->resolveClient([
@@ -217,6 +243,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $selected = Client::factory()->create(['tenant_id' => $tenant->id]);
 
         $resolved = app(QuickBillService::class)->resolveClient([
@@ -232,6 +260,8 @@ class QuickBillServiceTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $client = Client::factory()->create(['tenant_id' => $tenant->id]);
         $staff = User::factory()->for($tenant)->create();
 

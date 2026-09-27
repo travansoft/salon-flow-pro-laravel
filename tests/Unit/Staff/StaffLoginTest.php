@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Staff;
 
+use App\Models\Branch;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
+use App\Services\BranchContext;
 use App\Services\StaffService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +21,8 @@ class StaffLoginTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
 
         app(StaffService::class)->disableLogin($staffProfile);
@@ -31,6 +35,8 @@ class StaffLoginTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         DB::table('sessions')->insert([
             'id' => 'test-session-id',
@@ -48,6 +54,8 @@ class StaffLoginTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->withoutLogin()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(InvalidArgumentException::class);
@@ -59,6 +67,8 @@ class StaffLoginTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
         app(StaffService::class)->disableLogin($staffProfile);
 
@@ -72,6 +82,8 @@ class StaffLoginTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
         $staffProfile = StaffProfile::factory()->withoutLogin()->create(['tenant_id' => $tenant->id]);
 
         $this->expectException(InvalidArgumentException::class);
