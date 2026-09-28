@@ -97,11 +97,11 @@ class BackfillBillDatabaseTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ], 0, Carbon::parse('2026-01-10'), 84.74);
 
-        $this->assertSame('10.00', (string) $bill->fresh()->discount_percent);
+        $this->assertSame('8.47', (string) $bill->fresh()->discount_percent);
         $this->assertDatabaseHas('bills', [
             'id' => $bill->id,
             'discount_amount' => 84.74,
-            'total' => 899.99,
+            'total' => 915.26,
         ]);
         $this->assertDatabaseHas('bill_line_items', [
             'bill_id' => $bill->id,

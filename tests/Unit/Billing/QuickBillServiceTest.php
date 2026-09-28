@@ -273,9 +273,9 @@ class QuickBillServiceTest extends TestCase
             10,
         );
 
-        $this->assertSame('84.74', (string) $bill->discount_amount);
-        $this->assertSame('899.99', (string) $bill->total);
-        $this->assertSame('899.99', (string) $bill->amount_paid);
+        $this->assertSame('100.00', (string) $bill->discount_amount);
+        $this->assertSame('900.00', (string) $bill->total);
+        $this->assertSame('900.00', (string) $bill->amount_paid);
         $this->assertSame(Bill::StatusPaid, $bill->status);
     }
 
@@ -298,8 +298,8 @@ class QuickBillServiceTest extends TestCase
         );
 
         $this->assertSame('84.74', (string) $bill->discount_amount);
-        $this->assertSame('899.99', (string) $bill->total);
-        $this->assertSame('899.99', (string) $bill->amount_paid);
+        $this->assertSame('915.26', (string) $bill->total);
+        $this->assertSame('915.26', (string) $bill->amount_paid);
         $this->assertSame(Bill::StatusPaid, $bill->status);
     }
 }

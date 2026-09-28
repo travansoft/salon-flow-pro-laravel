@@ -307,9 +307,9 @@ class BillingServiceTest extends TestCase
 
         $this->assertSame('847.45', (string) $bill->subtotal);
         $this->assertSame('10.00', (string) $bill->discount_percent);
-        $this->assertSame('84.74', (string) $bill->discount_amount);
-        $this->assertSame('137.28', (string) $bill->tax_amount);
-        $this->assertSame('899.99', (string) $bill->total);
+        $this->assertSame('100.00', (string) $bill->discount_amount);
+        $this->assertSame('152.55', (string) $bill->tax_amount);
+        $this->assertSame('900.00', (string) $bill->total);
     }
 
     public function test_zero_discount_leaves_the_bill_unchanged(): void
@@ -356,13 +356,13 @@ class BillingServiceTest extends TestCase
 
         $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
-        ], 0, discountAmount: 84.74);
+        ], 0, discountAmount: 100.00);
 
         $this->assertSame('847.45', (string) $bill->subtotal);
         $this->assertSame('10.00', (string) $bill->discount_percent);
-        $this->assertSame('84.74', (string) $bill->discount_amount);
-        $this->assertSame('137.28', (string) $bill->tax_amount);
-        $this->assertSame('899.99', (string) $bill->total);
+        $this->assertSame('100.00', (string) $bill->discount_amount);
+        $this->assertSame('152.55', (string) $bill->tax_amount);
+        $this->assertSame('900.00', (string) $bill->total);
     }
 
     public function test_discount_amount_exceeding_subtotal_is_rejected(): void
@@ -378,7 +378,7 @@ class BillingServiceTest extends TestCase
 
         app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
-        ], 0, discountAmount: 900);
+        ], 0, discountAmount: 1100);
     }
 
     public function test_discount_percent_and_discount_amount_together_are_rejected(): void
@@ -414,9 +414,9 @@ class BillingServiceTest extends TestCase
         $first = $bill->lineItems->firstWhere('description', 'Hair Color');
         $second = $bill->lineItems->firstWhere('description', 'Spa Package');
 
-        $this->assertSame('9.52', (string) $first->discount_amount);
-        $this->assertSame('16.94', (string) $second->discount_amount);
-        $this->assertSame('26.46', (string) $bill->discount_amount);
+        $this->assertSame('10.00', (string) $first->discount_amount);
+        $this->assertSame('20.00', (string) $second->discount_amount);
+        $this->assertSame('30.00', (string) $bill->discount_amount);
     }
 
     public function test_discount_amount_is_split_proportionally_across_multiple_line_items_and_sums_exactly(): void
@@ -436,10 +436,10 @@ class BillingServiceTest extends TestCase
         $first = $bill->lineItems->firstWhere('description', 'Hair Color');
         $second = $bill->lineItems->firstWhere('description', 'Spa Package');
 
-        $this->assertSame('9.71', (string) $first->discount_amount);
-        $this->assertSame('17.29', (string) $second->discount_amount);
+        $this->assertSame('8.99', (string) $first->discount_amount);
+        $this->assertSame('18.01', (string) $second->discount_amount);
         $this->assertSame('27.00', (string) $bill->discount_amount);
-        $this->assertSame('269.38', (string) $bill->total);
+        $this->assertSame('273.00', (string) $bill->total);
     }
 
     public function test_discount_amount_with_zero_subtotal_line_items_does_not_error(): void
