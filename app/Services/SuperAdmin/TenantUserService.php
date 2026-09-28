@@ -25,6 +25,7 @@ class TenantUserService
             ]);
 
             $user->syncRoles($data['roles'] ?? []);
+            $user->branches()->sync($data['branch_ids'] ?? []);
 
             return $user;
         });
@@ -48,6 +49,10 @@ class TenantUserService
 
             if (array_key_exists('roles', $data)) {
                 $user->syncRoles($data['roles']);
+            }
+
+            if (array_key_exists('branch_ids', $data)) {
+                $user->branches()->sync($data['branch_ids']);
             }
 
             return $user->refresh();

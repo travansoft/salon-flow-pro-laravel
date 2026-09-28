@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\SuperAdmin;
 
+use App\Models\Branch;
 use App\Models\PlatformAdmin;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
@@ -40,11 +41,14 @@ class ManageTenantUsersTest extends TestCase
 
     public function test_super_admin_can_create_a_tenant_user_with_a_role(): void
     {
+        $branch = Branch::factory()->for($this->tenant)->create();
+
         $response = $this->actingAs($this->admin, 'super_admin')->postToSuperAdmin("/tenants/{$this->tenant->id}/users", [
             'name' => 'Jane Owner',
             'username' => 'jane',
             'password' => 'secret',
             'roles' => ['Owner'],
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertRedirect();
@@ -54,16 +58,19 @@ class ManageTenantUsersTest extends TestCase
         ]);
         $user = User::withoutGlobalScope(TenantScope::class)->where('username', 'jane')->first();
         $this->assertTrue($user->hasRole('Owner'));
+        $this->assertTrue($user->branches()->where('branches.id', $branch->id)->exists());
     }
 
     public function test_username_must_be_unique_within_the_tenant(): void
     {
         User::factory()->for($this->tenant)->create(['username' => 'jane']);
+        $branch = Branch::factory()->for($this->tenant)->create();
 
         $response = $this->actingAs($this->admin, 'super_admin')->postToSuperAdmin("/tenants/{$this->tenant->id}/users", [
             'name' => 'Jane Duplicate',
             'username' => 'jane',
             'password' => 'secret',
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertSessionHasErrors('username');
@@ -73,11 +80,13 @@ class ManageTenantUsersTest extends TestCase
     {
         $otherTenant = Tenant::factory()->create();
         User::factory()->for($otherTenant)->create(['username' => 'jane']);
+        $branch = Branch::factory()->for($this->tenant)->create();
 
         $response = $this->actingAs($this->admin, 'super_admin')->postToSuperAdmin("/tenants/{$this->tenant->id}/users", [
             'name' => 'Jane Owner',
             'username' => 'jane',
             'password' => 'secret',
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertRedirect();
@@ -88,11 +97,14 @@ class ManageTenantUsersTest extends TestCase
     {
         $user = User::factory()->for($this->tenant)->create();
         $user->assignRole('Stylist');
+        $branch = Branch::factory()->for($this->tenant)->create();
+        $user->branches()->sync([$branch->id]);
 
         $response = $this->actingAs($this->admin, 'super_admin')->putToSuperAdmin("/tenants/{$this->tenant->id}/users/{$user->id}", [
             'name' => $user->name,
             'username' => $user->username,
             'roles' => ['Manager'],
+            'branch_ids' => [$branch->id],
         ]);
 
         $response->assertRedirect();

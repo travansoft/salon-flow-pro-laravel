@@ -40,15 +40,15 @@ class BillingService
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null): Bill
+    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
     {
-        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate);
+        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate, $discountAmount);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null): Bill
+    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
     {
         if ($lineItems === []) {
             throw new InvalidArgumentException('A bill must have at least one line item.');
@@ -56,6 +56,14 @@ class BillingService
 
         if ($discountPercent < 0 || $discountPercent > 100) {
             throw new InvalidArgumentException('Discount percentage must be between 0 and 100.');
+        }
+
+        if ($discountPercent > 0 && $discountAmount !== null) {
+            throw new InvalidArgumentException('Provide either a discount percent or a discount amount, not both.');
+        }
+
+        if ($discountAmount !== null && $discountAmount < 0) {
+            throw new InvalidArgumentException('Discount amount cannot be negative.');
         }
 
         $tenant = $this->tenantContext->get();
@@ -67,17 +75,13 @@ class BillingService
 
         $client = Client::query()->findOrFail($clientId);
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
-        $discountRate = (string) $discountPercent;
+        $discountAmountInput = $discountAmount !== null ? (string) $discountAmount : null;
+        $discountPercentInput = (string) $discountPercent;
 
-        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountRate, $billDate): Bill {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountPercentInput, $discountAmountInput, $billDate): Bill {
             $subtotal = '0';
-            $discountAmount = '0';
-            $taxAmount = '0';
-            $cgstAmount = '0';
-            $sgstAmount = '0';
-            $igstAmount = '0';
+            $lineIntermediates = [];
 
-            $resolvedItems = [];
             foreach ($lineItems as $item) {
                 $quantity = $item['quantity'] ?? 1;
                 $unitPriceInclusive = (string) $item['unit_price'];
@@ -92,16 +96,63 @@ class BillingService
                 $lineTotal = bcadd(bcdiv($lineTotalInclusive, $taxRateMultiplier, 10), '0', 2);
                 $unitPrice = bcdiv($lineTotal, (string) $quantity, 2);
 
-                $lineDiscount = bcmul($lineTotal, bcdiv($discountRate, '100', 4), 2);
+                $subtotal = bcadd($subtotal, $lineTotal, 2);
+
+                $lineIntermediates[] = [
+                    'item' => $item,
+                    'quantity' => $quantity,
+                    'taxRate' => $taxRate,
+                    'lineTotalInclusive' => $lineTotalInclusive,
+                    'lineTotal' => $lineTotal,
+                    'unitPrice' => $unitPrice,
+                ];
+            }
+
+            if ($discountAmountInput !== null && bccomp($discountAmountInput, $subtotal, 2) > 0) {
+                throw new InvalidArgumentException('Discount amount cannot exceed the bill subtotal.');
+            }
+
+            // Amount mode allocates the exact typed amount across lines by each
+            // line's share of the subtotal, with the last line absorbing the
+            // rounding remainder so the sum always equals the typed amount
+            // exactly — unlike percent mode, this never round-trips through a
+            // stored percent, so it can't drift by a paisa from what was typed.
+            $lineCount = count($lineIntermediates);
+            $allocatedDiscount = '0';
+
+            $discountAmount = '0';
+            $taxAmount = '0';
+            $cgstAmount = '0';
+            $sgstAmount = '0';
+            $igstAmount = '0';
+
+            $resolvedItems = [];
+            foreach ($lineIntermediates as $index => $line) {
+                $item = $line['item'];
+                $quantity = $line['quantity'];
+                $taxRate = $line['taxRate'];
+                $lineTotalInclusive = $line['lineTotalInclusive'];
+                $lineTotal = $line['lineTotal'];
+                $unitPrice = $line['unitPrice'];
+
+                if ($discountAmountInput !== null) {
+                    $isLastLine = $index === $lineCount - 1;
+                    $lineDiscount = $isLastLine
+                        ? bcsub($discountAmountInput, $allocatedDiscount, 2)
+                        : (bccomp($subtotal, '0', 2) === 0 ? '0' : bcmul($discountAmountInput, bcdiv($lineTotal, $subtotal, 10), 2));
+                    $allocatedDiscount = bcadd($allocatedDiscount, $lineDiscount, 2);
+                } else {
+                    $lineDiscount = bcmul($lineTotal, bcdiv($discountPercentInput, '100', 4), 2);
+                }
+
                 $taxableAmount = bcsub($lineTotal, $lineDiscount, 2);
 
-                $lineTax = bccomp($discountRate, '0', 2) === 0
+                $lineTax = bccomp($lineDiscount, '0', 2) === 0
                     ? bcsub($lineTotalInclusive, $lineTotal, 2)
                     : bcmul($taxableAmount, bcdiv($taxRate, '100', 4), 2);
 
                 [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 
-                $subtotal = bcadd($subtotal, $lineTotal, 2);
                 $discountAmount = bcadd($discountAmount, $lineDiscount, 2);
                 $taxAmount = bcadd($taxAmount, $lineTax, 2);
                 $cgstAmount = bcadd($cgstAmount, $lineCgst, 2);
@@ -122,6 +173,15 @@ class BillingService
                     'igst_amount' => $lineIgst,
                 ];
             }
+
+            // discount_percent is informational display only in amount mode
+            // (e.g. "Discount (10.00%)" on the printed bill) — it is derived
+            // from the final discount_amount, never fed back into the per-line
+            // math above, so it can't introduce the rounding drift a stored
+            // percent would if it were round-tripped through tax calculations.
+            $discountRate = $discountAmountInput !== null
+                ? (bccomp($subtotal, '0', 2) === 0 ? '0' : bcmul(bcdiv($discountAmount, $subtotal, 6), '100', 4))
+                : $discountPercentInput;
 
             $total = bcadd(bcsub($subtotal, $discountAmount, 2), $taxAmount, 2);
             $effectiveDate = $billDate ?? now();

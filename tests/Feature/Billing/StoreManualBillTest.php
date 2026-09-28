@@ -235,4 +235,64 @@ class StoreManualBillTest extends TestCase
 
         $response->assertJsonValidationErrors('discount_percent');
     }
+
+    public function test_discount_amount_reduces_the_bill_total(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
+            'client_id' => $client->id,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'upi',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('bills', [
+            'client_id' => $client->id,
+            'discount_amount' => 84.74,
+            'total' => 899.99,
+        ]);
+    }
+
+    public function test_providing_both_discount_percent_and_discount_amount_is_rejected(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'upi',
+        ]);
+
+        $response->assertJsonValidationErrors('discount_percent');
+    }
+
+    public function test_discount_amount_exceeding_the_subtotal_is_rejected(): void
+    {
+        $frontDesk = User::factory()->for($this->tenant)->create();
+        $frontDesk->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
+            'client_id' => $client->id,
+            'discount_amount' => 900,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'upi',
+        ]);
+
+        $response->assertStatus(422);
+    }
 }

@@ -25,6 +25,11 @@ class StoreTenantUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:4'],
             'roles' => ['sometimes', 'array'],
             'roles.*' => ['string', 'exists:roles,name'],
+            'branch_ids' => ['required', 'array', 'min:1'],
+            'branch_ids.*' => [
+                'integer',
+                Rule::exists('branches', 'id')->where('tenant_id', $tenant->id)->whereNull('deleted_at'),
+            ],
         ];
     }
 }

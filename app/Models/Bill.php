@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'tenant_id', 'branch_id', 'client_id', 'appointment_id', 'bill_number', 'financial_year', 'subtotal', 'tax_amount', 'total',
     'cgst_amount', 'sgst_amount', 'igst_amount', 'discount_percent', 'discount_amount',
-    'amount_paid', 'amount_refunded', 'status', 'created_by',
+    'amount_paid', 'amount_refunded', 'status', 'created_by', 'notes',
 ])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class Bill extends Model

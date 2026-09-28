@@ -72,8 +72,14 @@
 
             <div class="sfp-split-2">
                 <div class="sfp-field">
-                    <label class="sfp-label" for="bill-discount">Discount <span style="color:#94A19D;font-weight:400">(optional, %)</span></label>
-                    <input type="number" id="bill-discount" class="sfp-input" min="0" max="100" step="0.01" placeholder="0">
+                    <label class="sfp-label" for="bill-discount">Discount <span style="color:#94A19D;font-weight:400">(optional)</span></label>
+                    <div style="display:flex;gap:8px;align-items:stretch">
+                        <input type="number" id="bill-discount" class="sfp-input" min="0" step="0.01" placeholder="0" style="flex:1">
+                        <div style="display:flex;gap:4px">
+                            <button type="button" id="bill-discount-mode-percent" class="sfp-btn-primary" data-mode="percent" style="padding:0 14px">%</button>
+                            <button type="button" id="bill-discount-mode-amount" class="sfp-btn-outline" data-mode="amount" style="padding:0 14px">&#8377;</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -207,6 +213,8 @@
     const discountInput = document.getElementById('bill-discount');
     const discountRow = document.getElementById('bill-discount-row');
     const discountAmountEl = document.getElementById('bill-discount-amount');
+    const discountModePercentBtn = document.getElementById('bill-discount-mode-percent');
+    const discountModeAmountBtn = document.getElementById('bill-discount-mode-amount');
     const totalEl = document.getElementById('bill-total');
 
     const paymentMethodSelect = document.getElementById('bill-payment-method');
@@ -557,15 +565,30 @@
         updateTotal();
     }
 
-    function discountPercent() {
+    let discountMode = 'percent';
+
+    function setDiscountMode(mode) {
+        discountMode = mode;
+        discountModePercentBtn.className = mode === 'percent' ? 'sfp-btn-primary' : 'sfp-btn-outline';
+        discountModeAmountBtn.className = mode === 'amount' ? 'sfp-btn-primary' : 'sfp-btn-outline';
+        discountInput.max = mode === 'percent' ? '100' : '';
+        updateTotal();
+    }
+
+    discountModePercentBtn.addEventListener('click', () => setDiscountMode('percent'));
+    discountModeAmountBtn.addEventListener('click', () => setDiscountMode('amount'));
+
+    function discountValue() {
         const value = parseFloat(discountInput.value);
 
-        return Number.isFinite(value) && value >= 0 && value <= 100 ? value : 0;
+        return Number.isFinite(value) && value >= 0 ? value : 0;
     }
 
     function updateTotal() {
         const subtotal = lines.reduce((sum, line) => sum + (Number(line.priceInclusive) * Number(line.quantity)), 0);
-        const discount = subtotal * (discountPercent() / 100);
+        const discount = discountMode === 'percent'
+            ? subtotal * (discountValue() / 100)
+            : Math.min(discountValue(), subtotal);
         const total = subtotal - discount;
 
         subtotalEl.textContent = money(subtotal);
@@ -584,7 +607,8 @@
             client_name: clientSearch.value.trim() || null,
             client_phone: clientPhoneInput.value.trim() || null,
             client_gst_number: clientGstInput.value.trim() || null,
-            discount_percent: discountPercent(),
+            discount_percent: discountMode === 'percent' ? discountValue() : null,
+            discount_amount: discountMode === 'amount' ? discountValue() : null,
         };
     }
 
@@ -657,6 +681,7 @@
 
     settleBtn.addEventListener('click', createAndSettle);
 
+    setDiscountMode('percent');
     renderLines();
 })();
 </script>

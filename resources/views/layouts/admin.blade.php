@@ -138,6 +138,10 @@
                         <div class="sfp-alert-success">{{ session('status') }}</div>
                     @endif
 
+                    @if (session('no_branch_assigned'))
+                        <div class="sfp-alert-error">Your account has no branch assigned, so no data can be shown. Contact your administrator to assign a branch.</div>
+                    @endif
+
                     @yield('content')
                 </main>
             </div>

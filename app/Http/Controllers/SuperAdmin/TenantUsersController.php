@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\StoreTenantUserRequest;
 use App\Http\Requests\SuperAdmin\UpdateTenantUserRequest;
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
@@ -13,6 +14,7 @@ use App\Services\SuperAdmin\TenantUserService;
 use App\Services\SuperAdminUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 
@@ -44,6 +46,7 @@ class TenantUsersController extends Controller
         return view('super-admin.tenant-users.create', [
             'tenant' => $tenant,
             'roles' => Role::all(),
+            'branches' => $this->branchesForTenant($tenant),
         ]);
     }
 
@@ -64,6 +67,8 @@ class TenantUsersController extends Controller
             'tenant' => $tenant,
             'tenantUser' => $tenantUser,
             'roles' => Role::all(),
+            'branches' => $this->branchesForTenant($tenant),
+            'assignedBranchIds' => $tenantUser->branches()->pluck('branches.id'),
         ]);
     }
 
@@ -91,5 +96,14 @@ class TenantUsersController extends Controller
         }
 
         return redirect($this->superAdminUrl->route('superAdmin.tenants.users.index', $tenant))->with('status', 'User login access updated.');
+    }
+
+    /** @return Collection<int, Branch> */
+    private function branchesForTenant(Tenant $tenant): Collection
+    {
+        return Branch::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->active()
+            ->get();
     }
 }

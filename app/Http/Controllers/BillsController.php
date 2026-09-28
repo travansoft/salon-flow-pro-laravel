@@ -7,6 +7,7 @@ use App\Http\Requests\Billing\GenerateBillFromAppointmentRequest;
 use App\Http\Requests\Billing\RecordPaymentRequest;
 use App\Http\Requests\Billing\RefundBillRequest;
 use App\Http\Requests\Billing\SettleQuickBillRequest;
+use App\Http\Requests\Billing\UpdateBillNotesRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
@@ -77,13 +78,18 @@ class BillsController extends Controller
 
         $billDate = Carbon::parse($data['bill_date'])->startOfDay();
 
-        $bill = $this->billingService->createManualBill(
-            $client->id,
-            $request->user()->id,
-            $data['items'],
-            (float) ($data['discount_percent'] ?? 0),
-            $billDate,
-        );
+        try {
+            $bill = $this->billingService->createManualBill(
+                $client->id,
+                $request->user()->id,
+                $data['items'],
+                discountPercent: (float) ($data['discount_percent'] ?? 0),
+                billDate: $billDate,
+                discountAmount: isset($data['discount_amount']) ? (float) $data['discount_amount'] : null,
+            );
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
 
         $this->billingService->recordPayments($bill, [
             ['method' => $data['payment_method'], 'amount' => (float) $bill->total],
@@ -128,6 +134,7 @@ class BillsController extends Controller
                 $data['payment_method'],
                 $request->user()->id,
                 (float) ($data['discount_percent'] ?? 0),
+                isset($data['discount_amount']) ? (float) $data['discount_amount'] : null,
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
@@ -181,5 +188,14 @@ class BillsController extends Controller
         }
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Refund recorded.');
+    }
+
+    public function updateNotes(UpdateBillNotesRequest $request, string $subdomain, Bill $bill): RedirectResponse
+    {
+        abort_unless($request->user()->can('billing.edit'), 403);
+
+        $this->billRepository->update($bill, ['notes' => $request->validated()['notes'] ?? null]);
+
+        return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Note saved.');
     }
 }
