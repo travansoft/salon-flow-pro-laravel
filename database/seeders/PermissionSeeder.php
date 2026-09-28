@@ -41,6 +41,8 @@ class PermissionSeeder extends Seeder
 
         $permissions[] = 'reports.consolidated.view';
         $permissions[] = 'billing.backfill';
+        $permissions[] = 'billing.editBill';
+        $permissions[] = 'billing.cancel';
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
@@ -50,7 +52,7 @@ class PermissionSeeder extends Seeder
         $owner->syncPermissions($permissions);
 
         $manager = Role::firstOrCreate(['name' => 'Manager', 'guard_name' => 'web']);
-        $manager->syncPermissions($permissions);
+        $manager->syncPermissions(array_diff($permissions, ['billing.editBill', 'billing.cancel']));
 
         $frontDesk = Role::firstOrCreate(['name' => 'FrontDesk', 'guard_name' => 'web']);
         $frontDesk->syncPermissions([

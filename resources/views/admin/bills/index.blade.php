@@ -72,6 +72,11 @@
                 <span style="display:flex;gap:10px">
                     <a href="{{ $tenantUrl->route('bills.show', $bill) }}" style="font-size:12.5px;color:#1B4B8F">View</a>
                     <a href="{{ $tenantUrl->route('bills.print', $bill) }}" target="_blank" style="font-size:12.5px;color:#1B4B8F">Reprint</a>
+                    @can('billing.editBill')
+                        @if ($bill->status !== \App\Models\Bill::StatusVoid)
+                            <a href="{{ $tenantUrl->route('bills.edit', $bill) }}" style="font-size:12.5px;color:#1B4B8F">Edit</a>
+                        @endif
+                    @endcan
                 </span>
             </div>
         @empty

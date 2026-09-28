@@ -8,6 +8,7 @@ use App\Http\Requests\Billing\RecordPaymentRequest;
 use App\Http\Requests\Billing\RefundBillRequest;
 use App\Http\Requests\Billing\SettleQuickBillRequest;
 use App\Http\Requests\Billing\UpdateBillNotesRequest;
+use App\Http\Requests\Billing\UpdateBillRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
@@ -197,5 +198,43 @@ class BillsController extends Controller
         $this->billRepository->update($bill, ['notes' => $request->validated()['notes'] ?? null]);
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Note saved.');
+    }
+
+    public function edit(Request $request, string $subdomain, Bill $bill): View
+    {
+        abort_unless($request->user()->can('billing.editBill'), 403);
+        abort_if($bill->status === Bill::StatusVoid, 403, 'A cancelled bill cannot be edited.');
+
+        $bill->load('client');
+
+        return view('admin.bills.edit', ['bill' => $bill]);
+    }
+
+    public function update(UpdateBillRequest $request, string $subdomain, Bill $bill): RedirectResponse
+    {
+        abort_unless($request->user()->can('billing.editBill'), 403);
+        abort_if($bill->status === Bill::StatusVoid, 403, 'A cancelled bill cannot be edited.');
+
+        $data = $request->validated();
+        $client = $this->quickBillService->resolveClient([
+            'client_id' => $data['client_id'] ?? null,
+            'name' => $data['client_name'] ?? null,
+            'phone' => $data['client_phone'] ?? null,
+            'gst_number' => $data['client_gst_number'] ?? null,
+        ]);
+
+        $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null);
+
+        return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill updated.');
+    }
+
+    public function cancel(Request $request, string $subdomain, Bill $bill): RedirectResponse
+    {
+        abort_unless($request->user()->can('billing.cancel'), 403);
+        abort_if($bill->status === Bill::StatusVoid, 403, 'This bill is already cancelled.');
+
+        $this->billingService->cancel($bill);
+
+        return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill cancelled.');
     }
 }
