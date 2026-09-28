@@ -80,6 +80,7 @@ class BillingService
 
         return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountPercentInput, $discountAmountInput, $billDate): Bill {
             $subtotal = '0';
+            $subtotalInclusive = '0';
             $lineIntermediates = [];
 
             foreach ($lineItems as $item) {
@@ -97,6 +98,7 @@ class BillingService
                 $unitPrice = bcdiv($lineTotal, (string) $quantity, 2);
 
                 $subtotal = bcadd($subtotal, $lineTotal, 2);
+                $subtotalInclusive = bcadd($subtotalInclusive, $lineTotalInclusive, 2);
 
                 $lineIntermediates[] = [
                     'item' => $item,
@@ -108,7 +110,7 @@ class BillingService
                 ];
             }
 
-            if ($discountAmountInput !== null && bccomp($discountAmountInput, $subtotal, 2) > 0) {
+            if ($discountAmountInput !== null && bccomp($discountAmountInput, $subtotalInclusive, 2) > 0) {
                 throw new InvalidArgumentException('Discount amount cannot exceed the bill subtotal.');
             }
 
@@ -139,17 +141,21 @@ class BillingService
                     $isLastLine = $index === $lineCount - 1;
                     $lineDiscount = $isLastLine
                         ? bcsub($discountAmountInput, $allocatedDiscount, 2)
-                        : (bccomp($subtotal, '0', 2) === 0 ? '0' : bcmul($discountAmountInput, bcdiv($lineTotal, $subtotal, 10), 2));
+                        : (bccomp($subtotalInclusive, '0', 2) === 0 ? '0' : bcmul($discountAmountInput, bcdiv($lineTotalInclusive, $subtotalInclusive, 10), 2));
                     $allocatedDiscount = bcadd($allocatedDiscount, $lineDiscount, 2);
                 } else {
-                    $lineDiscount = bcmul($lineTotal, bcdiv($discountPercentInput, '100', 4), 2);
+                    $lineDiscount = bcmul($lineTotalInclusive, bcdiv($discountPercentInput, '100', 4), 2);
                 }
 
                 $taxableAmount = bcsub($lineTotal, $lineDiscount, 2);
 
-                $lineTax = bccomp($lineDiscount, '0', 2) === 0
-                    ? bcsub($lineTotalInclusive, $lineTotal, 2)
-                    : bcmul($taxableAmount, bcdiv($taxRate, '100', 4), 2);
+                // The discount is applied to the GST-inclusive amount the customer
+                // actually sees, so tax is the remainder needed to make the line's
+                // taxable value plus its tax equal (inclusive - discount) exactly —
+                // not the taxable value re-multiplied by the tax rate, which would
+                // also strip GST off the discount itself and shrink the bill by
+                // more than what was typed.
+                $lineTax = bcsub(bcsub($lineTotalInclusive, $lineDiscount, 2), $taxableAmount, 2);
 
                 [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 
@@ -180,7 +186,7 @@ class BillingService
             // math above, so it can't introduce the rounding drift a stored
             // percent would if it were round-tripped through tax calculations.
             $discountRate = $discountAmountInput !== null
-                ? (bccomp($subtotal, '0', 2) === 0 ? '0' : bcmul(bcdiv($discountAmount, $subtotal, 6), '100', 4))
+                ? (bccomp($subtotalInclusive, '0', 2) === 0 ? '0' : bcmul(bcdiv($discountAmount, $subtotalInclusive, 6), '100', 4))
                 : $discountPercentInput;
 
             $total = bcadd(bcsub($subtotal, $discountAmount, 2), $taxAmount, 2);

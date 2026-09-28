@@ -123,11 +123,11 @@ class SettleBillTest extends TestCase
         ]);
 
         $response->assertOk();
-        $this->assertEquals(899.99, $response->json('total'));
+        $this->assertEquals(900.00, $response->json('total'));
         $this->assertDatabaseHas('bills', [
             'id' => $response->json('bill_id'),
-            'discount_amount' => 84.74,
-            'amount_paid' => 899.99,
+            'discount_amount' => 100.00,
+            'amount_paid' => 900.00,
             'status' => 'paid',
         ]);
     }
@@ -148,11 +148,11 @@ class SettleBillTest extends TestCase
         ]);
 
         $response->assertOk();
-        $this->assertEquals(899.99, $response->json('total'));
+        $this->assertEquals(915.26, $response->json('total'));
         $this->assertDatabaseHas('bills', [
             'id' => $response->json('bill_id'),
             'discount_amount' => 84.74,
-            'amount_paid' => 899.99,
+            'amount_paid' => 915.26,
             'status' => 'paid',
         ]);
     }
@@ -184,7 +184,7 @@ class SettleBillTest extends TestCase
 
         $response = $this->actingAs($user)->postToTenant('/bills/settle', [
             'client_id' => $client->id,
-            'discount_amount' => 900,
+            'discount_amount' => 1100,
             'items' => [
                 ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
             ],

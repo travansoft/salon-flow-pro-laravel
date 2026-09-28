@@ -213,8 +213,8 @@ class StoreManualBillTest extends TestCase
         $this->assertDatabaseHas('bills', [
             'client_id' => $client->id,
             'discount_percent' => 10,
-            'discount_amount' => 84.74,
-            'total' => 899.99,
+            'discount_amount' => 100.00,
+            'total' => 900.00,
         ]);
     }
 
@@ -255,7 +255,7 @@ class StoreManualBillTest extends TestCase
         $this->assertDatabaseHas('bills', [
             'client_id' => $client->id,
             'discount_amount' => 84.74,
-            'total' => 899.99,
+            'total' => 915.26,
         ]);
     }
 
@@ -286,7 +286,7 @@ class StoreManualBillTest extends TestCase
 
         $response = $this->actingAs($frontDesk)->postJson($this->tenantUrl('/bills/settle'), [
             'client_id' => $client->id,
-            'discount_amount' => 900,
+            'discount_amount' => 1100,
             'items' => [
                 ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
             ],

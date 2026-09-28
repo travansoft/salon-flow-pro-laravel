@@ -142,7 +142,7 @@ class BackfillBillTest extends TestCase
         $this->assertDatabaseHas('bills', [
             'client_id' => $client->id,
             'discount_amount' => 84.74,
-            'total' => 899.99,
+            'total' => 915.26,
         ]);
     }
 
@@ -175,7 +175,7 @@ class BackfillBillTest extends TestCase
         $response = $this->actingAs($owner)->postJson($this->tenantUrl('/bills/backfill'), [
             'bill_date' => '2026-01-10',
             'client_id' => $client->id,
-            'discount_amount' => 900,
+            'discount_amount' => 1100,
             'items' => [
                 ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
             ],
