@@ -25,6 +25,16 @@
             </p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
+            @can('billing.editBill')
+                @if ($bill->status !== \App\Models\Bill::StatusVoid)
+                    <a href="{{ $tenantUrl->route('bills.edit', $bill) }}" class="sfp-btn-outline">Edit</a>
+                @endif
+            @endcan
+            @can('billing.cancel')
+                @if ($bill->status !== \App\Models\Bill::StatusVoid)
+                    <button type="button" class="sfp-btn-outline" style="color:#A8506B;border-color:#A8506B" data-bs-toggle="modal" data-bs-target="#cancelBillModal">Cancel bill</button>
+                @endif
+            @endcan
             <a href="{{ $tenantUrl->route('bills.print', $bill) }}" target="_blank" class="sfp-btn-outline">Print</a>
             <span class="sfp-pill {{ $statusPillClass }}">{{ ucfirst($bill->status) }}</span>
         </div>
@@ -222,6 +232,36 @@
                         <div class="modal-footer">
                             <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Issue refund</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
+
+    @can('billing.cancel')
+        <div class="modal fade" id="cancelBillModal" tabindex="-1" aria-labelledby="cancelBillModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('bills.cancel', $bill) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancelBillModalLabel">Cancel bill</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p style="font-size:13.5px;color:#66736F;margin:0">
+                                This marks the bill as cancelled. It is excluded from revenue reports and cannot be undone &mdash;
+                                if the sale was wrong, create a new bill instead.
+                            </p>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Keep bill</button>
+                            <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Cancel bill</button>
                         </div>
                     </form>
                 </div>

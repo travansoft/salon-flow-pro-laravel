@@ -242,6 +242,15 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::put('/bills/{bill}/notes', [BillsController::class, 'updateNotes'])->name("bills.updateNotes{$nameSuffix}");
         });
 
+        Route::middleware('permission:billing.editBill')->group(function () use ($nameSuffix): void {
+            Route::get('/bills/{bill}/edit', [BillsController::class, 'edit'])->name("bills.edit{$nameSuffix}");
+            Route::put('/bills/{bill}', [BillsController::class, 'update'])->name("bills.update{$nameSuffix}");
+        });
+
+        Route::middleware('permission:billing.cancel')->group(function () use ($nameSuffix): void {
+            Route::put('/bills/{bill}/cancel', [BillsController::class, 'cancel'])->name("bills.cancel{$nameSuffix}");
+        });
+
         Route::middleware('permission:billing.view')->group(function () use ($nameSuffix): void {
             Route::get('/bills/{bill}', [BillsController::class, 'show'])->name("bills.show{$nameSuffix}");
             Route::get('/bills/{bill}/print', [BillsController::class, 'print'])->name("bills.print{$nameSuffix}");

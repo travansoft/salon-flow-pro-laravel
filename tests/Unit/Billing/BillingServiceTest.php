@@ -458,4 +458,42 @@ class BillingServiceTest extends TestCase
         $this->assertSame('0.00', (string) $bill->discount_percent);
         $this->assertSame('0.00', (string) $bill->discount_amount);
     }
+
+    public function test_cancel_marks_the_bill_as_void(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ]);
+
+        $cancelled = app(BillingService::class)->cancel($bill);
+
+        $this->assertSame(Bill::StatusVoid, $cancelled->status);
+    }
+
+    public function test_edit_bill_updates_client_and_notes(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $newClient = Client::factory()->create(['tenant_id' => $tenant->id, 'gst_number' => '32AAAAA0000A1Z5']);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ]);
+
+        $updated = app(BillingService::class)->editBill($bill, $newClient->id, 'Requested GST invoice');
+
+        $this->assertSame($newClient->id, $updated->client_id);
+        $this->assertSame('Requested GST invoice', $updated->notes);
+    }
 }

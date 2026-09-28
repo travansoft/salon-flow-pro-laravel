@@ -303,8 +303,28 @@ class BillingService
         });
     }
 
-    public function void(Bill $bill): Bill
+    /**
+     * Cancels a bill. Cancelled (void) bills are excluded from reports and
+     * revenue totals, and are treated as effectively deleted — the fix for a
+     * mis-billed sale is to cancel it and create a new bill, not to keep
+     * editing the original.
+     */
+    public function cancel(Bill $bill): Bill
     {
         return $this->billRepository->update($bill, ['status' => Bill::StatusVoid]);
+    }
+
+    /**
+     * Updates the client attached to a bill (e.g. switching a walk-in sale to
+     * a named client with a GSTIN for a proper tax invoice) and its internal
+     * note. Line items and totals are immutable once a bill is created — any
+     * other correction requires cancelling the bill and creating a new one.
+     */
+    public function editBill(Bill $bill, int $clientId, ?string $notes): Bill
+    {
+        return $this->billRepository->update($bill, [
+            'client_id' => $clientId,
+            'notes' => $notes,
+        ]);
     }
 }

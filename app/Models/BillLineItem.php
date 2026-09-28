@@ -71,4 +71,12 @@ class BillLineItem extends Model
 
         return bcmul($taxableAmount, bcdiv((string) $this->tax_rate, '100', 4), 2);
     }
+
+    public function totalWithTax(): string
+    {
+        $taxableAmount = bcsub((string) $this->line_total, (string) $this->discount_amount, 2);
+        $gst = bcadd(bcadd((string) $this->cgst_amount, (string) $this->sgst_amount, 2), (string) $this->igst_amount, 2);
+
+        return bcadd($taxableAmount, $gst, 2);
+    }
 }

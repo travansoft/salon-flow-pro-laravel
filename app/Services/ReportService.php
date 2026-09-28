@@ -67,7 +67,7 @@ class ReportService
         foreach ($bills as $bill) {
             foreach ($bill->lineItems as $lineItem) {
                 $name = $lineItem->service?->name ?? $lineItem->description;
-                $totals[$name] = bcadd($totals[$name] ?? '0.00', (string) $lineItem->line_total, 2);
+                $totals[$name] = bcadd($totals[$name] ?? '0.00', $lineItem->totalWithTax(), 2);
             }
         }
 
@@ -123,7 +123,7 @@ class ReportService
                 }
 
                 $totals[$staffName]['services']++;
-                $totals[$staffName]['revenue'] = bcadd($totals[$staffName]['revenue'], (string) $lineItem->line_total, 2);
+                $totals[$staffName]['revenue'] = bcadd($totals[$staffName]['revenue'], $lineItem->totalWithTax(), 2);
             }
         }
 
