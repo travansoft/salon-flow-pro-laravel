@@ -121,4 +121,67 @@ class BackfillBillTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('items');
     }
+
+    public function test_backfill_discount_amount_reduces_the_bill_total(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($owner)->postJson($this->tenantUrl('/bills/backfill'), [
+            'bill_date' => '2026-01-10',
+            'client_id' => $client->id,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('bills', [
+            'client_id' => $client->id,
+            'discount_amount' => 84.74,
+            'total' => 899.99,
+        ]);
+    }
+
+    public function test_backfill_rejects_both_discount_percent_and_discount_amount(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($owner)->postJson($this->tenantUrl('/bills/backfill'), [
+            'bill_date' => '2026-01-10',
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertJsonValidationErrors('discount_percent');
+    }
+
+    public function test_backfill_rejects_a_discount_amount_exceeding_the_subtotal(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($owner)->postJson($this->tenantUrl('/bills/backfill'), [
+            'bill_date' => '2026-01-10',
+            'client_id' => $client->id,
+            'discount_amount' => 900,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertStatus(422);
+    }
 }

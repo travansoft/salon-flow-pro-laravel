@@ -126,7 +126,7 @@ class QuickBillService
 
         $client = $this->resolveClient($clientDetails);
 
-        $bill = $this->billingService->createManualBill($client->id, $staffUserId, $lineItems, $discountPercent, $discountAmount);
+        $bill = $this->billingService->createManualBill($client->id, $staffUserId, $lineItems, $discountPercent, discountAmount: $discountAmount);
 
         return $this->billingService->recordPayments($bill, [
             ['method' => $paymentMethod, 'amount' => (float) $bill->total],

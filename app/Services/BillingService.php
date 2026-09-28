@@ -40,15 +40,15 @@ class BillingService
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?float $discountAmount = null, ?CarbonInterface $billDate = null): Bill
+    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
     {
-        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $discountAmount, $billDate);
+        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate, $discountAmount);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?float $discountAmount = null, ?CarbonInterface $billDate = null): Bill
+    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
     {
         if ($lineItems === []) {
             throw new InvalidArgumentException('A bill must have at least one line item.');

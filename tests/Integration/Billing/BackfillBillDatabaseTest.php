@@ -83,4 +83,29 @@ class BackfillBillDatabaseTest extends TestCase
 
         $this->assertCount(1, $bills);
     }
+
+    public function test_backfilled_bill_with_discount_amount_persists_correct_discount_percent_and_line_splits(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ], 0, Carbon::parse('2026-01-10'), 84.74);
+
+        $this->assertSame('10.00', (string) $bill->fresh()->discount_percent);
+        $this->assertDatabaseHas('bills', [
+            'id' => $bill->id,
+            'discount_amount' => 84.74,
+            'total' => 899.99,
+        ]);
+        $this->assertDatabaseHas('bill_line_items', [
+            'bill_id' => $bill->id,
+            'discount_amount' => 84.74,
+        ]);
+    }
 }

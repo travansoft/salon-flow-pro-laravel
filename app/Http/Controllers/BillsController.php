@@ -83,9 +83,9 @@ class BillsController extends Controller
                 $client->id,
                 $request->user()->id,
                 $data['items'],
-                (float) ($data['discount_percent'] ?? 0),
-                isset($data['discount_amount']) ? (float) $data['discount_amount'] : null,
-                $billDate,
+                discountPercent: (float) ($data['discount_percent'] ?? 0),
+                billDate: $billDate,
+                discountAmount: isset($data['discount_amount']) ? (float) $data['discount_amount'] : null,
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);

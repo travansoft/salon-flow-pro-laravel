@@ -356,7 +356,7 @@ class BillingServiceTest extends TestCase
 
         $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
-        ], 0, 84.74);
+        ], 0, discountAmount: 84.74);
 
         $this->assertSame('847.45', (string) $bill->subtotal);
         $this->assertSame('10.00', (string) $bill->discount_percent);
@@ -378,7 +378,7 @@ class BillingServiceTest extends TestCase
 
         app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
-        ], 0, 900);
+        ], 0, discountAmount: 900);
     }
 
     public function test_discount_percent_and_discount_amount_together_are_rejected(): void
@@ -394,7 +394,7 @@ class BillingServiceTest extends TestCase
 
         app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
-        ], 10, 50);
+        ], 10, discountAmount: 50);
     }
 
     public function test_discount_is_split_proportionally_across_multiple_line_items(): void
@@ -431,7 +431,7 @@ class BillingServiceTest extends TestCase
         $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Hair Color', 'unit_price' => 100, 'tax_rate' => 5],
             ['description' => 'Spa Package', 'unit_price' => 200, 'tax_rate' => 18],
-        ], 0, 27.00);
+        ], 0, discountAmount: 27.00);
 
         $first = $bill->lineItems->firstWhere('description', 'Hair Color');
         $second = $bill->lineItems->firstWhere('description', 'Spa Package');
@@ -453,7 +453,7 @@ class BillingServiceTest extends TestCase
 
         $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
             ['description' => 'Free Consultation', 'unit_price' => 0, 'tax_rate' => 18],
-        ], 0, 0);
+        ], 0, discountAmount: 0);
 
         $this->assertSame('0.00', (string) $bill->discount_percent);
         $this->assertSame('0.00', (string) $bill->discount_amount);

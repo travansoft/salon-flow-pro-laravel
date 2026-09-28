@@ -132,6 +132,68 @@ class SettleBillTest extends TestCase
         ]);
     }
 
+    public function test_settle_applies_discount_amount_and_settles_the_discounted_total(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($user)->postToTenant('/bills/settle', [
+            'client_id' => $client->id,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(899.99, $response->json('total'));
+        $this->assertDatabaseHas('bills', [
+            'id' => $response->json('bill_id'),
+            'discount_amount' => 84.74,
+            'amount_paid' => 899.99,
+            'status' => 'paid',
+        ]);
+    }
+
+    public function test_settle_rejects_both_discount_percent_and_discount_amount(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($user)->postToTenant('/bills/settle', [
+            'client_id' => $client->id,
+            'discount_percent' => 10,
+            'discount_amount' => 84.74,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertSessionHasErrors('discount_percent');
+    }
+
+    public function test_settle_rejects_a_discount_amount_exceeding_the_subtotal(): void
+    {
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($user)->postToTenant('/bills/settle', [
+            'client_id' => $client->id,
+            'discount_amount' => 900,
+            'items' => [
+                ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+            ],
+            'payment_method' => 'cash',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
     public function test_settle_validates_required_fields(): void
     {
         $user = User::factory()->for($this->tenant)->create();
