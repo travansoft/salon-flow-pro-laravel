@@ -162,6 +162,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::post('/appointments', [AppointmentsController::class, 'store'])->name("appointments.store{$nameSuffix}");
             Route::post('/walk-ins', [WalkInsController::class, 'store'])->name("walkIns.store{$nameSuffix}");
             Route::get('/appointments/clients/search', [AppointmentsController::class, 'searchClients'])->name("appointments.searchClients{$nameSuffix}");
+            Route::get('/appointments/services/search', [AppointmentsController::class, 'searchServices'])->name("appointments.searchServices{$nameSuffix}");
             Route::post('/appointments/clients/quick-create', [AppointmentsController::class, 'quickCreateClient'])->name("appointments.quickCreateClient{$nameSuffix}");
             Route::get('/appointments/services/{service}/eligible-staff', [ServicesController::class, 'eligibleStaff'])->name("appointments.services.eligibleStaff{$nameSuffix}");
             Route::get('/appointments/time-slots/create', [TimeSlotsController::class, 'create'])->name("timeSlots.create{$nameSuffix}");

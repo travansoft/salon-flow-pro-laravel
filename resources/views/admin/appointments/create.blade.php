@@ -45,21 +45,11 @@
 
             <div class="sfp-field">
                 <label class="sfp-label">Services</label>
-                <div id="appt-service-picker" style="display:grid;gap:8px;margin-bottom:12px">
-                    @foreach ($services as $service)
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input appt-service-toggle" value="{{ $service->id }}"
-                                   id="svc-{{ $service->id }}" data-name="{{ $service->name }}" data-duration="{{ $service->duration_minutes }}"
-                                   data-price="{{ $service->price }}">
-                            <label class="form-check-label" for="svc-{{ $service->id }}">
-                                {{ $service->name }}
-                                <span class="sfp-mono" style="color:#94A19D;font-size:12.5px">&mdash; {{ $service->duration_minutes }} min &middot; &#8377;{{ number_format((float) $service->price, 2) }}</span>
-                            </label>
-                        </div>
-                    @endforeach
-                </div>
+                <input type="text" id="appt-service-search" class="sfp-input" autocomplete="off"
+                       placeholder="Search services by name&hellip;">
+                <div id="appt-service-results" class="sfp-autosuggest-list" style="display:none"></div>
 
-                <div class="sfp-table-wrap" id="appt-lines-wrap" style="display:none">
+                <div class="sfp-table-wrap" id="appt-lines-wrap" style="display:none;margin-top:12px">
                     <div class="sfp-table-head-row" style="grid-template-columns:1.4fr 1fr 90px">
                         <span>Service</span>
                         <span>Staff</span>
@@ -131,12 +121,14 @@
     const dateInput = document.getElementById('appt-date');
     const slotSelect = document.getElementById('appt-time-slot');
     const startAtInput = document.getElementById('appt-start-at');
-    const serviceToggles = [...document.querySelectorAll('.appt-service-toggle')];
+    const serviceSearchInput = document.getElementById('appt-service-search');
+    const serviceResultsBox = document.getElementById('appt-service-results');
     const linesWrap = document.getElementById('appt-lines-wrap');
     const linesBody = document.getElementById('appt-lines');
     const apptForm = document.getElementById('appt-form');
 
-    let searchTimer = null;
+    let clientSearchTimer = null;
+    let serviceSearchTimer = null;
     let lines = [];
 
     function renderLines() {
@@ -168,7 +160,6 @@
             removeBtn.className = 'sfp-btn-link-danger';
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
-                document.getElementById('svc-' + line.serviceId).checked = false;
                 lines.splice(index, 1);
                 renderLines();
             });
@@ -194,23 +185,86 @@
         ).join('');
     }
 
-    serviceToggles.forEach((toggle) => {
-        toggle.addEventListener('change', () => {
-            const serviceId = toggle.value;
+    function addService(service) {
+        const serviceId = String(service.id);
 
-            if (toggle.checked) {
-                lines.push({
-                    serviceId,
-                    name: toggle.dataset.name,
-                    duration: toggle.dataset.duration,
-                    staffProfileId: null,
-                });
-            } else {
-                lines = lines.filter((line) => line.serviceId !== serviceId);
+        if (lines.some((line) => line.serviceId === serviceId)) {
+            serviceSearchInput.value = '';
+            serviceResultsBox.style.display = 'none';
+            return;
+        }
+
+        lines.push({
+            serviceId,
+            name: service.name,
+            duration: service.duration_minutes,
+            staffProfileId: null,
+        });
+
+        renderLines();
+        serviceSearchInput.value = '';
+        serviceResultsBox.style.display = 'none';
+        serviceResultsBox.innerHTML = '';
+    }
+
+    function renderServiceResults(services) {
+        serviceResultsBox.innerHTML = '';
+
+        if (services.length === 0) {
+            serviceResultsBox.style.display = 'none';
+            return;
+        }
+
+        services.forEach((service) => {
+            const alreadyAdded = lines.some((line) => line.serviceId === String(service.id));
+
+            const row = document.createElement('div');
+            row.className = 'sfp-autosuggest-item';
+            row.style.opacity = alreadyAdded ? '0.5' : '1';
+            row.innerHTML = `${service.name}
+                <span class="sfp-mono" style="color:#94A19D;font-size:12px">&mdash; ${service.duration_minutes} min &middot; &#8377;${Number(service.price).toFixed(2)}</span>
+                ${alreadyAdded ? ' <span style="font-size:12px">(added)</span>' : ''}`;
+
+            if (!alreadyAdded) {
+                row.addEventListener('click', () => addService(service));
             }
 
-            renderLines();
+            serviceResultsBox.appendChild(row);
         });
+
+        serviceResultsBox.style.display = 'block';
+    }
+
+    async function searchServices(term) {
+        const response = await fetch('{{ $tenantUrl->route("appointments.searchServices") }}?q=' + encodeURIComponent(term), {
+            headers: { 'Accept': 'application/json' },
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        renderServiceResults(data.services || []);
+    }
+
+    serviceSearchInput.addEventListener('input', () => {
+        const term = serviceSearchInput.value.trim();
+
+        clearTimeout(serviceSearchTimer);
+        serviceSearchTimer = setTimeout(() => searchServices(term), 250);
+    });
+
+    serviceSearchInput.addEventListener('focus', () => {
+        if (serviceSearchInput.value.trim() === '') {
+            searchServices('');
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!serviceResultsBox.contains(event.target) && event.target !== serviceSearchInput) {
+            serviceResultsBox.style.display = 'none';
+        }
     });
 
     apptForm.addEventListener('submit', (event) => {
@@ -292,7 +346,7 @@
         clearSelection();
         const term = searchInput.value.trim();
 
-        clearTimeout(searchTimer);
+        clearTimeout(clientSearchTimer);
 
         if (term.length < 2) {
             resultsBox.style.display = 'none';
@@ -300,7 +354,7 @@
             return;
         }
 
-        searchTimer = setTimeout(() => search(term), 250);
+        clientSearchTimer = setTimeout(() => search(term), 250);
     });
 
     newClientSave.addEventListener('click', async () => {
