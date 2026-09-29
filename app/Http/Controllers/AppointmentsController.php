@@ -49,7 +49,6 @@ class AppointmentsController extends Controller
         abort_unless($request->user()->can('appointments.create'), 403);
 
         return view('admin.appointments.create', [
-            'services' => $this->serviceRepository->getActive(),
             'timeSlots' => $this->timeSlotRepository->getActive(),
         ]);
     }
@@ -93,6 +92,26 @@ class AppointmentsController extends Controller
                 'id' => $client->id,
                 'name' => $client->name,
                 'phone' => $client->phone,
+            ])->values(),
+        ]);
+    }
+
+    public function searchServices(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('appointments.create'), 403);
+
+        $term = trim((string) $request->query('q', ''));
+
+        $services = $term === ''
+            ? $this->serviceRepository->getActive()->take(10)
+            : $this->serviceRepository->search($term);
+
+        return response()->json([
+            'services' => $services->map(fn ($service) => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'duration_minutes' => $service->duration_minutes,
+                'price' => $service->price,
             ])->values(),
         ]);
     }
