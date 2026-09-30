@@ -92,10 +92,10 @@ class StaffProfile extends Model
         return $this->hasMany(Appointment::class);
     }
 
-    /** @return HasMany<CommissionRate, $this> */
-    public function commissionRates(): HasMany
+    /** @return HasMany<StaffTarget, $this> */
+    public function targets(): HasMany
     {
-        return $this->hasMany(CommissionRate::class);
+        return $this->hasMany(StaffTarget::class);
     }
 
     /** @return HasMany<StaffIncentive, $this> */

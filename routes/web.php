@@ -6,21 +6,22 @@ use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\BranchSwitcherController;
 use App\Http\Controllers\BridalEngagementsController;
 use App\Http\Controllers\ClientsController;
-use App\Http\Controllers\CommissionEarningsController;
-use App\Http\Controllers\CommissionRatesController;
 use App\Http\Controllers\DesignationsController;
 use App\Http\Controllers\ExpenseCategoriesController;
 use App\Http\Controllers\ExpensesController;
+use App\Http\Controllers\IncentiveProgressController;
+use App\Http\Controllers\IncentiveSettingsController;
 use App\Http\Controllers\InventoryCategoriesController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ServiceCategoriesController;
 use App\Http\Controllers\ServicesController;
-use App\Http\Controllers\StaffIncentivesController;
+use App\Http\Controllers\StaffBonusesController;
 use App\Http\Controllers\StaffLeaveRequestsController;
 use App\Http\Controllers\StaffLoginController;
 use App\Http\Controllers\StaffsController;
+use App\Http\Controllers\StaffTargetsController;
 use App\Http\Controllers\StockAdjustmentsController;
 use App\Http\Controllers\StopImpersonationController;
 use App\Http\Controllers\SuperAdmin\PlatformAdminsController;
@@ -285,25 +286,27 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/expenses/{expense}', [ExpensesController::class, 'show'])->name("expenses.show{$nameSuffix}");
         });
 
-        Route::middleware('permission:commissions.view')->group(function () use ($nameSuffix): void {
-            Route::get('/commission-rates', [CommissionRatesController::class, 'index'])->name("commissionRates.index{$nameSuffix}");
-            Route::get('/commission-earnings', [CommissionEarningsController::class, 'index'])->name("commissionEarnings.index{$nameSuffix}");
+        Route::middleware('permission:incentives.view')->group(function () use ($nameSuffix): void {
+            Route::get('/incentive-progress', [IncentiveProgressController::class, 'index'])->name("incentiveProgress.index{$nameSuffix}");
         });
 
-        Route::middleware('permission:commissions.create')->group(function () use ($nameSuffix): void {
-            Route::get('/commission-rates/create', [CommissionRatesController::class, 'create'])->name("commissionRates.create{$nameSuffix}");
-            Route::post('/commission-rates', [CommissionRatesController::class, 'store'])->name("commissionRates.store{$nameSuffix}");
-            Route::get('/staff-incentives/create', [StaffIncentivesController::class, 'create'])->name("staffIncentives.create{$nameSuffix}");
-            Route::post('/staff-incentives', [StaffIncentivesController::class, 'store'])->name("staffIncentives.store{$nameSuffix}");
+        Route::middleware('permission:incentives.create')->group(function () use ($nameSuffix): void {
+            Route::post('/incentive-slabs', [IncentiveSettingsController::class, 'storeSlab'])->name("incentiveSlabs.store{$nameSuffix}");
+            Route::get('/staff-bonuses/create', [StaffBonusesController::class, 'create'])->name("staffBonuses.create{$nameSuffix}");
+            Route::post('/staff-bonuses', [StaffBonusesController::class, 'store'])->name("staffBonuses.store{$nameSuffix}");
         });
 
-        Route::middleware('permission:commissions.edit')->group(function () use ($nameSuffix): void {
-            Route::get('/commission-rates/{commissionRate}/edit', [CommissionRatesController::class, 'edit'])->name("commissionRates.edit{$nameSuffix}");
-            Route::put('/commission-rates/{commissionRate}', [CommissionRatesController::class, 'update'])->name("commissionRates.update{$nameSuffix}");
+        Route::middleware('permission:incentives.edit')->group(function () use ($nameSuffix): void {
+            Route::get('/incentive-settings', [IncentiveSettingsController::class, 'edit'])->name("incentiveSettings.edit{$nameSuffix}");
+            Route::put('/incentive-settings', [IncentiveSettingsController::class, 'update'])->name("incentiveSettings.update{$nameSuffix}");
+            Route::put('/incentive-slabs/{incentiveSlab}', [IncentiveSettingsController::class, 'updateSlab'])->name("incentiveSlabs.update{$nameSuffix}");
+            Route::get('/incentive-targets', [StaffTargetsController::class, 'index'])->name("staffTargets.index{$nameSuffix}");
+            Route::post('/incentive-targets', [StaffTargetsController::class, 'store'])->name("staffTargets.store{$nameSuffix}");
+            Route::post('/incentive-targets/copy', [StaffTargetsController::class, 'copy'])->name("staffTargets.copy{$nameSuffix}");
         });
 
-        Route::middleware('permission:commissions.delete')->group(function () use ($nameSuffix): void {
-            Route::delete('/commission-rates/{commissionRate}', [CommissionRatesController::class, 'destroy'])->name("commissionRates.destroy{$nameSuffix}");
+        Route::middleware('permission:incentives.delete')->group(function () use ($nameSuffix): void {
+            Route::delete('/incentive-slabs/{incentiveSlab}', [IncentiveSettingsController::class, 'destroySlab'])->name("incentiveSlabs.destroy{$nameSuffix}");
         });
 
         Route::middleware('permission:dashboard.view')->group(function () use ($nameSuffix): void {

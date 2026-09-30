@@ -105,9 +105,9 @@
                         </a>
                     @endcan
 
-                    @can('commissions.view')
-                        <a href="{{ $tenantUrl->route('commissionEarnings.index') }}" class="sfp-nav-item {{ request()->routeIs('commissionEarnings.*') || request()->routeIs('commissionRates.*') || request()->routeIs('staffIncentives.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Commission
+                    @can('incentives.view')
+                        <a href="{{ $tenantUrl->route('incentiveProgress.index') }}" class="sfp-nav-item {{ request()->routeIs('incentiveProgress.*') || request()->routeIs('staffTargets.*') || request()->routeIs('incentiveSettings.*') || request()->routeIs('incentiveSlabs.*') || request()->routeIs('staffBonuses.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Incentive
                         </a>
                     @endcan
 

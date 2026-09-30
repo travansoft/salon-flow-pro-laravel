@@ -14,6 +14,7 @@ use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\BillingService;
+use App\Services\IncentiveService;
 use App\Services\QuickBillService;
 use App\Services\TenantUrl;
 use Illuminate\Http\JsonResponse;
@@ -154,13 +155,16 @@ class BillsController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $subdomain, Bill $bill): View
+    public function show(Request $request, string $subdomain, Bill $bill, IncentiveService $incentiveService): View
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy', 'branch', 'auditTrail.changedBy']);
+        $bill->load(['lineItems.staffProfile', 'lineItems.referredByStaffProfile', 'payments', 'refunds', 'client', 'createdBy', 'branch', 'auditTrail.changedBy']);
 
-        return view('admin.bills.show', ['bill' => $bill]);
+        return view('admin.bills.show', [
+            'bill' => $bill,
+            'incentiveSplit' => $request->user()->can('incentives.view') ? $incentiveService->splitForBill($bill) : null,
+        ]);
     }
 
     public function print(Request $request, string $subdomain, Bill $bill): View
