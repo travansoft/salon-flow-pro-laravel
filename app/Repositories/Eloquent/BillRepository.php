@@ -59,7 +59,7 @@ class BillRepository implements BillRepositoryInterface
     {
         return $this->model->where('status', '!=', Bill::StatusVoid)
             ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
-            ->with(['lineItems.service', 'lineItems.staffProfile', 'payments'])
+            ->with(['lineItems.service', 'lineItems.staffProfile', 'lineItems.referredByStaffProfile', 'payments'])
             ->get();
     }
 

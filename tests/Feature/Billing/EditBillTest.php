@@ -67,6 +67,52 @@ class EditBillTest extends TestCase
         $this->assertSame($existingClient->id, $bill->refresh()->client_id);
     }
 
+    public function test_owner_can_change_the_bill_date_within_the_same_financial_year(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'financial_year' => '2026-27', 'created_at' => '2026-05-15']);
+
+        $response = $this->actingAs($owner)->putToTenant("/bills/{$bill->id}", [
+            'bill_date' => '2026-05-10',
+        ]);
+
+        $response->assertRedirect($this->tenantUrl("/bills/{$bill->id}"));
+        $this->assertSame('2026-05-10', $bill->refresh()->created_at->toDateString());
+    }
+
+    public function test_owner_cannot_move_the_bill_date_into_a_different_financial_year(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create();
+        $owner->assignRole('Owner');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'financial_year' => '2026-27', 'created_at' => '2026-05-15']);
+
+        $response = $this->actingAs($owner)->putToTenant("/bills/{$bill->id}", [
+            'bill_date' => '2026-02-01',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('bill_date');
+        $this->assertSame('2026-05-15', $bill->refresh()->created_at->toDateString());
+    }
+
+    public function test_editing_a_bill_records_who_made_the_change_in_the_history(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create(['name' => 'Meera Pillai']);
+        $owner->assignRole('Owner');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->actingAs($owner)->putToTenant("/bills/{$bill->id}", [
+            'client_name' => 'Acme Traders',
+        ]);
+
+        $response = $this->actingAs($owner)->getFromTenant("/bills/{$bill->id}");
+
+        $response->assertOk();
+        $response->assertSee('Meera Pillai');
+        $response->assertSee('Client changed');
+    }
+
     public function test_manager_cannot_edit_a_bill(): void
     {
         $manager = User::factory()->for($this->tenant)->create();

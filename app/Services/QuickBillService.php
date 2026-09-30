@@ -90,6 +90,7 @@ class QuickBillService
         $lineItems = [];
         foreach ($items as $item) {
             $staffProfileId = $item['staff_profile_id'] ?? null;
+            $referredByStaffProfileId = $item['referred_by_staff_profile_id'] ?? null;
 
             if (! empty($item['service_id'])) {
                 $service = Service::query()->active()->find($item['service_id']);
@@ -105,6 +106,7 @@ class QuickBillService
                 $lineItems[] = [
                     'service_id' => $service->id,
                     'staff_profile_id' => $staffProfileId,
+                    'referred_by_staff_profile_id' => $referredByStaffProfileId,
                     'description' => $service->name,
                     'quantity' => $item['quantity'] ?? 1,
                     'unit_price' => isset($item['unit_price']) ? (float) $item['unit_price'] : (float) $service->price,
@@ -117,6 +119,7 @@ class QuickBillService
             $lineItems[] = [
                 'service_id' => null,
                 'staff_profile_id' => $staffProfileId,
+                'referred_by_staff_profile_id' => $referredByStaffProfileId,
                 'description' => $item['description'] ?? 'Manual item',
                 'quantity' => $item['quantity'] ?? 1,
                 'unit_price' => (float) ($item['unit_price'] ?? 0),

@@ -3,9 +3,11 @@
 namespace Tests\Integration\Billing;
 
 use App\Models\Bill;
+use App\Models\BillAudit;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Services\BillingService;
 use App\Services\BranchContext;
 use App\Services\ReportService;
@@ -25,10 +27,16 @@ class CancelBillDatabaseTest extends TestCase
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
         $bill = Bill::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
 
-        app(BillingService::class)->cancel($bill);
+        app(BillingService::class)->cancel($bill, $user->id);
 
         $this->assertDatabaseHas('bills', ['id' => $bill->id, 'status' => Bill::StatusVoid]);
+        $this->assertDatabaseHas('bill_audits', [
+            'bill_id' => $bill->id,
+            'action' => BillAudit::ActionCancelled,
+            'changed_by' => $user->id,
+        ]);
     }
 
     public function test_cancelled_bills_are_excluded_from_report_revenue_totals(): void
@@ -39,9 +47,10 @@ class CancelBillDatabaseTest extends TestCase
         app(BranchContext::class)->set($branch);
         $today = Carbon::today();
 
+        $user = User::factory()->for($tenant)->create();
         Bill::factory()->create(['tenant_id' => $tenant->id, 'total' => 500, 'created_at' => $today]);
         $cancelledBill = Bill::factory()->create(['tenant_id' => $tenant->id, 'total' => 2000, 'created_at' => $today]);
-        app(BillingService::class)->cancel($cancelledBill);
+        app(BillingService::class)->cancel($cancelledBill, $user->id);
 
         $report = app(ReportService::class)->reportFor($today, $today);
 
@@ -57,8 +66,9 @@ class CancelBillDatabaseTest extends TestCase
         app(BranchContext::class)->set($branch);
         $bill = Bill::factory()->create(['tenant_id' => $tenant->id]);
         $newClient = Client::factory()->create(['tenant_id' => $tenant->id, 'gst_number' => '32AAAAA0000A1Z5']);
+        $user = User::factory()->for($tenant)->create();
 
-        app(BillingService::class)->editBill($bill, $newClient->id, 'GST invoice requested');
+        app(BillingService::class)->editBill($bill, $newClient->id, 'GST invoice requested', null, $user->id);
 
         $this->assertDatabaseHas('bills', [
             'id' => $bill->id,

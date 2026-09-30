@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\Bill;
+use App\Models\BillAudit;
 use App\Models\Client;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use Carbon\CarbonInterface;
@@ -168,6 +169,7 @@ class BillingService
                 $resolvedItems[] = [
                     'service_id' => $item['service_id'] ?? null,
                     'staff_profile_id' => $item['staff_profile_id'] ?? null,
+                    'referred_by_staff_profile_id' => $item['referred_by_staff_profile_id'] ?? null,
                     'description' => $item['description'],
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
@@ -315,22 +317,78 @@ class BillingService
      * mis-billed sale is to cancel it and create a new bill, not to keep
      * editing the original.
      */
-    public function cancel(Bill $bill): Bill
+    public function cancel(Bill $bill, int $changedBy): Bill
     {
-        return $this->billRepository->update($bill, ['status' => Bill::StatusVoid]);
+        return DB::transaction(function () use ($bill, $changedBy): Bill {
+            $updated = $this->billRepository->update($bill, ['status' => Bill::StatusVoid]);
+
+            $this->recordAudit($bill, BillAudit::ActionCancelled, null, null, null, $changedBy);
+
+            return $updated;
+        });
     }
 
     /**
      * Updates the client attached to a bill (e.g. switching a walk-in sale to
-     * a named client with a GSTIN for a proper tax invoice) and its internal
-     * note. Line items and totals are immutable once a bill is created — any
+     * a named client with a GSTIN for a proper tax invoice), its internal
+     * note, and its bill date, recording each changed field to the audit
+     * trail. Line items and totals are immutable once a bill is created — any
      * other correction requires cancelling the bill and creating a new one.
+     *
+     * The bill date may only be moved within its existing financial year:
+     * bill_number and financial_year are allocated once at creation and never
+     * renumbered, so a date edit crossing a financial year would desync the
+     * stored invoice number from the displayed date.
      */
-    public function editBill(Bill $bill, int $clientId, ?string $notes): Bill
+    public function editBill(Bill $bill, int $clientId, ?string $notes, ?CarbonInterface $billDate, int $changedBy): Bill
     {
-        return $this->billRepository->update($bill, [
-            'client_id' => $clientId,
-            'notes' => $notes,
+        if ($billDate && $bill->financial_year && FinancialYear::forDate($billDate) !== $bill->financial_year) {
+            throw new InvalidArgumentException('The bill date must stay within the bill\'s current financial year ('.$bill->financial_year.').');
+        }
+
+        return DB::transaction(function () use ($bill, $clientId, $notes, $billDate, $changedBy): Bill {
+            $oldClientId = $bill->client_id;
+            $oldClientName = $bill->client->name;
+            $oldNotes = $bill->notes;
+            $oldCreatedAt = $bill->created_at;
+
+            $updated = $this->billRepository->update($bill, [
+                'client_id' => $clientId,
+                'notes' => $notes,
+            ]);
+
+            if ($billDate) {
+                $updated->forceFill(['created_at' => $billDate])->save();
+            }
+
+            if ($clientId !== $oldClientId) {
+                $updated->load('client');
+                $this->recordAudit($bill, BillAudit::ActionEdited, 'client', $oldClientName, $updated->client->name, $changedBy);
+            }
+
+            if ($notes !== $oldNotes) {
+                $this->recordAudit($bill, BillAudit::ActionEdited, 'notes', $oldNotes, $notes, $changedBy);
+            }
+
+            if ($billDate && ! $billDate->equalTo($oldCreatedAt)) {
+                $this->recordAudit($bill, BillAudit::ActionEdited, 'bill_date', $oldCreatedAt->toDateString(), $billDate->toDateString(), $changedBy);
+            }
+
+            return $updated;
+        });
+    }
+
+    private function recordAudit(Bill $bill, string $action, ?string $field, ?string $oldValue, ?string $newValue, int $changedBy): void
+    {
+        BillAudit::query()->create([
+            'tenant_id' => $bill->tenant_id,
+            'branch_id' => $bill->branch_id,
+            'bill_id' => $bill->id,
+            'action' => $action,
+            'field' => $field,
+            'old_value' => $oldValue,
+            'new_value' => $newValue,
+            'changed_by' => $changedBy,
         ]);
     }
 }

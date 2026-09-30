@@ -53,9 +53,10 @@
             <div class="sfp-field">
                 <label class="sfp-label">Line items</label>
                 <div class="sfp-table-wrap">
-                    <div class="sfp-table-head-row" style="grid-template-columns:1.5fr 1.3fr 64px 100px 40px">
+                    <div class="sfp-table-head-row" style="grid-template-columns:1.5fr 1.3fr 1.1fr 64px 100px 40px">
                         <span>Item</span>
                         <span>Staff</span>
+                        <span>Referred by</span>
                         <span style="text-align:center">Qty</span>
                         <span style="text-align:right">Price</span>
                         <span></span>
@@ -195,6 +196,7 @@
 (function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     const eligibleStaffUrlTemplate = '{{ $tenantUrl->route('services.eligibleStaff', '__SERVICE_ID__') }}';
+    const referrers = @json($referrers->map(fn ($member) => ['id' => $member->id, 'name' => $member->name])->values());
 
     const clientSearch = document.getElementById('bill-client-search');
     const clientIdInput = document.getElementById('bill-client-id');
@@ -479,6 +481,7 @@
             taxRate: Number(service.tax_rate),
             quantity: 1,
             staffProfileId: null,
+            referredByStaffProfileId: null,
             requiresRateConfirmation,
         });
         renderLines();
@@ -522,13 +525,14 @@
             const row = document.createElement('div');
             row.className = 'sfp-table-row';
             row.dataset.lineId = line.id;
-            row.style.gridTemplateColumns = '1.5fr 1.3fr 64px 100px 40px';
+            row.style.gridTemplateColumns = '1.5fr 1.3fr 1.1fr 64px 100px 40px';
 
             row.innerHTML = `
                 <span class="bill-line-description-wrap">
                     <span style="font-size:14px">${line.description}</span>
                     ${line.requiresRateConfirmation ? '<span class="sfp-pill sfp-pill-amber" style="margin-left:6px;font-size:10.5px">Confirm rate</span>' : ''}
                 </span>
+                <span></span>
                 <span></span>
                 <input type="number" min="1" value="${line.quantity}" class="sfp-table-control sfp-table-control--qty bill-line-qty">
                 <input type="number" min="0" step="0.01" value="${line.priceInclusive}" class="sfp-table-control bill-line-price" style="text-align:right${line.requiresRateConfirmation ? ';border-color:#C98A2C' : ''}">
@@ -542,6 +546,16 @@
             });
             row.children[1].replaceWith(staffSelect);
             loadEligibleStaff(line, staffSelect);
+
+            const referrerSelect = document.createElement('select');
+            referrerSelect.className = 'sfp-table-control bill-line-referrer';
+            referrerSelect.innerHTML = '<option value="">Direct</option>' + referrers.map((member) =>
+                `<option value="${member.id}" ${String(member.id) === String(line.referredByStaffProfileId || '') ? 'selected' : ''}>${member.name}</option>`
+            ).join('');
+            referrerSelect.addEventListener('change', () => {
+                line.referredByStaffProfileId = referrerSelect.value || null;
+            });
+            row.children[2].replaceWith(referrerSelect);
 
             row.querySelector('.bill-line-qty').addEventListener('input', (event) => {
                 line.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
@@ -616,6 +630,7 @@
         return lines.map((line) => ({
             service_id: line.serviceId,
             staff_profile_id: line.staffProfileId || null,
+            referred_by_staff_profile_id: line.referredByStaffProfileId || null,
             description: line.description,
             quantity: line.quantity,
             unit_price: line.priceInclusive,

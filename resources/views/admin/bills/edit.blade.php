@@ -7,8 +7,8 @@
         <div>
             <h1 class="sfp-page-title">Edit bill &middot; {{ $bill->invoiceNumber() }}</h1>
             <p class="sfp-page-subtitle">
-                Only the client and internal note can be changed here. To correct items, quantities, or amounts,
-                cancel this bill and create a new one.
+                Only the client, internal note, and bill date can be changed here. To correct items, quantities, or amounts,
+                cancel this bill and create a new one. The date can only be moved within financial year {{ $bill->financial_year }}.
             </p>
         </div>
     </div>
@@ -43,6 +43,14 @@
                         <span class="sfp-invalid-feedback">{{ $message }}</span>
                     @enderror
                 </div>
+            </div>
+
+            <div class="sfp-field">
+                <label class="sfp-label" for="bill-edit-date">Bill date</label>
+                <input type="date" id="bill-edit-date" name="bill_date" value="{{ old('bill_date', $bill->created_at->toDateString()) }}" class="sfp-input" max="{{ now()->toDateString() }}">
+                @error('bill_date')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
             </div>
 
             <div class="sfp-field">

@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'tenant_id', 'branch_id', 'bill_id', 'service_id', 'staff_profile_id', 'description', 'quantity', 'unit_price',
-    'tax_rate', 'line_total', 'discount_amount', 'cgst_amount', 'sgst_amount', 'igst_amount',
+    'tenant_id', 'branch_id', 'bill_id', 'service_id', 'staff_profile_id', 'referred_by_staff_profile_id', 'description',
+    'quantity', 'unit_price', 'tax_rate', 'line_total', 'discount_amount', 'cgst_amount', 'sgst_amount', 'igst_amount',
 ])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class BillLineItem extends Model
@@ -63,6 +63,12 @@ class BillLineItem extends Model
     public function staffProfile(): BelongsTo
     {
         return $this->belongsTo(StaffProfile::class);
+    }
+
+    /** @return BelongsTo<StaffProfile, $this> */
+    public function referredByStaffProfile(): BelongsTo
+    {
+        return $this->belongsTo(StaffProfile::class, 'referred_by_staff_profile_id');
     }
 
     public function taxAmount(): string

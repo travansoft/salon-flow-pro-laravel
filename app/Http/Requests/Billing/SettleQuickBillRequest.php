@@ -63,6 +63,10 @@ class SettleQuickBillRequest extends FormRequest
                     }
                 },
             ],
+            'items.*.referred_by_staff_profile_id' => [
+                'nullable', 'integer',
+                Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
+            ],
             'items.*.quantity' => ['sometimes', 'integer', 'min:1'],
             'items.*.unit_price' => ['sometimes', 'numeric', 'min:0'],
             'payment_method' => ['required', Rule::in(['cash', 'card', 'upi'])],
