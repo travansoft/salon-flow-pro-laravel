@@ -4,6 +4,7 @@ namespace Tests\Unit\Billing;
 
 use App\Models\Appointment;
 use App\Models\Bill;
+use App\Models\BillAudit;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Service;
@@ -14,6 +15,7 @@ use App\Services\BillingService;
 use App\Services\BranchContext;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -472,9 +474,31 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ]);
 
-        $cancelled = app(BillingService::class)->cancel($bill);
+        $cancelled = app(BillingService::class)->cancel($bill, $user->id);
 
         $this->assertSame(Bill::StatusVoid, $cancelled->status);
+    }
+
+    public function test_cancel_records_an_audit_entry(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ]);
+
+        app(BillingService::class)->cancel($bill, $user->id);
+
+        $this->assertDatabaseHas('bill_audits', [
+            'bill_id' => $bill->id,
+            'action' => BillAudit::ActionCancelled,
+            'changed_by' => $user->id,
+        ]);
     }
 
     public function test_edit_bill_updates_client_and_notes(): void
@@ -491,9 +515,83 @@ class BillingServiceTest extends TestCase
             ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
         ]);
 
-        $updated = app(BillingService::class)->editBill($bill, $newClient->id, 'Requested GST invoice');
+        $updated = app(BillingService::class)->editBill($bill, $newClient->id, 'Requested GST invoice', null, $user->id);
 
         $this->assertSame($newClient->id, $updated->client_id);
         $this->assertSame('Requested GST invoice', $updated->notes);
+    }
+
+    public function test_edit_bill_records_audit_entries_for_client_and_notes_changes(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Walk-in customer']);
+        $newClient = Client::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Acme Traders']);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ]);
+
+        app(BillingService::class)->editBill($bill, $newClient->id, 'Requested GST invoice', null, $user->id);
+
+        $this->assertDatabaseHas('bill_audits', [
+            'bill_id' => $bill->id,
+            'field' => 'client',
+            'old_value' => 'Walk-in customer',
+            'new_value' => 'Acme Traders',
+            'changed_by' => $user->id,
+        ]);
+        $this->assertDatabaseHas('bill_audits', [
+            'bill_id' => $bill->id,
+            'field' => 'notes',
+            'new_value' => 'Requested GST invoice',
+            'changed_by' => $user->id,
+        ]);
+    }
+
+    public function test_edit_bill_allows_moving_the_date_within_the_same_financial_year(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ], billDate: Carbon::parse('2026-05-15'));
+
+        $newDate = Carbon::parse('2026-05-10');
+        $updated = app(BillingService::class)->editBill($bill, $client->id, null, $newDate, $user->id);
+
+        $this->assertSame('2026-05-10', $updated->created_at->toDateString());
+        $this->assertDatabaseHas('bill_audits', [
+            'bill_id' => $bill->id,
+            'field' => 'bill_date',
+            'old_value' => '2026-05-15',
+            'new_value' => '2026-05-10',
+        ]);
+    }
+
+    public function test_edit_bill_rejects_a_date_outside_the_current_financial_year(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+
+        $bill = app(BillingService::class)->createManualBill($client->id, $user->id, [
+            ['description' => 'Hair Color', 'unit_price' => 1000, 'tax_rate' => 18],
+        ], billDate: Carbon::parse('2026-05-15'));
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(BillingService::class)->editBill($bill, $client->id, null, Carbon::parse('2026-03-01'), $user->id);
     }
 }

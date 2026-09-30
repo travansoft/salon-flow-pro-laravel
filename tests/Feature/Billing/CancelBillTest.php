@@ -79,6 +79,21 @@ class CancelBillTest extends TestCase
         $this->assertSame(Bill::StatusVoid, $bill->refresh()->status);
     }
 
+    public function test_cancelling_a_bill_records_who_cancelled_it_in_the_history(): void
+    {
+        $owner = User::factory()->for($this->tenant)->create(['name' => 'Meera Pillai']);
+        $owner->assignRole('Owner');
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $this->actingAs($owner)->putToTenant("/bills/{$bill->id}/cancel", []);
+
+        $response = $this->actingAs($owner)->getFromTenant("/bills/{$bill->id}");
+
+        $response->assertOk();
+        $response->assertSee('Meera Pillai');
+        $response->assertSee('Bill cancelled');
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
         $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id]);

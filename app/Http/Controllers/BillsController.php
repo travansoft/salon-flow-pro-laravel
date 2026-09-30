@@ -12,6 +12,7 @@ use App\Http\Requests\Billing\UpdateBillRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\BillingService;
 use App\Services\QuickBillService;
 use App\Services\TenantUrl;
@@ -51,18 +52,22 @@ class BillsController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request, StaffProfileRepositoryInterface $staffProfileRepository): View
     {
         abort_unless($request->user()->can('billing.create'), 403);
 
-        return view('admin.bills.create');
+        return view('admin.bills.create', [
+            'referrers' => $staffProfileRepository->getActive(),
+        ]);
     }
 
-    public function backfillCreate(Request $request): View
+    public function backfillCreate(Request $request, StaffProfileRepositoryInterface $staffProfileRepository): View
     {
         abort_unless($request->user()->can('billing.backfill'), 403);
 
-        return view('admin.bills.backfill');
+        return view('admin.bills.backfill', [
+            'referrers' => $staffProfileRepository->getActive(),
+        ]);
     }
 
     public function backfillStore(BackfillBillRequest $request): JsonResponse
@@ -153,7 +158,7 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.view'), 403);
 
-        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy', 'branch']);
+        $bill->load(['lineItems.staffProfile', 'payments', 'refunds', 'client', 'createdBy', 'branch', 'auditTrail.changedBy']);
 
         return view('admin.bills.show', ['bill' => $bill]);
     }
@@ -222,8 +227,13 @@ class BillsController extends Controller
             'phone' => $data['client_phone'] ?? null,
             'gst_number' => $data['client_gst_number'] ?? null,
         ]);
+        $billDate = isset($data['bill_date']) ? Carbon::parse($data['bill_date'])->setTimeFrom($bill->created_at) : null;
 
-        $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null);
+        try {
+            $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null, $billDate, $request->user()->id);
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['bill_date' => $exception->getMessage()])->withInput();
+        }
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill updated.');
     }
@@ -233,7 +243,7 @@ class BillsController extends Controller
         abort_unless($request->user()->can('billing.cancel'), 403);
         abort_if($bill->status === Bill::StatusVoid, 403, 'This bill is already cancelled.');
 
-        $this->billingService->cancel($bill);
+        $this->billingService->cancel($bill, $request->user()->id);
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill cancelled.');
     }

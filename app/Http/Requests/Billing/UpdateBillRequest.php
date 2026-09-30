@@ -28,6 +28,7 @@ class UpdateBillRequest extends FormRequest
             'client_phone' => ['nullable', 'string', 'max:20'],
             'client_gst_number' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'bill_date' => ['nullable', 'date', 'before_or_equal:today'],
         ];
     }
 }

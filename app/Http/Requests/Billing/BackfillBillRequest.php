@@ -57,6 +57,10 @@ class BackfillBillRequest extends FormRequest
                     }
                 },
             ],
+            'items.*.referred_by_staff_profile_id' => [
+                'nullable', 'integer',
+                Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
+            ],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.quantity' => ['sometimes', 'integer', 'min:1'],
             'items.*.tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],

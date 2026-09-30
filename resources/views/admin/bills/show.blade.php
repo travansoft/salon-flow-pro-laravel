@@ -58,6 +58,7 @@
                                 @if ($item->staffProfile)
                                     &middot; {{ $item->staffProfile->name }}
                                 @endif
+                                &middot; Referred by: {{ $item->referredByStaffProfile?->name ?? 'Direct' }}
                             </div>
                         </div>
                         <span class="sfp-mono" style="text-align:center;font-size:13px">{{ $item->quantity }}</span>
@@ -164,6 +165,34 @@
                     <p style="color:#94A19D;font-size:13.5px;margin:0">No note added.</p>
                 @endif
             </div>
+
+            @can('billing.editBill')
+                <div class="sfp-card">
+                    <h2 class="sfp-card-title">History</h2>
+
+                    @forelse ($bill->auditTrail as $entry)
+                        <div style="padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:13px">
+                            @if ($entry->action === \App\Models\BillAudit::ActionCancelled)
+                                <div style="color:#A8506B">Bill cancelled</div>
+                            @elseif ($entry->field === 'client')
+                                <div style="color:#66736F">Client changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
+                            @elseif ($entry->field === 'notes')
+                                <div style="color:#66736F">Note updated</div>
+                            @elseif ($entry->field === 'bill_date')
+                                <div style="color:#66736F">Bill date changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
+                            @endif
+                            <div style="color:#94A19D;font-size:11.5px;margin-top:2px">
+                                {{ $entry->created_at->format('d M Y, h:i A') }}
+                                @if ($entry->changedBy)
+                                    &middot; by {{ $entry->changedBy->name }}
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <p style="color:#94A19D;font-size:13.5px;margin:0">No changes recorded yet.</p>
+                    @endforelse
+                </div>
+            @endcan
         </div>
     </div>
 

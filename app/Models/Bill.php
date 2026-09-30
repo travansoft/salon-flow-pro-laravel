@@ -98,6 +98,12 @@ class Bill extends Model
         return $this->hasMany(BillRefund::class);
     }
 
+    /** @return HasMany<BillAudit, $this> */
+    public function auditTrail(): HasMany
+    {
+        return $this->hasMany(BillAudit::class)->latest();
+    }
+
     public function balanceDue(): string
     {
         return bcsub((string) $this->total, (string) $this->amount_paid, 2);
