@@ -16,6 +16,9 @@ interface ExpenseRepositoryInterface
     /** @return Collection<int, Expense> */
     public function getBetweenDates(Carbon $from, Carbon $to): Collection;
 
+    /** @return array<string, string> Expense totals keyed by payment method, for everything dated before the date. */
+    public function totalsByMethodBefore(Carbon $date): array;
+
     /** @param array<string, mixed> $data */
     public function create(array $data): Expense;
 

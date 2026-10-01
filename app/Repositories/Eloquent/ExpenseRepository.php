@@ -28,6 +28,18 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         return $this->model->betweenDates($from, $to)->with('category')->orderByDesc('expense_date')->get();
     }
 
+    /** @return array<string, string> */
+    public function totalsByMethodBefore(Carbon $date): array
+    {
+        return $this->model
+            ->where('expense_date', '<', $date->copy()->startOfDay())
+            ->selectRaw('payment_method, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->pluck('total', 'payment_method')
+            ->map(fn ($total): string => number_format((float) $total, 2, '.', ''))
+            ->all();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): Expense
     {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BillPayment;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Repositories\Contracts\ExpenseCategoryRepositoryInterface;
@@ -31,6 +32,7 @@ class ExpenseService
             'category_id' => $data['category_id'] ?? null,
             'description' => $data['description'],
             'amount' => $data['amount'],
+            'payment_method' => $data['payment_method'] ?? BillPayment::MethodCash,
             'is_recurring' => $data['is_recurring'] ?? false,
             'recurrence_interval' => ($data['is_recurring'] ?? false) ? ($data['recurrence_interval'] ?? null) : null,
             'expense_date' => $data['expense_date'],
@@ -54,6 +56,7 @@ class ExpenseService
             'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $expense->category_id,
             'description' => $data['description'] ?? $expense->description,
             'amount' => $data['amount'] ?? $expense->amount,
+            'payment_method' => $data['payment_method'] ?? $expense->payment_method,
             'is_recurring' => $isRecurring,
             'recurrence_interval' => $isRecurring
                 ? (array_key_exists('recurrence_interval', $data) ? $data['recurrence_interval'] : $expense->recurrence_interval)

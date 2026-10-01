@@ -33,6 +33,18 @@
             </div>
 
             <div class="sfp-field">
+                <label class="sfp-label">Paid via</label>
+                <select name="payment_method" class="sfp-select">
+                    @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card'] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('payment_method', 'cash') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                @error('payment_method')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="sfp-field">
                 <label class="sfp-label">Category</label>
                 <select name="category_id" class="sfp-select">
                     <option value="">No category</option>

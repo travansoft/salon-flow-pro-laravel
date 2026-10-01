@@ -29,6 +29,7 @@ class StoreExpenseRequest extends FormRequest
         return [
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_method' => ['sometimes', 'in:cash,upi,card'],
             'category_id' => [
                 'nullable', 'integer',
                 Rule::exists('expense_categories', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),

@@ -241,6 +241,64 @@ a.sfp-nav-item.active {
     background: #1B4B8F;
 }
 
+/* ---- Sidebar: multilevel groups ---- */
+.sfp-nav-group > summary {
+    list-style: none;
+}
+
+.sfp-nav-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+summary.sfp-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #5C6866;
+    border-radius: 12px;
+    padding: 11px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+summary.sfp-nav-item:hover {
+    background: #F3F6F5;
+    color: #16201D;
+}
+
+summary.sfp-nav-item.active {
+    color: #16201D;
+    font-weight: 500;
+}
+
+.sfp-nav-caret {
+    margin-left: auto;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid #94A19D;
+    border-bottom: 1.5px solid #94A19D;
+    transform: rotate(-45deg);
+    transition: transform .15s;
+}
+
+.sfp-nav-group[open] > summary .sfp-nav-caret {
+    transform: rotate(45deg);
+}
+
+.sfp-nav-children {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0 4px 22px;
+    padding-left: 8px;
+    border-left: 1px solid #E3EAE8;
+}
+
+a.sfp-nav-item.sfp-nav-child {
+    padding: 8px 12px;
+    font-size: 13.5px;
+}
+
 .sfp-sidebar-footer {
     margin-top: auto;
     padding: 14px 12px;
