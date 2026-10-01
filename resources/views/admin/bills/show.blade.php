@@ -210,6 +210,10 @@
                                 <div style="color:#66736F">Client changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
                             @elseif ($entry->field === 'notes')
                                 <div style="color:#66736F">Note updated</div>
+                            @elseif ($entry->field === 'servicing_staff')
+                                <div style="color:#66736F">Servicing staff changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
+                            @elseif ($entry->field === 'referring_staff')
+                                <div style="color:#66736F">Referred by changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
                             @elseif ($entry->field === 'bill_date')
                                 <div style="color:#66736F">Bill date changed: <span style="color:#3A4744">{{ $entry->old_value }}</span> &rarr; <span style="color:#3A4744">{{ $entry->new_value }}</span></div>
                             @endif

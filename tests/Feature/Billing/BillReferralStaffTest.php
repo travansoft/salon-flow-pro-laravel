@@ -11,11 +11,12 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsTenant;
+use Tests\Concerns\CreatesEligibleStaff;
 use Tests\TestCase;
 
 class BillReferralStaffTest extends TestCase
 {
-    use ActsAsTenant, RefreshDatabase;
+    use ActsAsTenant, CreatesEligibleStaff, RefreshDatabase;
 
     private User $frontDesk;
 
@@ -104,6 +105,7 @@ class BillReferralStaffTest extends TestCase
                 [
                     'description' => $this->service->name,
                     'service_id' => $this->service->id,
+                    'staff_profile_id' => $this->eligibleStaffFor($this->service)->id,
                     'referred_by_staff_profile_id' => $referrerId,
                     'unit_price' => 500,
                 ],

@@ -39,7 +39,7 @@ class BackfillBillRequest extends FormRequest
                 Rule::exists('services', 'id')->where('tenant_id', $tenantId),
             ],
             'items.*.staff_profile_id' => [
-                'nullable', 'integer',
+                'required_with:items.*.service_id', 'nullable', 'integer',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
                 function (string $attribute, mixed $value, Closure $fail): void {
                     $index = explode('.', $attribute)[1];

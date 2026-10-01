@@ -15,4 +15,7 @@ interface BillLineItemRepositoryInterface
      * @return Collection<int, BillLineItem>
      */
     public function getPaidBetween(Carbon $from, Carbon $to): Collection;
+
+    /** @param array<string, mixed> $data */
+    public function update(BillLineItem $lineItem, array $data): BillLineItem;
 }

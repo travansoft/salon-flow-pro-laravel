@@ -8,11 +8,12 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsTenant;
+use Tests\Concerns\CreatesEligibleStaff;
 use Tests\TestCase;
 
 class SettleBillTest extends TestCase
 {
-    use ActsAsTenant, RefreshDatabase;
+    use ActsAsTenant, CreatesEligibleStaff, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -59,7 +60,7 @@ class SettleBillTest extends TestCase
         $response = $this->actingAs($user)->postToTenant('/bills/settle', [
             'client_id' => $client->id,
             'items' => [
-                ['service_id' => $service->id, 'quantity' => 1],
+                ['service_id' => $service->id, 'staff_profile_id' => $this->eligibleStaffFor($service)->id, 'quantity' => 1],
             ],
             'payment_method' => 'cash',
         ]);
@@ -76,7 +77,7 @@ class SettleBillTest extends TestCase
 
         $response = $this->actingAs($user)->postToTenant('/bills/settle', [
             'items' => [
-                ['service_id' => $service->id],
+                ['service_id' => $service->id, 'staff_profile_id' => $this->eligibleStaffFor($service)->id],
             ],
             'payment_method' => 'cash',
         ]);
@@ -94,7 +95,7 @@ class SettleBillTest extends TestCase
             'client_name' => 'Priya Nair',
             'client_phone' => '9876543210',
             'items' => [
-                ['service_id' => $service->id],
+                ['service_id' => $service->id, 'staff_profile_id' => $this->eligibleStaffFor($service)->id],
             ],
             'payment_method' => 'cash',
         ]);
@@ -215,7 +216,7 @@ class SettleBillTest extends TestCase
 
         $response = $this->actingAs($stylist)->postToTenant('/bills/settle', [
             'items' => [
-                ['service_id' => $service->id],
+                ['service_id' => $service->id, 'staff_profile_id' => $this->eligibleStaffFor($service)->id],
             ],
             'payment_method' => 'cash',
         ]);
