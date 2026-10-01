@@ -31,3 +31,11 @@ document.addEventListener('keydown', (event) => {
 
     document.querySelectorAll('.modal.show').forEach((modal) => modal.classList.remove('show'));
 });
+
+document.addEventListener('wheel', (event) => {
+    const field = document.activeElement;
+
+    if (field instanceof HTMLInputElement && field.type === 'number' && field === event.target) {
+        field.blur();
+    }
+}, { passive: true });

@@ -33,6 +33,14 @@ class StaffIncentiveRepository implements StaffIncentiveRepositoryInterface
             ->get();
     }
 
+    /** @return Collection<int, StaffIncentive> */
+    public function getBetweenDates(Carbon $from, Carbon $to): Collection
+    {
+        return $this->model
+            ->whereBetween('awarded_date', [$from->toDateString(), $to->toDateString()])
+            ->get();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): StaffIncentive
     {

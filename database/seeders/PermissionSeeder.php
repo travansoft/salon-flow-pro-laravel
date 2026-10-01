@@ -18,7 +18,7 @@ class PermissionSeeder extends Seeder
         'clients',
         'expenses',
         'dashboard',
-        'commissions',
+        'incentives',
         'settings',
         'branches',
     ];
@@ -69,7 +69,7 @@ class PermissionSeeder extends Seeder
         $stylist->syncPermissions([
             'appointments.view',
             'clients.view',
-            'commissions.view',
+            'incentives.view',
         ]);
     }
 }

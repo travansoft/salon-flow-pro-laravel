@@ -126,6 +126,38 @@
                 @endforelse
             </div>
 
+            @if ($incentiveSplit !== null)
+                <div class="sfp-card" @style(['opacity:.6' => $bill->status === \App\Models\Bill::StatusVoid])>
+                    <h2 class="sfp-card-title">Incentive split</h2>
+
+                    @if ($bill->status === \App\Models\Bill::StatusVoid)
+                        <p style="color:#66736F;font-size:12.5px;margin:0 0 8px">Cancelled &ndash; not counted toward targets.</p>
+                    @elseif ($bill->status !== \App\Models\Bill::StatusPaid)
+                        <p style="color:#66736F;font-size:12.5px;margin:0 0 8px">Counts toward targets once the bill is fully paid.</p>
+                    @endif
+
+                    @if ($bill->amount_refunded > 0)
+                        <p style="color:#A8506B;font-size:12.5px;margin:0 0 8px">Refunded &#8377;{{ number_format($bill->amount_refunded, 2) }} &ndash; credit reduced in proportion.</p>
+                    @endif
+
+                    @foreach ($incentiveSplit as $row)
+                        <div style="padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:13.5px">
+                            <div style="color:#66736F;font-size:12.5px;margin-bottom:4px">{{ $row['lineItem']->description }} &middot; <span class="sfp-mono">&#8377;{{ number_format((float) $row['basis'], 2) }}</span></div>
+                            <div style="display:flex;justify-content:space-between">
+                                <span>{{ $row['lineItem']->staffProfile?->name ?? 'No staff' }} <span style="color:#94A19D">(servicing {{ number_format((float) $row['servicingPercent'], 0) }}%)</span></span>
+                                <span class="sfp-mono">&#8377;{{ number_format((float) $row['servicingAmount'], 2) }}</span>
+                            </div>
+                            @if ($row['referrerAmount'] !== null)
+                                <div style="display:flex;justify-content:space-between">
+                                    <span>{{ $row['lineItem']->referredByStaffProfile?->name }} <span style="color:#94A19D">(referring {{ number_format((float) $row['referringPercent'], 0) }}%)</span></span>
+                                    <span class="sfp-mono">&#8377;{{ number_format((float) $row['referrerAmount'], 2) }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             @if ($bill->refunds->isNotEmpty())
                 <div class="sfp-card">
                     <h2 class="sfp-card-title">Refunds</h2>

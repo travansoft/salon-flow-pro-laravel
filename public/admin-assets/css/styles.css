@@ -770,3 +770,29 @@ button.sfp-btn-link {
 .btn-close::before {
     content: "\00d7";
 }
+
+/* ===== Incentive progress ===== */
+.sfp-progress {
+    position: relative;
+    height: 10px;
+    background: #EDF1F0;
+    border-radius: 999px;
+}
+
+.sfp-progress-fill {
+    height: 100%;
+    background: #5B8C7E;
+    border-radius: 999px;
+}
+
+.sfp-progress-fill-complete {
+    background: #2F7D5B;
+}
+
+.sfp-progress-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: #94A19D;
+}
