@@ -8,11 +8,12 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsTenant;
+use Tests\Concerns\CreatesEligibleStaff;
 use Tests\TestCase;
 
 class QuickBillSettleHonoursEditedServicePriceFixTest extends TestCase
 {
-    use ActsAsTenant, RefreshDatabase;
+    use ActsAsTenant, CreatesEligibleStaff, RefreshDatabase;
 
     /**
      * Bug: QuickBillService::createAndSettle() always priced catalogued service
@@ -36,6 +37,7 @@ class QuickBillSettleHonoursEditedServicePriceFixTest extends TestCase
             'items' => [
                 [
                     'service_id' => $service->id,
+                    'staff_profile_id' => $this->eligibleStaffFor($service)->id,
                     'unit_price' => 350,
                 ],
             ],

@@ -648,6 +648,14 @@
             return false;
         }
 
+        const missingStaff = lines.find((line) => !line.staffProfileId);
+
+        if (missingStaff) {
+            setFeedback(`Select the servicing staff for ${missingStaff.description}.`, true);
+            itemsBox.querySelector(`[data-line-id="${missingStaff.id}"] .bill-line-staff`)?.focus();
+            return false;
+        }
+
         return true;
     }
 

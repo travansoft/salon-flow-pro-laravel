@@ -209,14 +209,25 @@ class BillsController extends Controller
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Note saved.');
     }
 
-    public function edit(Request $request, string $subdomain, Bill $bill): View
+    public function edit(Request $request, string $subdomain, Bill $bill, StaffProfileRepositoryInterface $staffProfileRepository): View
     {
         abort_unless($request->user()->can('billing.editBill'), 403);
         abort_if($bill->status === Bill::StatusVoid, 403, 'A cancelled bill cannot be edited.');
 
-        $bill->load('client');
+        $bill->load(['client', 'lineItems.service.staff']);
+        $activeStaff = $staffProfileRepository->getActive();
 
-        return view('admin.bills.edit', ['bill' => $bill]);
+        $servicingOptions = $bill->lineItems->mapWithKeys(fn ($lineItem) => [
+            $lineItem->id => ($lineItem->service?->staff ?? $activeStaff)
+                ->filter(fn ($member) => $member->is_active || $member->id === $lineItem->staff_profile_id)
+                ->values(),
+        ]);
+
+        return view('admin.bills.edit', [
+            'bill' => $bill,
+            'servicingOptions' => $servicingOptions,
+            'referrers' => $activeStaff,
+        ]);
     }
 
     public function update(UpdateBillRequest $request, string $subdomain, Bill $bill): RedirectResponse
@@ -234,7 +245,7 @@ class BillsController extends Controller
         $billDate = isset($data['bill_date']) ? Carbon::parse($data['bill_date'])->setTimeFrom($bill->created_at) : null;
 
         try {
-            $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null, $billDate, $request->user()->id);
+            $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null, $billDate, $request->user()->id, $data['items'] ?? []);
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['bill_date' => $exception->getMessage()])->withInput();
         }

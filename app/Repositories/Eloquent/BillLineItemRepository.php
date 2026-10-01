@@ -24,4 +24,12 @@ class BillLineItemRepository implements BillLineItemRepositoryInterface
             ->with(['bill', 'staffProfile', 'referredByStaffProfile'])
             ->get();
     }
+
+    /** @param array<string, mixed> $data */
+    public function update(BillLineItem $lineItem, array $data): BillLineItem
+    {
+        $lineItem->update($data);
+
+        return $lineItem;
+    }
 }

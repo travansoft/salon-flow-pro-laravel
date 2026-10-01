@@ -6,7 +6,9 @@ use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\BillAudit;
 use App\Models\Client;
+use App\Repositories\Contracts\BillLineItemRepositoryInterface;
 use App\Repositories\Contracts\BillRepositoryInterface;
+use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -15,6 +17,8 @@ class BillingService
 {
     public function __construct(
         private BillRepositoryInterface $billRepository,
+        private BillLineItemRepositoryInterface $billLineItemRepository,
+        private StaffProfileRepositoryInterface $staffProfileRepository,
         private TenantContext $tenantContext,
         private BranchContext $branchContext,
     ) {}
@@ -331,22 +335,25 @@ class BillingService
     /**
      * Updates the client attached to a bill (e.g. switching a walk-in sale to
      * a named client with a GSTIN for a proper tax invoice), its internal
-     * note, and its bill date, recording each changed field to the audit
-     * trail. Line items and totals are immutable once a bill is created — any
-     * other correction requires cancelling the bill and creating a new one.
+     * note, its bill date, and the servicing and referring staff of each line,
+     * recording each changed field to the audit trail. Line items and totals
+     * are otherwise immutable once a bill is created — any other correction
+     * requires cancelling the bill and creating a new one.
+     *
+     * @param  array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>  $lineStaff  keyed by line item id
      *
      * The bill date may only be moved within its existing financial year:
      * bill_number and financial_year are allocated once at creation and never
      * renumbered, so a date edit crossing a financial year would desync the
      * stored invoice number from the displayed date.
      */
-    public function editBill(Bill $bill, int $clientId, ?string $notes, ?CarbonInterface $billDate, int $changedBy): Bill
+    public function editBill(Bill $bill, int $clientId, ?string $notes, ?CarbonInterface $billDate, int $changedBy, array $lineStaff = []): Bill
     {
         if ($billDate && $bill->financial_year && FinancialYear::forDate($billDate) !== $bill->financial_year) {
             throw new InvalidArgumentException('The bill date must stay within the bill\'s current financial year ('.$bill->financial_year.').');
         }
 
-        return DB::transaction(function () use ($bill, $clientId, $notes, $billDate, $changedBy): Bill {
+        return DB::transaction(function () use ($bill, $clientId, $notes, $billDate, $changedBy, $lineStaff): Bill {
             $oldClientId = $bill->client_id;
             $oldClientName = $bill->client->name;
             $oldNotes = $bill->notes;
@@ -374,8 +381,55 @@ class BillingService
                 $this->recordAudit($bill, BillAudit::ActionEdited, 'bill_date', $oldCreatedAt->toDateString(), $billDate->toDateString(), $changedBy);
             }
 
+            $this->updateLineStaff($bill, $lineStaff, $changedBy);
+
             return $updated;
         });
+    }
+
+    /** @param array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}> $lineStaff keyed by line item id */
+    private function updateLineStaff(Bill $bill, array $lineStaff, int $changedBy): void
+    {
+        $bill->loadMissing(['lineItems.staffProfile', 'lineItems.referredByStaffProfile']);
+
+        foreach ($bill->lineItems as $lineItem) {
+            if (! isset($lineStaff[$lineItem->id])) {
+                continue;
+            }
+
+            $newServicingId = (int) $lineStaff[$lineItem->id]['staff_profile_id'];
+            $newReferrerId = $lineStaff[$lineItem->id]['referred_by_staff_profile_id'] ?? null;
+            $newReferrerId = $newReferrerId === null ? null : (int) $newReferrerId;
+
+            if ($newServicingId === $lineItem->staff_profile_id && $newReferrerId === $lineItem->referred_by_staff_profile_id) {
+                continue;
+            }
+
+            $oldServicingId = $lineItem->staff_profile_id;
+            $oldReferrerId = $lineItem->referred_by_staff_profile_id;
+            $oldServicingName = $lineItem->staffProfile?->name ?? 'None';
+            $oldReferrerName = $lineItem->referredByStaffProfile?->name ?? 'Direct';
+
+            $this->billLineItemRepository->update($lineItem, [
+                'staff_profile_id' => $newServicingId,
+                'referred_by_staff_profile_id' => $newReferrerId,
+            ]);
+
+            if ($newServicingId !== $oldServicingId) {
+                $this->recordAudit($bill, BillAudit::ActionEdited, 'servicing_staff', "{$lineItem->description}: {$oldServicingName}", "{$lineItem->description}: {$this->staffName($newServicingId)}", $changedBy);
+            }
+
+            if ($newReferrerId !== $oldReferrerId) {
+                $newReferrerName = $newReferrerId === null ? 'Direct' : $this->staffName($newReferrerId);
+
+                $this->recordAudit($bill, BillAudit::ActionEdited, 'referring_staff', "{$lineItem->description}: {$oldReferrerName}", "{$lineItem->description}: {$newReferrerName}", $changedBy);
+            }
+        }
+    }
+
+    private function staffName(int $staffProfileId): ?string
+    {
+        return $this->staffProfileRepository->findById($staffProfileId)?->name;
     }
 
     private function recordAudit(Bill $bill, string $action, ?string $field, ?string $oldValue, ?string $newValue, int $changedBy): void

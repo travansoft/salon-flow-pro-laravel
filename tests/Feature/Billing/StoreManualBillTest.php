@@ -9,11 +9,12 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsTenant;
+use Tests\Concerns\CreatesEligibleStaff;
 use Tests\TestCase;
 
 class StoreManualBillTest extends TestCase
 {
-    use ActsAsTenant, RefreshDatabase;
+    use ActsAsTenant, CreatesEligibleStaff, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -73,6 +74,7 @@ class StoreManualBillTest extends TestCase
                 [
                     'description' => $service->name,
                     'service_id' => $service->id,
+                    'staff_profile_id' => $this->eligibleStaffFor($service)->id,
                     'unit_price' => 2200,
                 ],
             ],
