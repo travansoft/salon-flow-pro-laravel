@@ -100,9 +100,14 @@
                     @endcan
 
                     @can('dashboard.view')
-                        <a href="{{ $tenantUrl->route('reports.index') }}" class="sfp-nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Reports
-                        </a>
+                        <x-nav-group label="Reports" :active="request()->routeIs('reports.*')">
+                            <a href="{{ $tenantUrl->route('reports.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.index', 'reports.consolidated') ? 'active' : '' }}">
+                                Sales summary
+                            </a>
+                            <a href="{{ $tenantUrl->route('reports.dayBook') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.dayBook') ? 'active' : '' }}">
+                                Day book
+                            </a>
+                        </x-nav-group>
                     @endcan
 
                     @can('incentives.view')

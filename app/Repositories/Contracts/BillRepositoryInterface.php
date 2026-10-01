@@ -3,6 +3,8 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\Bill;
+use App\Models\BillPayment;
+use App\Models\BillRefund;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
@@ -26,6 +28,26 @@ interface BillRepositoryInterface
 
     /** Sum of non-void bill totals on a single date, for reporting trends. */
     public function totalForDate(Carbon $date): string;
+
+    /**
+     * Payments received between two dates on non-void bills, oldest first.
+     *
+     * @return Collection<int, BillPayment>
+     */
+    public function paymentsBetween(Carbon $from, Carbon $to): Collection;
+
+    /**
+     * Refunds paid out between two dates on non-void bills, oldest first.
+     *
+     * @return Collection<int, BillRefund>
+     */
+    public function refundsBetween(Carbon $from, Carbon $to): Collection;
+
+    /** @return array<string, string> Payment totals keyed by method, for everything received before the date. */
+    public function paymentTotalsByMethodBefore(Carbon $date): array;
+
+    /** @return array<string, string> Refund totals keyed by method, for everything paid out before the date. */
+    public function refundTotalsByMethodBefore(Carbon $date): array;
 
     /** @param array<string, mixed> $data */
     public function create(array $data): Bill;

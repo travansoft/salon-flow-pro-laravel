@@ -24,6 +24,7 @@ class RefundBillRequest extends FormRequest
     {
         return [
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['sometimes', 'in:cash,upi,card'],
             'reason' => ['required', 'string', 'max:255'],
         ];
     }

@@ -11,6 +11,7 @@ use App\Http\Requests\Billing\UpdateBillNotesRequest;
 use App\Http\Requests\Billing\UpdateBillRequest;
 use App\Models\Appointment;
 use App\Models\Bill;
+use App\Models\BillPayment;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\BillingService;
@@ -192,7 +193,7 @@ class BillsController extends Controller
         $data = $request->validated();
 
         try {
-            $this->billingService->refund($bill, $data['amount'], $data['reason'], $request->user()->id);
+            $this->billingService->refund($bill, $data['amount'], $data['reason'], $request->user()->id, $data['method'] ?? BillPayment::MethodCash);
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['amount' => $exception->getMessage()]);
         }

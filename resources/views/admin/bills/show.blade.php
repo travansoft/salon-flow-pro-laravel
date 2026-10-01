@@ -289,6 +289,14 @@
                                 <input type="number" step="0.01" name="amount" class="sfp-input">
                             </div>
                             <div class="sfp-field">
+                                <label class="sfp-label">Refunded via</label>
+                                <select name="method" class="sfp-select">
+                                    <option value="cash">Cash</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="card">Card</option>
+                                </select>
+                            </div>
+                            <div class="sfp-field">
                                 <label class="sfp-label">Reason</label>
                                 <input type="text" name="reason" class="sfp-input">
                             </div>

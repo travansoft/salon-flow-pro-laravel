@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'bill_id', 'amount', 'reason', 'refunded_by'])]
+#[Fillable(['tenant_id', 'bill_id', 'amount', 'method', 'reason', 'refunded_by'])]
 #[ScopedBy([TenantScope::class])]
 class BillRefund extends Model
 {

@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
     'category_id',
     'description',
     'amount',
+    'payment_method',
     'is_recurring',
     'recurrence_interval',
     'expense_date',

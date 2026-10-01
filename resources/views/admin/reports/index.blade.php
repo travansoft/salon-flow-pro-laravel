@@ -1,11 +1,11 @@
 @extends('layouts.admin')
 
-@section('title', 'Reports')
+@section('title', 'Sales summary')
 
 @section('content')
     <div class="sfp-page-header">
         <div>
-            <h1 class="sfp-page-title">Reports</h1>
+            <h1 class="sfp-page-title">Sales summary</h1>
             <p class="sfp-page-subtitle">Figures update as bills are settled.</p>
         </div>
         <div style="display:flex;gap:8px">

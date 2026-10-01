@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\BranchContext;
+use App\Services\DayBookService;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,7 @@ class ReportsController extends Controller
     public function __construct(
         private ReportService $reportService,
         private BranchContext $branchContext,
+        private DayBookService $dayBookService,
     ) {}
 
     public function index(Request $request): View
@@ -25,6 +27,25 @@ class ReportsController extends Controller
         return view('admin.reports.index', [
             'period' => $period,
             ...$this->reportService->reportFor($from, $to),
+        ]);
+    }
+
+    public function dayBook(Request $request): View
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        $from = Carbon::parse($validated['from'] ?? 'today')->startOfDay();
+        $to = Carbon::parse($validated['to'] ?? $from)->startOfDay();
+
+        return view('admin.reports.dayBook', [
+            'from' => $from,
+            'to' => $to,
+            ...$this->dayBookService->forRange($from, $to),
         ]);
     }
 

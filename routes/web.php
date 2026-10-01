@@ -312,6 +312,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:dashboard.view')->group(function () use ($nameSuffix): void {
             Route::get('/reports', [ReportsController::class, 'index'])->name("reports.index{$nameSuffix}");
+            Route::get('/reports/day-book', [ReportsController::class, 'dayBook'])->name("reports.dayBook{$nameSuffix}");
         });
 
         Route::middleware('permission:reports.consolidated.view')->group(function () use ($nameSuffix): void {

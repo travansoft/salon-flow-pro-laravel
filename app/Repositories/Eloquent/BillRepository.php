@@ -3,6 +3,8 @@
 namespace App\Repositories\Eloquent;
 
 use App\Models\Bill;
+use App\Models\BillPayment;
+use App\Models\BillRefund;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -68,6 +70,58 @@ class BillRepository implements BillRepositoryInterface
         return (string) $this->model->where('status', '!=', Bill::StatusVoid)
             ->whereDate('created_at', $date)
             ->sum('total');
+    }
+
+    /** @return Collection<int, BillPayment> */
+    public function paymentsBetween(Carbon $from, Carbon $to): Collection
+    {
+        return BillPayment::query()
+            ->whereHas('bill', fn (Builder $query) => $query->where('status', '!=', Bill::StatusVoid))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->with(['bill.client', 'bill.branch'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /** @return Collection<int, BillRefund> */
+    public function refundsBetween(Carbon $from, Carbon $to): Collection
+    {
+        return BillRefund::query()
+            ->whereHas('bill', fn (Builder $query) => $query->where('status', '!=', Bill::StatusVoid))
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->with(['bill.client', 'bill.branch'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /** @return array<string, string> */
+    public function paymentTotalsByMethodBefore(Carbon $date): array
+    {
+        return $this->totalsByMethod(BillPayment::query(), $date);
+    }
+
+    /** @return array<string, string> */
+    public function refundTotalsByMethodBefore(Carbon $date): array
+    {
+        return $this->totalsByMethod(BillRefund::query(), $date);
+    }
+
+    /**
+     * @param  Builder<BillPayment>|Builder<BillRefund>  $query
+     * @return array<string, string>
+     */
+    private function totalsByMethod(Builder $query, Carbon $date): array
+    {
+        return $query
+            ->whereHas('bill', fn (Builder $billQuery) => $billQuery->where('status', '!=', Bill::StatusVoid))
+            ->where('created_at', '<', $date->copy()->startOfDay())
+            ->selectRaw('method, SUM(amount) as total')
+            ->groupBy('method')
+            ->pluck('total', 'method')
+            ->map(fn ($total): string => number_format((float) $total, 2, '.', ''))
+            ->all();
     }
 
     /** @param array<string, mixed> $data */

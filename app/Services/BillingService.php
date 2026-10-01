@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\BillAudit;
+use App\Models\BillPayment;
 use App\Models\Client;
 use App\Repositories\Contracts\BillLineItemRepositoryInterface;
 use App\Repositories\Contracts\BillRepositoryInterface;
@@ -291,7 +292,7 @@ class BillingService
         });
     }
 
-    public function refund(Bill $bill, float $amount, string $reason, int $refundedBy): Bill
+    public function refund(Bill $bill, float $amount, string $reason, int $refundedBy, string $method = BillPayment::MethodCash): Bill
     {
         $maxRefundable = bcsub((string) $bill->amount_paid, (string) $bill->amount_refunded, 2);
 
@@ -299,10 +300,11 @@ class BillingService
             throw new InvalidArgumentException('Refund amount cannot exceed the amount already paid.');
         }
 
-        return DB::transaction(function () use ($bill, $amount, $reason, $refundedBy): Bill {
+        return DB::transaction(function () use ($bill, $amount, $reason, $refundedBy, $method): Bill {
             $bill->refunds()->create([
                 'tenant_id' => $bill->tenant_id,
                 'amount' => $amount,
+                'method' => $method,
                 'reason' => $reason,
                 'refunded_by' => $refundedBy,
             ]);
