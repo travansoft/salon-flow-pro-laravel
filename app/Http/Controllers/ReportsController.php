@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\BranchContext;
 use App\Services\DayBookService;
 use App\Services\ReportService;
+use App\Services\SalesInsightsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -15,18 +16,30 @@ class ReportsController extends Controller
         private ReportService $reportService,
         private BranchContext $branchContext,
         private DayBookService $dayBookService,
+        private SalesInsightsService $salesInsightsService,
     ) {}
 
     public function index(Request $request): View
     {
         abort_unless($request->user()->can('dashboard.view'), 403);
 
-        $period = $request->query('period', 'month');
-        [$from, $to] = $this->rangeFor($period);
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        if (isset($validated['from'])) {
+            $from = Carbon::parse($validated['from'])->startOfDay();
+            $to = Carbon::parse($validated['to'] ?? $from)->startOfDay();
+        } else {
+            [$from, $to] = $this->rangeFor($request->query('period', 'month'));
+        }
 
         return view('admin.reports.index', [
-            'period' => $period,
+            'from' => $from,
+            'to' => $to,
             ...$this->reportService->reportFor($from, $to),
+            ...$this->salesInsightsService->forRange($from, $to),
         ]);
     }
 
