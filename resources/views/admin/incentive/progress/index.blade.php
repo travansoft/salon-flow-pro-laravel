@@ -45,7 +45,7 @@
 
         @forelse ($progress as $row)
             <div class="sfp-table-row" style="grid-template-columns:1.1fr 110px 130px 1.4fr 110px 130px 110px 100px 120px">
-                <span>{{ $row['staff']->name }}</span>
+                <a href="{{ $tenantUrl->route('incentiveProgress.show', $row['staff']) }}?month={{ $month->format('Y-m') }}" style="color:#1B4B8F">{{ $row['staff']->name }}</a>
                 <span class="sfp-mono">
                     @if ($row['target'] !== null)
                         &#8377;{{ number_format((float) $row['target'], 2) }}

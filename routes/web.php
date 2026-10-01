@@ -288,6 +288,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:incentives.view')->group(function () use ($nameSuffix): void {
             Route::get('/incentive-progress', [IncentiveProgressController::class, 'index'])->name("incentiveProgress.index{$nameSuffix}");
+            Route::get('/incentive-progress/{staffProfile}', [IncentiveProgressController::class, 'show'])->name("incentiveProgress.show{$nameSuffix}");
         });
 
         Route::middleware('permission:incentives.create')->group(function () use ($nameSuffix): void {

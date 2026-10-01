@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Incentive;
 
+use App\Models\Bill;
 use App\Models\BillLineItem;
 use App\Models\IncentiveSetting;
 use App\Models\IncentiveSlab;
@@ -162,6 +163,28 @@ class IncentiveServiceTest extends TestCase
 
         $this->assertSame('1000.00', $split['servicingAmount']);
         $this->assertNull($split['referrerAmount']);
+    }
+
+    public function test_refund_scales_the_split_by_the_share_of_the_bill_kept(): void
+    {
+        $bill = new Bill(['total' => '1000', 'amount_refunded' => '250']);
+        $lineItem = $this->lineItem('1000', 1, 2);
+
+        $split = $this->service()->splitLine($lineItem, $this->settings(), $bill);
+
+        $this->assertSame('750.00', $split['basis']);
+        $this->assertSame('225.00', $split['referrerAmount']);
+        $this->assertSame('525.00', $split['servicingAmount']);
+    }
+
+    public function test_full_refund_leaves_no_credit(): void
+    {
+        $bill = new Bill(['total' => '1000', 'amount_refunded' => '1000']);
+
+        $split = $this->service()->splitLine($this->lineItem('1000', 1, 2), $this->settings(), $bill);
+
+        $this->assertSame('0.00', $split['basis']);
+        $this->assertSame('0.00', $split['servicingAmount']);
     }
 
     /** @return array<string, array{0: string, 1: ?string, 2: string}> */

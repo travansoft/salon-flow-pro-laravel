@@ -136,6 +136,10 @@
                         <p style="color:#66736F;font-size:12.5px;margin:0 0 8px">Counts toward targets once the bill is fully paid.</p>
                     @endif
 
+                    @if ($bill->amount_refunded > 0)
+                        <p style="color:#A8506B;font-size:12.5px;margin:0 0 8px">Refunded &#8377;{{ number_format($bill->amount_refunded, 2) }} &ndash; credit reduced in proportion.</p>
+                    @endif
+
                     @foreach ($incentiveSplit as $row)
                         <div style="padding:10px 0;border-bottom:1px solid #EDF1F0;font-size:13.5px">
                             <div style="color:#66736F;font-size:12.5px;margin-bottom:4px">{{ $row['lineItem']->description }} &middot; <span class="sfp-mono">&#8377;{{ number_format((float) $row['basis'], 2) }}</span></div>

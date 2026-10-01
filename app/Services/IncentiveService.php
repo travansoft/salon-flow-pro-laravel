@@ -135,6 +135,25 @@ class IncentiveService
     }
 
     /**
+     * A refund reduces every line of the bill in proportion to the share of
+     * the bill total that was refunded, since refunds are not tied to lines.
+     */
+    private function afterRefund(string $basis, ?Bill $bill): string
+    {
+        if ($bill === null || bccomp((string) $bill->amount_refunded, '0', 2) <= 0 || bccomp((string) $bill->total, '0', 2) <= 0) {
+            return $basis;
+        }
+
+        $retainedShare = bcdiv(bcsub((string) $bill->total, (string) $bill->amount_refunded, 6), (string) $bill->total, 6);
+
+        if (bccomp($retainedShare, '0', 6) < 0) {
+            return '0.00';
+        }
+
+        return bcmul($basis, $retainedShare, 2);
+    }
+
+    /**
      * Splits the GST-inclusive, post-discount value of a line between the
      * servicing staff and the referrer. The servicing share is the remainder
      * so the two credits always add up to the line value exactly.
@@ -147,9 +166,10 @@ class IncentiveService
      *     referringPercent: ?string,
      * }
      */
-    public function splitLine(BillLineItem $lineItem, IncentiveSetting $setting): array
+    public function splitLine(BillLineItem $lineItem, IncentiveSetting $setting, ?Bill $bill = null): array
     {
-        $basis = $lineItem->totalWithTax();
+        $bill ??= $lineItem->relationLoaded('bill') ? $lineItem->bill : null;
+        $basis = $this->afterRefund($lineItem->totalWithTax(), $bill);
         $hasDistinctReferrer = $lineItem->referred_by_staff_profile_id !== null
             && $lineItem->referred_by_staff_profile_id !== $lineItem->staff_profile_id;
 
@@ -191,7 +211,7 @@ class IncentiveService
 
         return $bill->lineItems->map(fn (BillLineItem $lineItem) => [
             'lineItem' => $lineItem,
-            ...$this->splitLine($lineItem, $setting),
+            ...$this->splitLine($lineItem, $setting, $bill),
         ]);
     }
 
@@ -227,6 +247,62 @@ class IncentiveService
                 $slabs,
             )];
         });
+    }
+
+    /**
+     * The bill lines that make up one staff member's credit for the month.
+     *
+     * @return Collection<int, array{
+     *     lineItem: BillLineItem,
+     *     bill: Bill,
+     *     role: string,
+     *     otherStaff: ?StaffProfile,
+     *     basis: string,
+     *     credit: string,
+     *     percent: string,
+     * }>
+     */
+    public function creditLinesFor(StaffProfile $staff, Carbon $month): Collection
+    {
+        $setting = $this->getSettings();
+        $lineItems = $this->billLineItemRepository->getPaidBetween($month->copy()->startOfMonth(), $month->copy()->endOfMonth());
+        $rows = collect();
+
+        foreach ($lineItems as $lineItem) {
+            if ($lineItem->staff_profile_id === null) {
+                continue;
+            }
+
+            $split = $this->splitLine($lineItem, $setting);
+
+            if ($lineItem->staff_profile_id === $staff->id) {
+                $rows->push([
+                    'lineItem' => $lineItem,
+                    'bill' => $lineItem->bill,
+                    'role' => 'servicing',
+                    'otherStaff' => $split['referrerAmount'] === null ? null : $lineItem->referredByStaffProfile,
+                    'basis' => $split['basis'],
+                    'credit' => $split['servicingAmount'],
+                    'percent' => $split['servicingPercent'],
+                ]);
+
+                continue;
+            }
+
+            if ($split['referrerAmount'] !== null && $lineItem->referred_by_staff_profile_id === $staff->id) {
+                $rows->push([
+                    'lineItem' => $lineItem,
+                    'bill' => $lineItem->bill,
+                    'role' => 'referral',
+                    'otherStaff' => $lineItem->staffProfile,
+                    'basis' => $split['basis'],
+                    'credit' => $split['referrerAmount'],
+                    'percent' => (string) $split['referringPercent'],
+                ]);
+            }
+        }
+
+        return $rows->sortBy(fn (array $row) => $row['bill']->created_at)->values();
     }
 
     /**

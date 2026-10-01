@@ -94,6 +94,18 @@ class IncentiveCreditIntegrationTest extends TestCase
         $this->assertSame('0.00', $this->progressOf($referrer)['achieved']);
     }
 
+    public function test_a_partial_refund_reduces_credit_in_proportion_for_both_staff(): void
+    {
+        $servicing = $this->staff('Rizwan');
+        $referrer = $this->staff('Azam');
+        $bill = $this->billWithLine('10000', $servicing, $referrer);
+
+        $bill->update(['amount_refunded' => 295]);
+
+        $this->assertSame('3500.00', $this->progressOf($servicing)['servicingCredit']);
+        $this->assertSame('1500.00', $this->progressOf($referrer)['referralCredit']);
+    }
+
     public function test_only_bills_inside_the_month_count(): void
     {
         $staff = $this->staff();
