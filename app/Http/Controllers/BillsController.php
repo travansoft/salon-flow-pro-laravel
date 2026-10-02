@@ -18,12 +18,14 @@ use App\Services\BillingService;
 use App\Services\IncentiveService;
 use App\Services\QuickBillService;
 use App\Services\TenantUrl;
+use App\Services\XlsxWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BillsController extends Controller
 {
@@ -52,6 +54,42 @@ class BillsController extends Controller
             'clientName' => $clientName,
             'clientPhone' => $clientPhone,
         ]);
+    }
+
+    public function export(Request $request, XlsxWriter $xlsxWriter): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('billing.view'), 403);
+
+        $fromDate = $request->query('from_date', now()->toDateString());
+        $toDate = $request->query('to_date', now()->toDateString());
+
+        $bills = $this->billRepository->search(
+            $fromDate,
+            $toDate,
+            $request->query('client_name'),
+            $request->query('client_phone'),
+        );
+
+        $rows = $bills->map(fn (Bill $bill): array => [
+            $bill->bill_number,
+            $bill->client->name,
+            $bill->client->phone,
+            $bill->createdBy->name ?? '',
+            $bill->created_at->format('d M Y, h:i A'),
+            (float) $bill->total,
+            (float) $bill->amount_paid,
+            ucfirst($bill->status),
+        ])->all();
+
+        $path = $xlsxWriter->build(
+            'Bills',
+            ['Bill #', 'Client', 'Mobile', 'Billed by', 'Date & time', 'Total', 'Paid', 'Status'],
+            $rows,
+        );
+
+        return response()
+            ->download($path, "bills-{$fromDate}-to-{$toDate}.xlsx")
+            ->deleteFileAfterSend();
     }
 
     public function create(Request $request, StaffProfileRepositoryInterface $staffProfileRepository): View

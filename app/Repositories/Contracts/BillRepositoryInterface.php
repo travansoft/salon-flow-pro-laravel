@@ -26,6 +26,13 @@ interface BillRepositoryInterface
      */
     public function forDateRange(Carbon $from, Carbon $to): Collection;
 
+    /**
+     * Non-void bills in the range with the relations the GST report needs.
+     *
+     * @return Collection<int, Bill>
+     */
+    public function forGstReport(Carbon $from, Carbon $to): Collection;
+
     /** Sum of non-void bill totals on a single date, for reporting trends. */
     public function totalForDate(Carbon $date): string;
 

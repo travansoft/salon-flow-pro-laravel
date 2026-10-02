@@ -20,6 +20,14 @@
     @include('admin.incentive._nav')
 
     <div class="sfp-card" style="margin-bottom:14px">
+        <div class="sfp-row" style="flex-wrap:wrap;gap:28px;font-size:13px;color:#66736F">
+            <span>Incentive accrued till now <strong class="sfp-mono" style="color:#1F2A27">&#8377;{{ number_format((float) $totalIncentive, 2) }}</strong></span>
+            <span>Bonus <strong class="sfp-mono" style="color:#1F2A27">&#8377;{{ number_format((float) $totalBonus, 2) }}</strong></span>
+            <span>Total accrued <strong class="sfp-mono" style="color:#1F2A27">&#8377;{{ number_format((float) $totalAccrued, 2) }}</strong></span>
+        </div>
+    </div>
+
+    <div class="sfp-card" style="margin-bottom:14px">
         <div class="sfp-row" style="flex-wrap:wrap;gap:18px;font-size:13px;color:#66736F">
             <strong style="color:#1F2A27">Slabs</strong>
             @forelse ($slabs as $slab)
@@ -38,9 +46,9 @@
             <span>Progress</span>
             <span>Slab</span>
             <span>To next slab</span>
-            <span>Incentive</span>
+            <span>Incentive accrued</span>
             <span>Bonus</span>
-            <span>Total earned</span>
+            <span>Total accrued</span>
         </div>
 
         @forelse ($progress as $row)
@@ -89,7 +97,11 @@
                     @endif
                 </span>
                 <span class="sfp-mono">&#8377;{{ number_format((float) $row['incentive'], 2) }}</span>
-                <span class="sfp-mono">&#8377;{{ number_format((float) $row['bonus'], 2) }}</span>
+                @if (bccomp((string) $row['bonus'], '0', 2) !== 0)
+                    <a href="{{ $tenantUrl->route('staffBonuses.index') }}?month={{ $month->format('Y-m') }}&amp;staff_profile_id={{ $row['staff']->id }}" class="sfp-mono" style="color:#1B4B8F">&#8377;{{ number_format((float) $row['bonus'], 2) }}</a>
+                @else
+                    <span class="sfp-mono">&#8377;{{ number_format((float) $row['bonus'], 2) }}</span>
+                @endif
                 <span class="sfp-mono" style="font-weight:600">&#8377;{{ number_format((float) $row['totalEarned'], 2) }}</span>
             </div>
         @empty

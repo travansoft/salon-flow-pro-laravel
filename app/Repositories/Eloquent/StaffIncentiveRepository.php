@@ -41,9 +41,33 @@ class StaffIncentiveRepository implements StaffIncentiveRepositoryInterface
             ->get();
     }
 
+    /** @return Collection<int, StaffIncentive> */
+    public function getListBetweenDates(Carbon $from, Carbon $to, ?int $staffProfileId = null): Collection
+    {
+        return $this->model->with(['staffProfile', 'awardedBy'])
+            ->whereBetween('awarded_date', [$from->toDateString(), $to->toDateString()])
+            ->when($staffProfileId !== null, fn ($query) => $query->where('staff_profile_id', $staffProfileId))
+            ->orderByDesc('awarded_date')
+            ->orderByDesc('id')
+            ->get();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): StaffIncentive
     {
         return $this->model->create($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function update(StaffIncentive $incentive, array $data): StaffIncentive
+    {
+        $incentive->update($data);
+
+        return $incentive;
+    }
+
+    public function delete(StaffIncentive $incentive): bool
+    {
+        return (bool) $incentive->delete();
     }
 }

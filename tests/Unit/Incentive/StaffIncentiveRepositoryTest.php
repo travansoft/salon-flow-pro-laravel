@@ -96,4 +96,45 @@ class StaffIncentiveRepositoryTest extends TestCase
 
         $this->assertCount(2, $results);
     }
+
+    public function test_get_list_between_dates_filters_by_staff_and_orders_newest_first(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $staff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
+        $otherStaff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
+
+        StaffIncentive::factory()->create(['tenant_id' => $tenant->id, 'staff_profile_id' => $staff->id, 'awarded_date' => '2026-06-05']);
+        StaffIncentive::factory()->create(['tenant_id' => $tenant->id, 'staff_profile_id' => $staff->id, 'awarded_date' => '2026-06-25']);
+        StaffIncentive::factory()->create(['tenant_id' => $tenant->id, 'staff_profile_id' => $otherStaff->id, 'awarded_date' => '2026-06-15']);
+
+        $repository = app(StaffIncentiveRepository::class);
+        $from = Carbon::parse('2026-06-01');
+        $to = Carbon::parse('2026-06-30');
+
+        $forStaff = $repository->getListBetweenDates($from, $to, $staff->id);
+
+        $this->assertCount(2, $forStaff);
+        $this->assertSame('2026-06-25', $forStaff->first()->awarded_date->toDateString());
+        $this->assertCount(3, $repository->getListBetweenDates($from, $to));
+    }
+
+    public function test_update_and_delete_modify_the_incentive(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+        $incentive = StaffIncentive::factory()->create(['tenant_id' => $tenant->id, 'amount' => 100]);
+
+        $repository = app(StaffIncentiveRepository::class);
+
+        $repository->update($incentive, ['amount' => 250, 'reason' => 'Revised']);
+        $this->assertDatabaseHas('staff_incentives', ['id' => $incentive->id, 'amount' => 250, 'reason' => 'Revised']);
+
+        $this->assertTrue($repository->delete($incentive));
+        $this->assertDatabaseMissing('staff_incentives', ['id' => $incentive->id]);
+    }
 }

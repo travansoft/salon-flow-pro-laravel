@@ -36,6 +36,9 @@ class IncentiveProgressController extends Controller
             'slabs' => $slabs,
             'scalePercent' => max(100, (float) $slabs->max('min_achievement_percent')),
             'settings' => $this->incentiveService->getSettings(),
+            'totalIncentive' => $progress->reduce(fn (string $carry, array $row) => bcadd($carry, $row['incentive'], 2), '0.00'),
+            'totalBonus' => $progress->reduce(fn (string $carry, array $row) => bcadd($carry, $row['bonus'], 2), '0.00'),
+            'totalAccrued' => $progress->reduce(fn (string $carry, array $row) => bcadd($carry, $row['totalEarned'], 2), '0.00'),
         ]);
     }
 
