@@ -37,6 +37,9 @@
         </div>
         <button type="submit" class="sfp-btn-primary">Filter</button>
         <a href="{{ $tenantUrl->route('bills.index') }}" class="sfp-btn-outline">Reset</a>
+        @can('billing.view')
+            <a href="{{ $tenantUrl->route('bills.export') }}?{{ http_build_query(['from_date' => $fromDate, 'to_date' => $toDate, 'client_name' => $clientName, 'client_phone' => $clientPhone]) }}" class="sfp-btn-outline"><i class="bi bi-file-earmark-excel"></i> Export to Excel</a>
+        @endcan
     </form>
 
     <div class="sfp-table-wrap">

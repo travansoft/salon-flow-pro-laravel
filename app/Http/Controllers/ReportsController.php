@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Reports\GstReportRequest;
 use App\Services\BranchContext;
 use App\Services\DayBookService;
+use App\Services\GstReportService;
 use App\Services\ReportService;
 use App\Services\SalesInsightsService;
+use App\Services\XlsxWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportsController extends Controller
 {
@@ -17,6 +21,7 @@ class ReportsController extends Controller
         private BranchContext $branchContext,
         private DayBookService $dayBookService,
         private SalesInsightsService $salesInsightsService,
+        private GstReportService $gstReportService,
     ) {}
 
     public function index(Request $request): View
@@ -60,6 +65,36 @@ class ReportsController extends Controller
             'to' => $to,
             ...$this->dayBookService->forRange($from, $to),
         ]);
+    }
+
+    public function gst(GstReportRequest $request): View
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        $month = $request->month();
+
+        return view('admin.reports.gst', [
+            'month' => $month,
+            ...$this->gstReportService->forMonth($month),
+        ]);
+    }
+
+    public function gstExport(GstReportRequest $request, XlsxWriter $xlsxWriter): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        $month = $request->month();
+        $report = $this->gstReportService->forMonth($month);
+
+        $path = $xlsxWriter->build(
+            'GST report',
+            GstReportService::Headings,
+            $this->gstReportService->exportRows($report['invoices']),
+        );
+
+        return response()
+            ->download($path, "gst-report-{$month->format('Y-m')}.xlsx")
+            ->deleteFileAfterSend();
     }
 
     public function consolidated(Request $request): View

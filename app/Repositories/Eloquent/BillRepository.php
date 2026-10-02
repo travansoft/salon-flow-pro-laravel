@@ -65,6 +65,17 @@ class BillRepository implements BillRepositoryInterface
             ->get();
     }
 
+    /** @return Collection<int, Bill> */
+    public function forGstReport(Carbon $from, Carbon $to): Collection
+    {
+        return $this->model->where('status', '!=', Bill::StatusVoid)
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->with(['client', 'branch', 'lineItems'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+    }
+
     public function totalForDate(Carbon $date): string
     {
         return (string) $this->model->where('status', '!=', Bill::StatusVoid)

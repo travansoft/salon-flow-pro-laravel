@@ -20,6 +20,14 @@ interface StaffIncentiveRepositoryInterface
     /** @return Collection<int, StaffIncentive> */
     public function getBetweenDates(Carbon $from, Carbon $to): Collection;
 
+    /** @return Collection<int, StaffIncentive> */
+    public function getListBetweenDates(Carbon $from, Carbon $to, ?int $staffProfileId = null): Collection;
+
     /** @param array<string, mixed> $data */
     public function create(array $data): StaffIncentive;
+
+    /** @param array<string, mixed> $data */
+    public function update(StaffIncentive $incentive, array $data): StaffIncentive;
+
+    public function delete(StaffIncentive $incentive): bool;
 }
