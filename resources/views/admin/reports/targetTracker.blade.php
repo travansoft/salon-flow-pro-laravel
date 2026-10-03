@@ -126,9 +126,9 @@
                 @if($day['actual'] === null || bccomp($day['expected'], '0', 2) <= 0)
                     <span style="text-align:center;color:#94A19D">—</span>
                 @elseif(bccomp($day['actual'], $day['expected'], 2) >= 0)
-                    <span style="text-align:center;color:#1E7B4F" title="Day's target achieved"><i class="bi bi-check-circle-fill"></i></span>
+                    <span style="text-align:center;color:#1E7B4F" title="Day's target achieved"><span style="font-weight:700;font-size:16px">&#10003;</span></span>
                 @else
-                    <span style="text-align:center;color:#C0392B" title="Day's target missed"><i class="bi bi-x-circle-fill"></i></span>
+                    <span style="text-align:center;color:#C0392B" title="Day's target missed"><span style="font-weight:700;font-size:16px">&#10007;</span></span>
                 @endif
                 <span style="color:{{ $statusStyles[$day['status'] ?? 'no-target']['color'] }}">{{ $day['status'] ? $statusStyles[$day['status']]['label'] : '—' }}</span>
             </div>
