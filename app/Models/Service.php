@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'branch_id', 'name', 'code', 'category_id', 'price', 'requires_rate_confirmation', 'duration_minutes', 'is_active', 'tax_rate', 'hsn_sac_code'])]
+#[Fillable(['tenant_id', 'branch_id', 'name', 'code', 'category_id', 'price', 'requires_rate_confirmation', 'duration_minutes', 'is_active', 'is_combo', 'tax_rate', 'hsn_sac_code'])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class Service extends Model
 {
@@ -28,6 +28,7 @@ class Service extends Model
         return [
             'price' => 'decimal:2',
             'is_active' => 'boolean',
+            'is_combo' => 'boolean',
             'requires_rate_confirmation' => 'boolean',
             'tax_rate' => 'decimal:2',
         ];
@@ -61,6 +62,18 @@ class Service extends Model
     public function priceHistories(): HasMany
     {
         return $this->hasMany(ServicePriceHistory::class);
+    }
+
+    /** @return HasMany<ServiceComboItem, $this> */
+    public function comboItems(): HasMany
+    {
+        return $this->hasMany(ServiceComboItem::class, 'combo_service_id')->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** @return HasMany<ServiceComboItem, $this> */
+    public function includedInCombos(): HasMany
+    {
+        return $this->hasMany(ServiceComboItem::class, 'component_service_id');
     }
 
     /** @return BelongsToMany<Product, $this> */

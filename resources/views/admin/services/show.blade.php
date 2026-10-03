@@ -46,6 +46,22 @@
         </div>
     </div>
 
+    @if ($service->is_combo)
+        <h2 class="sfp-card-title">Combo services</h2>
+        <div class="sfp-table-wrap" style="margin-bottom:16px">
+            <div class="sfp-table-head-row" style="grid-template-columns:1fr 1fr">
+                <span>Service</span>
+                <span>Price (incl. GST)</span>
+            </div>
+            @foreach ($service->comboItems as $comboItem)
+                <div class="sfp-table-row" style="grid-template-columns:1fr 1fr">
+                    <span style="font-size:13.5px">{{ $comboItem->component->name }}</span>
+                    <span class="sfp-mono" style="font-size:13px">&#8377;{{ number_format($comboItem->price, 2) }}</span>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <h2 class="sfp-card-title">Price history</h2>
     <div class="sfp-table-wrap">
         <div class="sfp-table-head-row" style="grid-template-columns:1fr 1fr 1fr">

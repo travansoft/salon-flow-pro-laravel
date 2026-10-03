@@ -51,7 +51,7 @@ class UpdateBillRequest extends FormRequest
                 function (string $attribute, mixed $value, Closure $fail): void {
                     $lineItem = $this->bill()->lineItems()->find(explode('.', $attribute)[1]);
 
-                    if (! $lineItem || ! $lineItem->service_id || (int) $value === $lineItem->staff_profile_id) {
+                    if (! $lineItem || ! $lineItem->service_id || $lineItem->service?->is_combo || (int) $value === $lineItem->staff_profile_id) {
                         return;
                     }
 
@@ -66,7 +66,41 @@ class UpdateBillRequest extends FormRequest
                 'nullable', 'integer',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
             ],
+            'combo_split' => [
+                'nullable', 'array',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $splittableIds = $this->bill()->lineItems()->whereNull('combo_group')
+                        ->whereHas('service', fn ($query) => $query->where('is_combo', true))->pluck('id')->all();
+
+                    if (array_diff(array_keys((array) $value), $splittableIds) !== []) {
+                        $fail('Only a combo billed as a single line can be split.');
+                    }
+                },
+            ],
+            'combo_split.*' => ['array'],
+            'combo_split.*.*' => [
+                'nullable', 'integer',
+                Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
+            ],
         ];
+    }
+
+    /**
+     * A line being split into its services gets its staff from the split, so
+     * its own servicing-staff field is filled from the first chosen staff
+     * member rather than required separately.
+     */
+    protected function prepareForValidation(): void
+    {
+        $comboSplit = array_map(fn ($staff) => array_filter((array) $staff, fn ($id) => $id !== null && $id !== ''), (array) $this->input('combo_split', []));
+        $comboSplit = array_filter($comboSplit, fn (array $staff) => $staff !== []);
+        $items = (array) $this->input('items', []);
+
+        foreach ($comboSplit as $lineItemId => $staff) {
+            $items[$lineItemId]['staff_profile_id'] = reset($staff);
+        }
+
+        $this->merge(['combo_split' => $comboSplit, 'items' => $items]);
     }
 
     private function bill(): Bill

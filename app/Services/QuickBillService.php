@@ -76,7 +76,7 @@ class QuickBillService
     /**
      * Creates a bill from resolved line items and settles it in full with a single payment.
      *
-     * @param  array<int, array{service_id: int, staff_profile_id?: int|null, quantity?: int, description?: string, unit_price?: float}>  $items
+     * @param  array<int, array{service_id: int, staff_profile_id?: int|null, components?: array<int, array{service_id: int, staff_profile_id: int|null}>, quantity?: int, description?: string, unit_price?: float}>  $items
      * @param  array{client_id?: int|null, name?: string|null, phone?: string|null, gst_number?: string|null}  $clientDetails
      */
     public function createAndSettle(array $items, array $clientDetails, string $paymentMethod, int $staffUserId, float $discountPercent = 0, ?float $discountAmount = null): Bill
@@ -97,6 +97,17 @@ class QuickBillService
 
                 if (! $service) {
                     throw new InvalidArgumentException('One of the selected services is no longer available.');
+                }
+
+                if ($service->is_combo) {
+                    $lineItems[] = [
+                        'service_id' => $service->id,
+                        'components' => $item['components'] ?? [],
+                        'referred_by_staff_profile_id' => $referredByStaffProfileId,
+                        'unit_price' => $item['unit_price'] ?? null,
+                    ];
+
+                    continue;
                 }
 
                 if ($staffProfileId && ! $service->staff()->where('staff_profiles.id', $staffProfileId)->exists()) {

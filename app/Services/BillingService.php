@@ -2,16 +2,20 @@
 
 namespace App\Services;
 
+use App\Actions\ExpandCombo;
 use App\Models\Appointment;
 use App\Models\Bill;
 use App\Models\BillAudit;
+use App\Models\BillLineItem;
 use App\Models\BillPayment;
 use App\Models\Client;
+use App\Models\Service;
 use App\Repositories\Contracts\BillLineItemRepositoryInterface;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class BillingService
@@ -22,6 +26,7 @@ class BillingService
         private StaffProfileRepositoryInterface $staffProfileRepository,
         private TenantContext $tenantContext,
         private BranchContext $branchContext,
+        private ExpandCombo $expandCombo,
     ) {}
 
     /**
@@ -78,6 +83,8 @@ class BillingService
         if (! $branch) {
             throw new InvalidArgumentException('A branch must be selected before a bill can be created.');
         }
+
+        $lineItems = $this->expandCombos($lineItems);
 
         $client = Client::query()->findOrFail($clientId);
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
@@ -173,6 +180,8 @@ class BillingService
 
                 $resolvedItems[] = [
                     'service_id' => $item['service_id'] ?? null,
+                    'combo_service_id' => $item['combo_service_id'] ?? null,
+                    'combo_group' => $item['combo_group'] ?? null,
                     'staff_profile_id' => $item['staff_profile_id'] ?? null,
                     'referred_by_staff_profile_id' => $item['referred_by_staff_profile_id'] ?? null,
                     'description' => $item['description'],
@@ -229,6 +238,27 @@ class BillingService
 
             return $bill->load('lineItems');
         });
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $lineItems
+     * @return array<int, array<string, mixed>>
+     */
+    private function expandCombos(array $lineItems): array
+    {
+        $expanded = [];
+
+        foreach ($lineItems as $item) {
+            if (isset($item['components'])) {
+                array_push($expanded, ...$this->expandCombo->execute($item));
+
+                continue;
+            }
+
+            $expanded[] = $item;
+        }
+
+        return $expanded;
     }
 
     /**
@@ -343,19 +373,20 @@ class BillingService
      * requires cancelling the bill and creating a new one.
      *
      * @param  array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>  $lineStaff  keyed by line item id
+     * @param  array<int, array<int, int|string>>  $comboSplits  staff profile id per component service id, keyed by the id of an old single-line combo to split
      *
      * The bill date may only be moved within its existing financial year:
      * bill_number and financial_year are allocated once at creation and never
      * renumbered, so a date edit crossing a financial year would desync the
      * stored invoice number from the displayed date.
      */
-    public function editBill(Bill $bill, int $clientId, ?string $notes, ?CarbonInterface $billDate, int $changedBy, array $lineStaff = []): Bill
+    public function editBill(Bill $bill, int $clientId, ?string $notes, ?CarbonInterface $billDate, int $changedBy, array $lineStaff = [], array $comboSplits = []): Bill
     {
         if ($billDate && $bill->financial_year && FinancialYear::forDate($billDate) !== $bill->financial_year) {
             throw new InvalidArgumentException('The bill date must stay within the bill\'s current financial year ('.$bill->financial_year.').');
         }
 
-        return DB::transaction(function () use ($bill, $clientId, $notes, $billDate, $changedBy, $lineStaff): Bill {
+        return DB::transaction(function () use ($bill, $clientId, $notes, $billDate, $changedBy, $lineStaff, $comboSplits): Bill {
             $oldClientId = $bill->client_id;
             $oldClientName = $bill->client->name;
             $oldNotes = $bill->notes;
@@ -383,6 +414,8 @@ class BillingService
                 $this->recordAudit($bill, BillAudit::ActionEdited, 'bill_date', $oldCreatedAt->toDateString(), $billDate->toDateString(), $changedBy);
             }
 
+            $lineStaff = $this->splitComboLines($bill, $comboSplits, $lineStaff, $changedBy);
+
             $this->updateLineStaff($bill, $lineStaff, $changedBy);
 
             return $updated;
@@ -394,6 +427,8 @@ class BillingService
     {
         $bill->loadMissing(['lineItems.staffProfile', 'lineItems.referredByStaffProfile']);
 
+        $comboReferrers = $this->changedComboReferrers($bill, $lineStaff);
+
         foreach ($bill->lineItems as $lineItem) {
             if (! isset($lineStaff[$lineItem->id])) {
                 continue;
@@ -402,6 +437,10 @@ class BillingService
             $newServicingId = (int) $lineStaff[$lineItem->id]['staff_profile_id'];
             $newReferrerId = $lineStaff[$lineItem->id]['referred_by_staff_profile_id'] ?? null;
             $newReferrerId = $newReferrerId === null ? null : (int) $newReferrerId;
+
+            if ($lineItem->combo_group !== null && array_key_exists($lineItem->combo_group, $comboReferrers)) {
+                $newReferrerId = $comboReferrers[$lineItem->combo_group];
+            }
 
             if ($newServicingId === $lineItem->staff_profile_id && $newReferrerId === $lineItem->referred_by_staff_profile_id) {
                 continue;
@@ -427,6 +466,137 @@ class BillingService
                 $this->recordAudit($bill, BillAudit::ActionEdited, 'referring_staff', "{$lineItem->description}: {$oldReferrerName}", "{$lineItem->description}: {$newReferrerName}", $changedBy);
             }
         }
+    }
+
+    /**
+     * Replaces a combo that was billed as one line (before combos were split
+     * per service) with one line per component, carrying the staff given for
+     * each. The line's amount, discount and GST are spread over the components
+     * in proportion to their combo prices, so bill totals never change.
+     *
+     * @param  array<int, array<int, int|string>>  $comboSplits
+     * @param  array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>  $lineStaff
+     * @return array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>
+     */
+    private function splitComboLines(Bill $bill, array $comboSplits, array $lineStaff, int $changedBy): array
+    {
+        if ($comboSplits === []) {
+            return $lineStaff;
+        }
+
+        $bill->loadMissing(['lineItems.service.comboItems.component.staff']);
+
+        foreach ($comboSplits as $lineItemId => $staffByComponent) {
+            $lineItem = $bill->lineItems->firstWhere('id', (int) $lineItemId);
+            $combo = $lineItem?->service;
+
+            if (! $lineItem || ! $combo?->is_combo || $lineItem->combo_group !== null) {
+                throw new InvalidArgumentException('Only a combo billed as a single line can be split.');
+            }
+
+            $referrerId = array_key_exists('referred_by_staff_profile_id', $lineStaff[$lineItemId] ?? [])
+                ? $lineStaff[$lineItemId]['referred_by_staff_profile_id']
+                : $lineItem->referred_by_staff_profile_id;
+
+            $this->splitComboLine($lineItem, $combo, array_map('intval', $staffByComponent), $referrerId === null || $referrerId === '' ? null : (int) $referrerId);
+
+            $this->recordAudit($bill, BillAudit::ActionEdited, 'combo_split', "{$lineItem->description}: single line", $this->describeSplit($combo, $staffByComponent), $changedBy);
+
+            unset($lineStaff[$lineItemId]);
+        }
+
+        $bill->unsetRelation('lineItems');
+
+        return $lineStaff;
+    }
+
+    /** @param array<int, int> $staffByComponent */
+    private function splitComboLine(BillLineItem $lineItem, Service $combo, array $staffByComponent, ?int $referrerId): void
+    {
+        $comboItems = $combo->comboItems;
+
+        if ($comboItems->pluck('component_service_id')->sort()->values()->all() !== collect($staffByComponent)->keys()->map(fn ($id): int => (int) $id)->sort()->values()->all()) {
+            throw new InvalidArgumentException("Select a staff member for every service in \"{$combo->name}\".");
+        }
+
+        $weightTotal = $comboItems->reduce(fn (string $sum, $comboItem): string => bcadd($sum, (string) $comboItem->price, 2), '0');
+        $fields = ['line_total', 'discount_amount', 'cgst_amount', 'sgst_amount', 'igst_amount'];
+        $remaining = array_combine($fields, array_map(fn (string $field): string => (string) $lineItem->{$field}, $fields));
+        $group = (string) Str::uuid();
+        $lastIndex = $comboItems->count() - 1;
+
+        foreach ($comboItems as $index => $comboItem) {
+            $component = $comboItem->component;
+            $staffProfileId = $staffByComponent[$comboItem->component_service_id];
+
+            if (! $component->staff->contains('id', $staffProfileId)) {
+                throw new InvalidArgumentException("The selected staff member is not eligible to perform \"{$component->name}\".");
+            }
+
+            $share = [];
+
+            foreach ($fields as $field) {
+                $share[$field] = match (true) {
+                    $index === $lastIndex => $remaining[$field],
+                    bccomp($weightTotal, '0', 2) === 0 => bcdiv((string) $lineItem->{$field}, (string) ($lastIndex + 1), 2),
+                    default => bcadd(bcmul((string) $lineItem->{$field}, bcdiv((string) $comboItem->price, $weightTotal, 10), 10), '0', 2),
+                };
+                $remaining[$field] = bcsub($remaining[$field], $share[$field], 2);
+            }
+
+            $this->billLineItemRepository->create([
+                'tenant_id' => $lineItem->tenant_id,
+                'branch_id' => $lineItem->branch_id,
+                'bill_id' => $lineItem->bill_id,
+                'service_id' => $component->id,
+                'combo_service_id' => $combo->id,
+                'combo_group' => $group,
+                'staff_profile_id' => $staffProfileId,
+                'referred_by_staff_profile_id' => $referrerId,
+                'description' => "{$combo->name} - {$component->name}",
+                'quantity' => $lineItem->quantity,
+                'unit_price' => bcdiv($share['line_total'], (string) $lineItem->quantity, 2),
+                'tax_rate' => $lineItem->tax_rate,
+                ...$share,
+            ]);
+        }
+
+        $this->billLineItemRepository->delete($lineItem);
+    }
+
+    /** @param array<int, int|string> $staffByComponent */
+    private function describeSplit(Service $combo, array $staffByComponent): string
+    {
+        return $combo->comboItems
+            ->map(fn ($comboItem): string => "{$comboItem->component->name}: {$this->staffName((int) $staffByComponent[$comboItem->component_service_id])}")
+            ->implode(', ');
+    }
+
+    /**
+     * Referral belongs to the whole combo, so a referrer changed on any one of
+     * its lines is applied to every line of that combo.
+     *
+     * @param  array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>  $lineStaff
+     * @return array<string, int|null>
+     */
+    private function changedComboReferrers(Bill $bill, array $lineStaff): array
+    {
+        $comboReferrers = [];
+
+        foreach ($bill->lineItems as $lineItem) {
+            if ($lineItem->combo_group === null || ! isset($lineStaff[$lineItem->id])) {
+                continue;
+            }
+
+            $submitted = $lineStaff[$lineItem->id]['referred_by_staff_profile_id'] ?? null;
+            $submitted = $submitted === null ? null : (int) $submitted;
+
+            if ($submitted !== $lineItem->referred_by_staff_profile_id) {
+                $comboReferrers[$lineItem->combo_group] = $submitted;
+            }
+        }
+
+        return $comboReferrers;
     }
 
     private function staffName(int $staffProfileId): ?string
