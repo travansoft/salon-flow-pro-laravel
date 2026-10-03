@@ -59,7 +59,7 @@ class ExpandCombo
             $price = match (true) {
                 $isLast => bcsub($targetTotal, $allocated, 2),
                 bccomp($componentsTotal, '0', 2) === 0 => '0.00',
-                default => bcadd(bcmul((string) $comboItem->price, bcdiv($targetTotal, $componentsTotal, 10), 10), '0', 2),
+                default => bcadd(bcmul((string) $comboItem->price, bcdiv($targetTotal, $componentsTotal, 10), 6), '0.005', 2),
             };
 
             $allocated = bcadd($allocated, $price, 2);
@@ -72,6 +72,7 @@ class ExpandCombo
                 'referred_by_staff_profile_id' => $item['referred_by_staff_profile_id'] ?? null,
                 'description' => "{$combo->name} - {$component->name}",
                 'quantity' => 1,
+                'target_amount' => $price,
                 'unit_price' => (float) $price,
                 'tax_rate' => (float) ($component->tax_rate ?? $defaultGstRate),
             ];

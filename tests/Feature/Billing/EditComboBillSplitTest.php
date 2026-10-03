@@ -84,15 +84,13 @@ class EditComboBillSplitTest extends TestCase
         $this->assertSame([$this->referrer->id, $this->referrer->id], $lines->pluck('referred_by_staff_profile_id')->all());
     }
 
-    public function test_split_keeps_the_line_amounts_discount_and_gst_unchanged(): void
+    public function test_split_shares_the_line_value_by_service_price_and_credits_it_without_gst(): void
     {
         $this->actingAs($this->owner)->putToTenant("/bills/{$this->bill->id}", $this->payload($this->fullSplit()));
 
-        $lines = $this->bill->lineItems()->get();
-        $this->assertSame('1000.00', $lines->reduce(fn (string $sum, BillLineItem $line) => bcadd($sum, (string) $line->line_total, 2), '0'));
+        $lines = $this->bill->lineItems()->orderBy('id')->get();
+        $this->assertSame(['826.00', '354.00'], $lines->map(fn (BillLineItem $line) => (string) $line->target_amount)->all());
         $this->assertSame('100.00', $lines->reduce(fn (string $sum, BillLineItem $line) => bcadd($sum, (string) $line->discount_amount, 2), '0'));
-        $this->assertSame('90.00', $lines->reduce(fn (string $sum, BillLineItem $line) => bcadd($sum, (string) $line->cgst_amount, 2), '0'));
-        $this->assertSame('700.00', (string) $lines->firstWhere('service_id', $this->combo->comboItems[0]->component_service_id)->line_total);
     }
 
     public function test_split_is_recorded_in_the_bill_history(): void

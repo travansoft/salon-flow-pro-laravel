@@ -107,6 +107,9 @@
                             <a href="{{ $tenantUrl->route('reports.dayBook') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.dayBook') ? 'active' : '' }}">
                                 Day book
                             </a>
+                            <a href="{{ $tenantUrl->route('reports.expenseSummary') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.expenseSummary') ? 'active' : '' }}">
+                                Expense summary
+                            </a>
                             <a href="{{ $tenantUrl->route('reports.gst') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.gst') ? 'active' : '' }}">
                                 GST report
                             </a>

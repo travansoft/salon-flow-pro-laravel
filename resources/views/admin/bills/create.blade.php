@@ -107,6 +107,11 @@
                 </select>
             </div>
 
+            <div class="sfp-field">
+                <label class="sfp-label" for="bill-notes">Note <span style="color:#94A19D;font-weight:400">(internal, not printed)</span></label>
+                <textarea id="bill-notes" class="sfp-input" rows="3" maxlength="2000"></textarea>
+            </div>
+
             <div id="bill-feedback" style="font-size:13px;margin:10px 0;min-height:18px"></div>
 
             <div class="sfp-form-actions">
@@ -777,6 +782,7 @@
                     ...buildClientPayload(),
                     items: buildItemsPayload(),
                     payment_method: paymentMethodSelect.value,
+                    notes: document.getElementById('bill-notes').value.trim() || null,
                 }),
             });
 

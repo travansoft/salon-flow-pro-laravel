@@ -51,15 +51,15 @@ class BillingService
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
+    public function createManualBill(int $clientId, int $createdBy, array $lineItems, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null, ?string $notes = null): Bill
     {
-        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate, $discountAmount);
+        return $this->createBill($clientId, $createdBy, $lineItems, null, $discountPercent, $billDate, $discountAmount, $notes);
     }
 
     /**
      * @param  array<int, array{description: string, service_id?: int|null, staff_profile_id?: int|null, quantity?: int, unit_price: float, tax_rate?: float}>  $lineItems
      */
-    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null): Bill
+    private function createBill(int $clientId, int $createdBy, array $lineItems, ?int $appointmentId = null, float $discountPercent = 0, ?CarbonInterface $billDate = null, ?float $discountAmount = null, ?string $notes = null): Bill
     {
         if ($lineItems === []) {
             throw new InvalidArgumentException('A bill must have at least one line item.');
@@ -91,7 +91,7 @@ class BillingService
         $discountAmountInput = $discountAmount !== null ? (string) $discountAmount : null;
         $discountPercentInput = (string) $discountPercent;
 
-        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountPercentInput, $discountAmountInput, $billDate): Bill {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountPercentInput, $discountAmountInput, $billDate, $notes): Bill {
             $subtotal = '0';
             $subtotalInclusive = '0';
             $lineIntermediates = [];
@@ -182,6 +182,7 @@ class BillingService
                     'service_id' => $item['service_id'] ?? null,
                     'combo_service_id' => $item['combo_service_id'] ?? null,
                     'combo_group' => $item['combo_group'] ?? null,
+                    'target_amount' => $item['target_amount'] ?? null,
                     'staff_profile_id' => $item['staff_profile_id'] ?? null,
                     'referred_by_staff_profile_id' => $item['referred_by_staff_profile_id'] ?? null,
                     'description' => $item['description'],
@@ -226,6 +227,7 @@ class BillingService
                 'igst_amount' => $igstAmount,
                 'status' => Bill::StatusUnpaid,
                 'created_by' => $createdBy,
+                'notes' => $notes,
             ]);
 
             if ($billDate) {
@@ -471,8 +473,8 @@ class BillingService
     /**
      * Replaces a combo that was billed as one line (before combos were split
      * per service) with one line per component, carrying the staff given for
-     * each. The line's amount, discount and GST are spread over the components
-     * in proportion to their combo prices, so bill totals never change.
+     * each. The line's GST-inclusive value and discount are spread over the components
+     * in proportion to their combo prices, so the payable total never changes.
      *
      * @param  array<int, array<int, int|string>>  $comboSplits
      * @param  array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}>  $lineStaff
@@ -505,6 +507,8 @@ class BillingService
             unset($lineStaff[$lineItemId]);
         }
 
+        $this->refreshBillTotalsFromLines($bill);
+
         $bill->unsetRelation('lineItems');
 
         return $lineStaff;
@@ -520,10 +524,16 @@ class BillingService
         }
 
         $weightTotal = $comboItems->reduce(fn (string $sum, $comboItem): string => bcadd($sum, (string) $comboItem->price, 2), '0');
-        $fields = ['line_total', 'discount_amount', 'cgst_amount', 'sgst_amount', 'igst_amount'];
-        $remaining = array_combine($fields, array_map(fn (string $field): string => (string) $lineItem->{$field}, $fields));
+        $discount = (string) $lineItem->discount_amount;
+        $tax = bcadd(bcadd((string) $lineItem->cgst_amount, (string) $lineItem->sgst_amount, 2), (string) $lineItem->igst_amount, 2);
+        $inclusiveBeforeDiscount = bcadd(bcadd(bcsub((string) $lineItem->line_total, $discount, 2), $tax, 2), $discount, 2);
+        $isIntraState = bccomp((string) $lineItem->igst_amount, '0', 2) === 0;
+        $taxRateMultiplier = bcadd('1', bcdiv((string) $lineItem->tax_rate, '100', 4), 4);
+        $quantity = (string) $lineItem->quantity;
         $group = (string) Str::uuid();
         $lastIndex = $comboItems->count() - 1;
+        $remainingInclusive = $inclusiveBeforeDiscount;
+        $remainingDiscount = $discount;
 
         foreach ($comboItems as $index => $comboItem) {
             $component = $comboItem->component;
@@ -533,16 +543,26 @@ class BillingService
                 throw new InvalidArgumentException("The selected staff member is not eligible to perform \"{$component->name}\".");
             }
 
-            $share = [];
+            $isLast = $index === $lastIndex;
 
-            foreach ($fields as $field) {
-                $share[$field] = match (true) {
-                    $index === $lastIndex => $remaining[$field],
-                    bccomp($weightTotal, '0', 2) === 0 => bcdiv((string) $lineItem->{$field}, (string) ($lastIndex + 1), 2),
-                    default => bcadd(bcmul((string) $lineItem->{$field}, bcdiv((string) $comboItem->price, $weightTotal, 10), 10), '0', 2),
-                };
-                $remaining[$field] = bcsub($remaining[$field], $share[$field], 2);
-            }
+            $lineInclusive = match (true) {
+                $isLast => $remainingInclusive,
+                bccomp($weightTotal, '0', 2) === 0 => $this->roundMoney(bcdiv($inclusiveBeforeDiscount, (string) ($lastIndex + 1), 6)),
+                default => $this->roundMoney(bcmul($inclusiveBeforeDiscount, bcdiv((string) $comboItem->price, $weightTotal, 10), 6)),
+            };
+
+            $lineDiscount = match (true) {
+                $isLast => $remainingDiscount,
+                bccomp($inclusiveBeforeDiscount, '0', 2) === 0 => '0.00',
+                default => $this->roundMoney(bcmul($discount, bcdiv($lineInclusive, $inclusiveBeforeDiscount, 10), 6)),
+            };
+
+            $remainingInclusive = bcsub($remainingInclusive, $lineInclusive, 2);
+            $remainingDiscount = bcsub($remainingDiscount, $lineDiscount, 2);
+
+            $lineTotal = bcadd(bcdiv($lineInclusive, $taxRateMultiplier, 10), '0', 2);
+            $lineTax = bcsub(bcsub($lineInclusive, $lineDiscount, 2), bcsub($lineTotal, $lineDiscount, 2), 2);
+            [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 
             $this->billLineItemRepository->create([
                 'tenant_id' => $lineItem->tenant_id,
@@ -551,17 +571,53 @@ class BillingService
                 'service_id' => $component->id,
                 'combo_service_id' => $combo->id,
                 'combo_group' => $group,
+                'target_amount' => $lineInclusive,
                 'staff_profile_id' => $staffProfileId,
                 'referred_by_staff_profile_id' => $referrerId,
                 'description' => "{$combo->name} - {$component->name}",
                 'quantity' => $lineItem->quantity,
-                'unit_price' => bcdiv($share['line_total'], (string) $lineItem->quantity, 2),
+                'unit_price' => bcdiv($lineTotal, $quantity, 2),
                 'tax_rate' => $lineItem->tax_rate,
-                ...$share,
+                'line_total' => $lineTotal,
+                'discount_amount' => $lineDiscount,
+                'cgst_amount' => $lineCgst,
+                'sgst_amount' => $lineSgst,
+                'igst_amount' => $lineIgst,
             ]);
         }
 
         $this->billLineItemRepository->delete($lineItem);
+    }
+
+    private function roundMoney(string $amount): string
+    {
+        return bcadd($amount, '0.005', 2);
+    }
+
+    /**
+     * Brings the bill's stored subtotal and GST back in line with its lines
+     * after a split, since each service now has its own rounded GST. The
+     * payable total is unchanged because every line keeps its inclusive value.
+     */
+    private function refreshBillTotalsFromLines(Bill $bill): void
+    {
+        $lines = $bill->lineItems()->get();
+        $sum = fn (string $field): string => $lines->reduce(fn (string $carry, BillLineItem $line): string => bcadd($carry, (string) $line->{$field}, 2), '0');
+
+        $subtotal = $sum('line_total');
+        $cgst = $sum('cgst_amount');
+        $sgst = $sum('sgst_amount');
+        $igst = $sum('igst_amount');
+        $taxAmount = bcadd(bcadd($cgst, $sgst, 2), $igst, 2);
+
+        $this->billRepository->update($bill, [
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'cgst_amount' => $cgst,
+            'sgst_amount' => $sgst,
+            'igst_amount' => $igst,
+            'total' => bcadd(bcsub($subtotal, (string) $bill->discount_amount, 2), $taxAmount, 2),
+        ]);
     }
 
     /** @param array<int, int|string> $staffByComponent */

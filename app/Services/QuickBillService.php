@@ -79,7 +79,7 @@ class QuickBillService
      * @param  array<int, array{service_id: int, staff_profile_id?: int|null, components?: array<int, array{service_id: int, staff_profile_id: int|null}>, quantity?: int, description?: string, unit_price?: float}>  $items
      * @param  array{client_id?: int|null, name?: string|null, phone?: string|null, gst_number?: string|null}  $clientDetails
      */
-    public function createAndSettle(array $items, array $clientDetails, string $paymentMethod, int $staffUserId, float $discountPercent = 0, ?float $discountAmount = null): Bill
+    public function createAndSettle(array $items, array $clientDetails, string $paymentMethod, int $staffUserId, float $discountPercent = 0, ?float $discountAmount = null, ?string $notes = null): Bill
     {
         if ($items === []) {
             throw new InvalidArgumentException('At least one line item is required.');
@@ -140,7 +140,7 @@ class QuickBillService
 
         $client = $this->resolveClient($clientDetails);
 
-        $bill = $this->billingService->createManualBill($client->id, $staffUserId, $lineItems, $discountPercent, discountAmount: $discountAmount);
+        $bill = $this->billingService->createManualBill($client->id, $staffUserId, $lineItems, $discountPercent, discountAmount: $discountAmount, notes: $notes);
 
         return $this->billingService->recordPayments($bill, [
             ['method' => $paymentMethod, 'amount' => (float) $bill->total],

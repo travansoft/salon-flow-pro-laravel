@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Expenses\ExpenseFilterRequest;
 use App\Http\Requests\Expenses\StoreExpenseRequest;
 use App\Http\Requests\Expenses\UpdateExpenseRequest;
 use App\Models\Expense;
@@ -11,7 +12,6 @@ use App\Services\ExpenseService;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class ExpensesController extends Controller
@@ -23,21 +23,21 @@ class ExpensesController extends Controller
         private TenantUrl $tenantUrl,
     ) {}
 
-    public function index(Request $request): View
+    public function index(ExpenseFilterRequest $request): View
     {
         abort_unless($request->user()->can('expenses.view'), 403);
 
-        $month = $request->filled('month')
-            ? Carbon::parse($request->string('month')->toString())
-            : Carbon::now();
+        [$from, $to] = $request->range();
 
-        $expenses = $this->expenseRepository->getBetweenDates($month->copy()->startOfMonth(), $month->copy()->endOfMonth());
-        $total = $this->expenseService->totalForMonth($month);
+        $expenses = $this->expenseRepository->getFiltered($from, $to, $request->filters());
 
         return view('admin.expenses.index', [
             'expenses' => $expenses,
-            'month' => $month,
-            'total' => $total,
+            'from' => $from,
+            'to' => $to,
+            'filters' => $request->filters(),
+            'categories' => $this->categoryRepository->getAll(),
+            'total' => $this->expenseService->totalOf($expenses),
         ]);
     }
 
