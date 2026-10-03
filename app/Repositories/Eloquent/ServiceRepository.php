@@ -22,6 +22,16 @@ class ServiceRepository implements ServiceRepositoryInterface
     }
 
     /** @return Collection<int, Service> */
+    public function getActiveFiltered(?string $term, ?int $categoryId): Collection
+    {
+        return $this->model->active()
+            ->with('category')
+            ->when($term, fn ($query) => $query->search($term))
+            ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
+            ->get();
+    }
+
+    /** @return Collection<int, Service> */
     public function getActiveNonCombo(): Collection
     {
         return $this->model->active()->where('is_combo', false)->orderBy('name')->get();

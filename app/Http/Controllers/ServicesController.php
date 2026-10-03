@@ -31,10 +31,16 @@ class ServicesController extends Controller
     {
         abort_unless($request->user()->can('services.view'), 403);
 
-        $services = $this->serviceRepository->getActive();
+        $term = trim((string) $request->query('search'));
+        $categoryId = $request->integer('category') ?: null;
+
+        $services = $this->serviceRepository->getActiveFiltered($term !== '' ? $term : null, $categoryId);
 
         return view('admin.services.index', [
             'services' => $services,
+            'categories' => $this->categoryRepository->getActive(),
+            'search' => $term,
+            'categoryId' => $categoryId,
             'tenant' => $this->tenantContext->get(),
         ]);
     }
