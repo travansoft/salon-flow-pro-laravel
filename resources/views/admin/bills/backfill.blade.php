@@ -494,6 +494,12 @@
             quantity: 1,
             staffProfileId: null,
             referredByStaffProfileId: null,
+            isCombo: Boolean(service.is_combo),
+            components: (service.components || []).map((component) => ({
+                serviceId: component.id,
+                name: component.name,
+                staffProfileId: null,
+            })),
         });
         renderLines();
         itemSearch.value = '';
@@ -503,14 +509,18 @@
     }
 
     async function loadEligibleStaff(line, select) {
-        if (!line.serviceId) {
+        return loadStaffOptions(line.serviceId, line.staffProfileId, select);
+    }
+
+    async function loadStaffOptions(serviceId, selectedStaffId, select) {
+        if (!serviceId) {
             select.innerHTML = '<option value="">No staff assigned</option>';
             return;
         }
 
         select.innerHTML = '<option value="">Loading&hellip;</option>';
 
-        const response = await fetch(eligibleStaffUrlTemplate.replace('__SERVICE_ID__', encodeURIComponent(line.serviceId)), {
+        const response = await fetch(eligibleStaffUrlTemplate.replace('__SERVICE_ID__', encodeURIComponent(serviceId)), {
             headers: { 'Accept': 'application/json' },
         });
 
@@ -518,7 +528,7 @@
         const staff = data.staff || [];
 
         select.innerHTML = '<option value="">Select staff&hellip;</option>' + staff.map((member) =>
-            `<option value="${member.id}" ${String(member.id) === String(line.staffProfileId || '') ? 'selected' : ''}>${member.name}</option>`
+            `<option value="${member.id}" ${String(member.id) === String(selectedStaffId || '') ? 'selected' : ''}>${member.name}</option>`
         ).join('');
     }
 
@@ -527,6 +537,11 @@
         itemsEmpty.style.display = lines.length ? 'none' : 'grid';
 
         lines.forEach((line) => {
+            if (line.isCombo) {
+                renderComboLine(line);
+                return;
+            }
+
             const row = document.createElement('div');
             row.className = 'sfp-table-row';
             row.dataset.lineId = line.id;
@@ -583,6 +598,67 @@
         updateTotal();
     }
 
+    function renderComboLine(line) {
+        const row = document.createElement('div');
+        row.className = 'sfp-table-row';
+        row.dataset.lineId = line.id;
+        row.style.gridTemplateColumns = '1.5fr 1.3fr 1.1fr 64px 100px 40px';
+
+        row.innerHTML = `
+            <span class="bill-line-description-wrap">
+                <span style="font-size:14px"><i class="bi bi-collection"></i> ${line.description}</span>
+                <span class="sfp-pill sfp-pill-green" style="margin-left:6px;font-size:10.5px">Combo</span>
+            </span>
+            <span style="font-size:12px;color:#66736F">Staff per service below</span>
+            <span></span>
+            <span class="sfp-mono" style="text-align:center">1</span>
+            <input type="number" min="0" step="0.01" value="${line.priceInclusive}" class="sfp-table-control bill-line-price" style="text-align:right">
+            <button type="button" class="sfp-table-remove bill-line-remove" title="Remove item" aria-label="Remove item">&times;</button>
+        `;
+
+        const referrerSelect = document.createElement('select');
+        referrerSelect.className = 'sfp-table-control bill-line-referrer';
+        referrerSelect.innerHTML = '<option value="">Direct</option>' + referrers.map((member) =>
+            `<option value="${member.id}" ${String(member.id) === String(line.referredByStaffProfileId || '') ? 'selected' : ''}>${member.name}</option>`
+        ).join('');
+        referrerSelect.addEventListener('change', () => {
+            line.referredByStaffProfileId = referrerSelect.value || null;
+        });
+        row.children[2].replaceWith(referrerSelect);
+
+        row.querySelector('.bill-line-price').addEventListener('input', (event) => {
+            const value = parseFloat(event.target.value);
+            line.priceInclusive = Number.isFinite(value) && value >= 0 ? value : 0;
+            updateTotal();
+        });
+
+        row.querySelector('.bill-line-remove').addEventListener('click', () => {
+            lines = lines.filter((l) => l.id !== line.id);
+            renderLines();
+        });
+
+        itemsBox.appendChild(row);
+
+        line.components.forEach((component) => {
+            const componentRow = document.createElement('div');
+            componentRow.className = 'sfp-table-row';
+            componentRow.dataset.lineId = line.id;
+            componentRow.style.gridTemplateColumns = '1.5fr 1.3fr 1.1fr 64px 100px 40px';
+            componentRow.innerHTML = `<span style="font-size:13px;color:#66736F;padding-left:22px">&#8627; ${component.name}</span><span></span><span></span><span></span><span></span><span></span>`;
+
+            const staffSelect = document.createElement('select');
+            staffSelect.className = 'sfp-table-control bill-line-staff';
+            staffSelect.dataset.componentId = component.serviceId;
+            staffSelect.addEventListener('change', () => {
+                component.staffProfileId = staffSelect.value || null;
+            });
+            componentRow.children[1].replaceWith(staffSelect);
+            loadStaffOptions(component.serviceId, component.staffProfileId, staffSelect);
+
+            itemsBox.appendChild(componentRow);
+        });
+    }
+
     let discountMode = 'percent';
 
     function setDiscountMode(mode) {
@@ -631,7 +707,16 @@
     }
 
     function buildItemsPayload() {
-        return lines.map((line) => ({
+        return lines.map((line) => line.isCombo ? ({
+            service_id: line.serviceId,
+            components: line.components.map((component) => ({
+                service_id: component.serviceId,
+                staff_profile_id: component.staffProfileId || null,
+            })),
+            referred_by_staff_profile_id: line.referredByStaffProfileId || null,
+            description: line.description,
+            unit_price: line.priceInclusive,
+        }) : ({
             service_id: line.serviceId,
             staff_profile_id: line.staffProfileId || null,
             referred_by_staff_profile_id: line.referredByStaffProfileId || null,
@@ -648,7 +733,17 @@
             return false;
         }
 
-        const missingStaff = lines.find((line) => !line.staffProfileId);
+        for (const comboLine of lines.filter((line) => line.isCombo)) {
+            const missingComponent = comboLine.components.find((component) => !component.staffProfileId);
+
+            if (missingComponent) {
+                setFeedback(`Select the staff for ${missingComponent.name} in ${comboLine.description}.`, true);
+                itemsBox.querySelector(`[data-component-id="${missingComponent.serviceId}"]`)?.focus();
+                return false;
+            }
+        }
+
+        const missingStaff = lines.filter((line) => !line.isCombo).find((line) => !line.staffProfileId);
 
         if (missingStaff) {
             setFeedback(`Select the servicing staff for ${missingStaff.description}.`, true);

@@ -253,11 +253,11 @@ class BillsController extends Controller
         abort_unless($request->user()->can('billing.editBill'), 403);
         abort_if($bill->status === Bill::StatusVoid, 403, 'A cancelled bill cannot be edited.');
 
-        $bill->load(['client', 'lineItems.service.staff']);
+        $bill->load(['client', 'lineItems.service.staff', 'lineItems.service.comboItems.component.staff']);
         $activeStaff = $staffProfileRepository->getActive();
 
         $servicingOptions = $bill->lineItems->mapWithKeys(fn ($lineItem) => [
-            $lineItem->id => ($lineItem->service?->staff ?? $activeStaff)
+            $lineItem->id => (($lineItem->service?->is_combo ? null : $lineItem->service?->staff) ?? $activeStaff)
                 ->filter(fn ($member) => $member->is_active || $member->id === $lineItem->staff_profile_id)
                 ->values(),
         ]);
@@ -284,9 +284,9 @@ class BillsController extends Controller
         $billDate = isset($data['bill_date']) ? Carbon::parse($data['bill_date'])->setTimeFrom($bill->created_at) : null;
 
         try {
-            $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null, $billDate, $request->user()->id, $data['items'] ?? []);
+            $this->billingService->editBill($bill, $client->id, $data['notes'] ?? null, $billDate, $request->user()->id, $data['items'] ?? [], $data['combo_split'] ?? []);
         } catch (InvalidArgumentException $exception) {
-            return back()->withErrors(['bill_date' => $exception->getMessage()])->withInput();
+            return back()->withErrors([($data['combo_split'] ?? []) !== [] ? 'combo_split' : 'bill_date' => $exception->getMessage()])->withInput();
         }
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill updated.');

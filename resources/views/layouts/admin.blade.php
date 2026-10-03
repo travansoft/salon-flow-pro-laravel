@@ -110,6 +110,9 @@
                             <a href="{{ $tenantUrl->route('reports.gst') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.gst') ? 'active' : '' }}">
                                 GST report
                             </a>
+                            <a href="{{ $tenantUrl->route('reports.targetTracker') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('reports.targetTracker') ? 'active' : '' }}">
+                                Target tracker
+                            </a>
                         </x-nav-group>
                     @endcan
 

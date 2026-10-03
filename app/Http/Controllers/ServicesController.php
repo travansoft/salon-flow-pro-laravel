@@ -47,6 +47,7 @@ class ServicesController extends Controller
 
         return view('admin.services.create', [
             'categories' => $categories,
+            'componentServices' => $this->serviceRepository->getActiveNonCombo(),
             'staff' => $this->staffProfileRepository->getActive(),
             'tenant' => $this->tenantContext->get(),
         ]);
@@ -66,7 +67,7 @@ class ServicesController extends Controller
         abort_unless($request->user()->can('services.view'), 403);
 
         return view('admin.services.show', [
-            'service' => $service,
+            'service' => $service->load('comboItems.component'),
             'tenant' => $this->tenantContext->get(),
         ]);
     }
@@ -78,7 +79,8 @@ class ServicesController extends Controller
         $categories = $this->categoryRepository->getActive();
 
         return view('admin.services.edit', [
-            'service' => $service,
+            'service' => $service->load('comboItems'),
+            'componentServices' => $this->serviceRepository->getActiveNonCombo(),
             'categories' => $categories,
             'staff' => $this->staffProfileRepository->getActive(),
             'tenant' => $this->tenantContext->get(),
@@ -139,6 +141,14 @@ class ServicesController extends Controller
                 'tax_rate' => (float) $service->effectiveTaxRate($tenantDefaultGstRate),
                 'price_inclusive' => (float) $service->priceInclusiveOfTax($tenantDefaultGstRate),
                 'requires_rate_confirmation' => (bool) $service->requires_rate_confirmation,
+                'is_combo' => (bool) $service->is_combo,
+                'components' => $service->is_combo
+                    ? $service->comboItems->map(fn ($comboItem) => [
+                        'id' => $comboItem->component_service_id,
+                        'name' => $comboItem->component->name,
+                        'price' => (float) $comboItem->price,
+                    ])->values()
+                    : [],
             ])->values(),
         ]);
     }

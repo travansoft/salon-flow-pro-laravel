@@ -22,9 +22,15 @@ class ServiceRepository implements ServiceRepositoryInterface
     }
 
     /** @return Collection<int, Service> */
+    public function getActiveNonCombo(): Collection
+    {
+        return $this->model->active()->where('is_combo', false)->orderBy('name')->get();
+    }
+
+    /** @return Collection<int, Service> */
     public function search(string $term): Collection
     {
-        return $this->model->active()->search($term)->orderBy('name')->limit(10)->get();
+        return $this->model->active()->with('comboItems.component')->search($term)->orderBy('name')->limit(10)->get();
     }
 
     /** @param array<string, mixed> $data */

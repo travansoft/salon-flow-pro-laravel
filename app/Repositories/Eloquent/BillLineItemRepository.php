@@ -26,6 +26,17 @@ class BillLineItemRepository implements BillLineItemRepositoryInterface
     }
 
     /** @param array<string, mixed> $data */
+    public function create(array $data): BillLineItem
+    {
+        return $this->model->create($data);
+    }
+
+    public function delete(BillLineItem $lineItem): bool
+    {
+        return (bool) $lineItem->delete();
+    }
+
+    /** @param array<string, mixed> $data */
     public function update(BillLineItem $lineItem, array $data): BillLineItem
     {
         $lineItem->update($data);

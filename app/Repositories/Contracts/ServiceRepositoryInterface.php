@@ -13,6 +13,9 @@ interface ServiceRepositoryInterface
     public function getActive(): Collection;
 
     /** @return Collection<int, Service> */
+    public function getActiveNonCombo(): Collection;
+
+    /** @return Collection<int, Service> */
     public function search(string $term): Collection;
 
     /** @param array<string, mixed> $data */

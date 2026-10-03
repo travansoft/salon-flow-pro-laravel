@@ -82,7 +82,26 @@
                             @enderror
                         </div>
                     </div>
+                    @if ($lineItem->service?->is_combo && ! $lineItem->combo_group)
+                        <div style="margin:-2px 0 14px;padding:10px 12px;border:1px dashed #C9D3D0;border-radius:10px">
+                            <div style="font-size:13px;color:#66736F;margin-bottom:6px"><i class="bi bi-collection"></i> This combo was billed as one line. Select who gave each service to split it (amounts are shared in proportion to the combo's service prices). Leave blank to keep it as is.</div>
+                            @foreach ($lineItem->service->comboItems as $comboItem)
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin-bottom:6px">
+                                    <span style="font-size:13px">{{ $comboItem->component->name }}</span>
+                                    <select name="combo_split[{{ $lineItem->id }}][{{ $comboItem->component_service_id }}]" class="sfp-select">
+                                        <option value="">Select staff&hellip;</option>
+                                        @foreach ($comboItem->component->staff->where('is_active', true) as $member)
+                                            <option value="{{ $member->id }}" @selected(old("combo_split.{$lineItem->id}.{$comboItem->component_service_id}") == $member->id)>{{ $member->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 @endforeach
+                @error('combo_split')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
                 @error('items')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror

@@ -66,7 +66,7 @@ class ReportService
 
         foreach ($bills as $bill) {
             foreach ($bill->lineItems as $lineItem) {
-                $name = $lineItem->service?->name ?? $lineItem->description;
+                $name = $lineItem->comboService?->name ?? $lineItem->service?->name ?? $lineItem->description;
                 $totals[$name] = bcadd($totals[$name] ?? '0.00', $lineItem->totalWithTax(), 2);
             }
         }

@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Repositories\Contracts\ServiceComboItemRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Services\BranchContext;
 use App\Services\ServiceCatalogService;
@@ -33,7 +34,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -65,7 +66,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $service->update($existingService, ['name' => 'Renamed'], changedBy: $owner->id);
         $this->assertSame(0, $existingService->priceHistories()->count());
@@ -88,7 +89,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -120,7 +121,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
         $service->update($existingService, ['code' => '205'], changedBy: $owner->id);
 
         $this->assertSame('205', $existingService->fresh()->code);
@@ -141,7 +142,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $created = $service->create([
             'name' => 'Haircut',
@@ -173,7 +174,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
         $service->update($existingService, ['staff_ids' => [$staffProfile->id]], changedBy: $owner->id);
 
         $this->assertTrue($existingService->fresh()->staff->contains($staffProfile));
@@ -200,7 +201,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
         $service->update($existingService, ['staff_ids' => []], changedBy: $owner->id);
 
         $this->assertCount(0, $existingService->fresh()->staff);
@@ -220,7 +221,7 @@ class ServiceCatalogServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => Service::create($data));
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $created = $service->create([
             'name' => 'Bridal Facial',
@@ -252,7 +253,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
         $service->update($existingService, ['requires_rate_confirmation' => true], changedBy: $owner->id);
 
         $this->assertTrue($existingService->fresh()->requires_rate_confirmation);
@@ -277,7 +278,7 @@ class ServiceCatalogServiceTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
         $service->deactivate($existingService);
 
         $this->assertFalse($existingService->fresh()->is_active);

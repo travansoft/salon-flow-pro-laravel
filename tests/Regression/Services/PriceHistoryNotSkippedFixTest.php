@@ -47,7 +47,7 @@ class PriceHistoryNotSkippedFixTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $service->update($existingService, ['price' => '499.01'], changedBy: $owner->id);
 
@@ -74,7 +74,7 @@ class PriceHistoryNotSkippedFixTest extends TestCase
                 return $svc;
             });
 
-        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext);
+        $service = new ServiceCatalogService($repository, $tenantContext, $branchContext, Mockery::mock(ServiceComboItemRepositoryInterface::class));
 
         $service->update($existingService, ['price' => '500.00'], changedBy: $owner->id);
 

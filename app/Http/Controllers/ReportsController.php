@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Incentive\IncentiveMonthRequest;
 use App\Http\Requests\Reports\GstReportRequest;
 use App\Services\BranchContext;
 use App\Services\DayBookService;
 use App\Services\GstReportService;
 use App\Services\ReportService;
 use App\Services\SalesInsightsService;
+use App\Services\TargetTrackerService;
 use App\Services\XlsxWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,6 +24,7 @@ class ReportsController extends Controller
         private DayBookService $dayBookService,
         private SalesInsightsService $salesInsightsService,
         private GstReportService $gstReportService,
+        private TargetTrackerService $targetTrackerService,
     ) {}
 
     public function index(Request $request): View
@@ -94,6 +97,43 @@ class ReportsController extends Controller
 
         return response()
             ->download($path, "gst-report-{$month->format('Y-m')}.xlsx")
+            ->deleteFileAfterSend();
+    }
+
+    public function targetTracker(IncentiveMonthRequest $request): View
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        $month = $request->month();
+        $tracker = $this->targetTrackerService->forMonth($month);
+        $selectedStaff = $tracker['staff']->get((int) $request->query('staff'));
+
+        return view('admin.reports.targetTracker', [
+            'month' => $month,
+            'monthQuery' => ['month' => $month->format('Y-m')],
+            'statusStyles' => TargetTrackerService::StatusStyles,
+            'salon' => $tracker['salon'],
+            'staffRows' => $tracker['staff'],
+            'selectedStaff' => $selectedStaff,
+            'detail' => $selectedStaff ?? $tracker['salon'],
+        ]);
+    }
+
+    public function targetTrackerExport(IncentiveMonthRequest $request, XlsxWriter $xlsxWriter): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        $month = $request->month();
+        $tracker = $this->targetTrackerService->forMonth($month);
+
+        $path = $xlsxWriter->build(
+            'Target tracker',
+            TargetTrackerService::Headings,
+            $this->targetTrackerService->exportRows($tracker['salon'], $tracker['staff']),
+        );
+
+        return response()
+            ->download($path, "target-tracker-{$month->format('Y-m')}.xlsx")
             ->deleteFileAfterSend();
     }
 

@@ -36,10 +36,17 @@ class UpdateServiceRequest extends FormRequest
                 'nullable', 'integer',
                 Rule::exists('service_categories', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
             ],
-            'price' => ['sometimes', 'numeric', 'min:0'],
+            'price' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'requires_rate_confirmation' => ['sometimes', 'boolean'],
             'duration_minutes' => ['sometimes', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_combo' => ['sometimes', 'boolean'],
+            'combo_items' => ['required_if:is_combo,1', 'array', 'min:2'],
+            'combo_items.*.service_id' => [
+                'required', 'integer', 'distinct',
+                Rule::exists('services', 'id')->where('tenant_id', $tenantId)->where('is_combo', 0)->where('is_active', 1)->whereNull('deleted_at'),
+            ],
+            'combo_items.*.price' => ['required', 'numeric', 'min:0'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'hsn_sac_code' => ['nullable', 'string', 'max:10'],
 

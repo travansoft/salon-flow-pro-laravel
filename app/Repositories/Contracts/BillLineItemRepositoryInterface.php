@@ -18,4 +18,9 @@ interface BillLineItemRepositoryInterface
 
     /** @param array<string, mixed> $data */
     public function update(BillLineItem $lineItem, array $data): BillLineItem;
+
+    /** @param array<string, mixed> $data */
+    public function create(array $data): BillLineItem;
+
+    public function delete(BillLineItem $lineItem): bool;
 }

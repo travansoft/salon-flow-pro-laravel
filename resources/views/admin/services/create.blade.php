@@ -91,6 +91,9 @@
                 @enderror
             </div>
 
+            @include('admin.services.partials.comboFields')
+
+            <div id="eligible-staff-panel">
             <div class="sfp-card-title" style="margin-top: 24px;">Eligible staff</div>
             <p style="color: #66736F; font-size: 13px; margin-top: -8px;">Select which staff members can perform this service. Only mapped staff can be assigned to it when billing.</p>
 
@@ -104,6 +107,7 @@
                 @error('staff_ids')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
+            </div>
             </div>
 
             <div class="sfp-form-actions">
