@@ -3,6 +3,8 @@
 @section('title', 'Target tracker')
 
 @section('content')
+    @inject('compact', 'App\Actions\FormatCompactCurrency')
+
     <div class="sfp-page-header">
         <div>
             <h1 class="sfp-page-title">Target tracker</h1>
@@ -23,23 +25,23 @@
         </form>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px">
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">{{ $selectedStaff ? $selectedStaff['staff']->name : 'Salon' }} target</div>
-            <div class="sfp-heading" style="font-size:26px;line-height:1">&#8377;{{ number_format((float) $detail['target'], 2) }}</div>
+            <div class="sfp-heading" style="font-size:26px;line-height:1">{{ $compact->handle((float) $detail['target']) }}</div>
         </div>
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">Expected till now</div>
-            <div class="sfp-heading" style="font-size:26px;line-height:1">&#8377;{{ number_format((float) $detail['expectedToDate'], 2) }}</div>
+            <div class="sfp-heading" style="font-size:26px;line-height:1">{{ $compact->handle((float) $detail['expectedToDate']) }}</div>
         </div>
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">Actual till now</div>
-            <div class="sfp-heading" style="font-size:26px;line-height:1">&#8377;{{ number_format((float) $detail['actual'], 2) }}</div>
+            <div class="sfp-heading" style="font-size:26px;line-height:1">{{ $compact->handle((float) $detail['actual']) }}</div>
         </div>
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">Variance</div>
             <div class="sfp-heading" style="font-size:26px;line-height:1;color:{{ bccomp($detail['variance'], '0', 2) >= 0 ? '#1E7B4F' : '#C0392B' }}">
-                {{ bccomp($detail['variance'], '0', 2) >= 0 ? '+' : '-' }}&#8377;{{ number_format(abs((float) $detail['variance']), 2) }}
+                {{ bccomp($detail['variance'], '0', 2) >= 0 ? '+' : '' }}{{ $compact->handle((float) $detail['variance']) }}
             </div>
         </div>
         <div class="sfp-card">
@@ -48,7 +50,7 @@
         </div>
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">Projected month-end</div>
-            <div class="sfp-heading" style="font-size:26px;line-height:1">{{ $detail['projected'] !== null ? '₹'.number_format((float) $detail['projected'], 2) : '—' }}</div>
+            <div class="sfp-heading" style="font-size:26px;line-height:1">{{ $detail['projected'] !== null ? $compact->handle((float) $detail['projected']) : '—' }}</div>
         </div>
     </div>
 
