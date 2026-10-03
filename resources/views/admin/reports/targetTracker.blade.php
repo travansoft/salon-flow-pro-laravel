@@ -123,7 +123,13 @@
                 <span class="sfp-mono" style="text-align:right">{{ number_format((float) $day['cumulativeExpected'], 2) }}</span>
                 <span class="sfp-mono" style="text-align:right">{{ $day['cumulativeActual'] !== null ? number_format((float) $day['cumulativeActual'], 2) : '—' }}</span>
                 <span class="sfp-mono" style="text-align:right;color:{{ $day['variance'] !== null && bccomp($day['variance'], '0', 2) < 0 ? '#C0392B' : '#1E7B4F' }}">{{ $day['variance'] !== null ? number_format((float) $day['variance'], 2) : '—' }}</span>
-                <span></span>
+                @if($day['actual'] === null || bccomp($day['expected'], '0', 2) <= 0)
+                    <span style="text-align:center;color:#94A19D">—</span>
+                @elseif(bccomp($day['actual'], $day['expected'], 2) >= 0)
+                    <span style="text-align:center;color:#1E7B4F" title="Day's target achieved"><i class="bi bi-check-circle-fill"></i></span>
+                @else
+                    <span style="text-align:center;color:#C0392B" title="Day's target missed"><i class="bi bi-x-circle-fill"></i></span>
+                @endif
                 <span style="color:{{ $statusStyles[$day['status'] ?? 'no-target']['color'] }}">{{ $day['status'] ? $statusStyles[$day['status']]['label'] : '—' }}</span>
             </div>
         @endforeach
