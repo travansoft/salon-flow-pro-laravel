@@ -27,23 +27,25 @@
                 </div>
 
                 @foreach ($categoryServices as $service)
-                    <div class="sfp-table-row" style="grid-template-columns:70px 1fr 96px 96px 140px">
+                    <div class="sfp-table-row" style="grid-template-columns:70px 1fr 96px 110px 140px">
                         <span class="sfp-mono" style="font-size:12.5px;color:#94A19D">{{ $service->code ?? '—' }}</span>
                         <div>
-                            <div style="font-size:14.5px">{{ $service->name }}</div>
+                            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+                                <span style="font-size:14.5px">{{ $service->name }}</span>
+                                @if ($service->is_combo)
+                                    <span class="sfp-pill sfp-pill-green">Combo</span>
+                                @endif
+                                @if ($service->requires_rate_confirmation)
+                                    <span class="sfp-pill sfp-pill-amber">Rate varies</span>
+                                @endif
+                                @if (! $service->is_active)
+                                    <span class="sfp-pill sfp-pill-neutral">Disabled</span>
+                                @endif
+                            </div>
                         </div>
                         <span class="sfp-mono" style="font-size:13px;color:#66736F;text-align:right">{{ $service->duration_minutes }} min</span>
                         <span class="sfp-mono" style="font-size:14px;text-align:right">&#8377;{{ number_format($service->priceInclusiveOfTax((float) $tenant->default_gst_rate), 2) }}</span>
                         <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px">
-                            @if ($service->is_combo)
-                                <span class="sfp-pill sfp-pill-green">Combo</span>
-                            @endif
-                            @if ($service->requires_rate_confirmation)
-                                <span class="sfp-pill sfp-pill-amber">Rate varies</span>
-                            @endif
-                            @if (! $service->is_active)
-                                <span class="sfp-pill sfp-pill-neutral">Disabled</span>
-                            @endif
                             <a href="{{ $tenantUrl->route('services.show', $service) }}" style="font-size:12.5px;color:#66736F">View</a>
                             @can('services.edit')
                                 <a href="{{ $tenantUrl->route('services.edit', $service) }}" style="font-size:12.5px;color:#1B4B8F">Edit</a>
