@@ -34,7 +34,7 @@ class ServiceRepository implements ServiceRepositoryInterface
     /** @return Collection<int, Service> */
     public function getActiveNonCombo(): Collection
     {
-        return $this->model->active()->where('is_combo', false)->orderBy('name')->get();
+        return $this->model->active()->with('category')->where('is_combo', false)->orderBy('name')->get();
     }
 
     /** @return Collection<int, Service> */

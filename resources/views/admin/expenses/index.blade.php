@@ -6,12 +6,12 @@
     <div class="sfp-page-header">
         <div>
             <h1 class="sfp-page-title">Expenses</h1>
-            <p class="sfp-page-subtitle">Total for {{ $month->format('F Y') }}: <span class="sfp-mono">&#8377;{{ number_format((float) $total, 2) }}</span></p>
+            <p class="sfp-page-subtitle">{{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }} &middot; {{ $expenses->count() }} expenses: <span class="sfp-mono">&#8377;{{ number_format((float) $total, 2) }}</span></p>
         </div>
         <div class="sfp-row">
-            <form method="GET" style="margin:0">
-                <input type="month" name="month" value="{{ $month->format('Y-m') }}" class="sfp-input" style="margin-bottom:0;max-width:200px" onchange="this.form.submit()">
-            </form>
+            @can('dashboard.view')
+                <a href="{{ $tenantUrl->route('reports.expenseSummary') }}?{{ http_build_query(['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')]) }}" class="sfp-btn-outline">Category summary</a>
+            @endcan
             @can('expenses.view')
                 <a href="{{ $tenantUrl->route('expenseCategories.index') }}" class="sfp-btn-outline">Manage categories</a>
             @endcan
@@ -20,6 +20,28 @@
             @endcan
         </div>
     </div>
+
+    <form method="GET" action="{{ $tenantUrl->route('expenses.index') }}" class="sfp-row" style="margin-bottom:14px;flex-wrap:wrap;gap:8px;align-items:center">
+        <input type="date" name="from" class="sfp-input" style="margin-bottom:0;max-width:170px" value="{{ $from->format('Y-m-d') }}">
+        <span style="color:#94A19D">to</span>
+        <input type="date" name="to" class="sfp-input" style="margin-bottom:0;max-width:170px" value="{{ $to->format('Y-m-d') }}">
+        <select name="category_id" class="sfp-input" style="margin-bottom:0;max-width:200px">
+            <option value="">All categories</option>
+            <option value="none" @selected($filters['category_id'] === 'none')>Uncategorised</option>
+            @foreach ($categories as $category)
+                <option value="{{ $category->id }}" @selected((string) $filters['category_id'] === (string) $category->id)>{{ $category->name }}</option>
+            @endforeach
+        </select>
+        <select name="payment_method" class="sfp-input" style="margin-bottom:0;max-width:160px">
+            <option value="">All payment modes</option>
+            @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card'] as $method => $label)
+                <option value="{{ $method }}" @selected($filters['payment_method'] === $method)>{{ $label }}</option>
+            @endforeach
+        </select>
+        <input type="text" name="search" class="sfp-input" style="margin-bottom:0;max-width:220px" placeholder="Search description" value="{{ $filters['search'] }}">
+        <button type="submit" class="sfp-btn-primary">Filter</button>
+        <a href="{{ $tenantUrl->route('expenses.index') }}" class="sfp-btn-outline">Reset</a>
+    </form>
 
     <div class="sfp-table-wrap">
         <div class="sfp-table-head-row" style="grid-template-columns:1fr 140px 120px 110px 150px 80px">
@@ -47,7 +69,7 @@
             </div>
         @empty
             <div class="sfp-table-row" style="grid-template-columns:1fr">
-                <p style="color:#66736F;margin:0">No expenses recorded for this month.</p>
+                <p style="color:#66736F;margin:0">No expenses match these filters.</p>
             </div>
         @endforelse
     </div>

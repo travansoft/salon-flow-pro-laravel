@@ -35,7 +35,7 @@
 
 <script>
 (function () {
-    const components = @json($componentServices->map(fn ($componentService) => ['id' => $componentService->id, 'name' => $componentService->name, 'price' => (float) $componentService->price])->values());
+    const components = @json($componentServices->map(fn ($componentService) => ['id' => $componentService->id, 'name' => $componentService->category ? "{$componentService->name} - {$componentService->category->name}" : $componentService->name, 'price' => (float) $componentService->price])->values());
     const initialRows = @json(array_values($comboRows));
 
     const checkbox = document.getElementById('is-combo');

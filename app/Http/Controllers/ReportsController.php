@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Expenses\ExpenseFilterRequest;
 use App\Http\Requests\Incentive\IncentiveMonthRequest;
 use App\Http\Requests\Reports\GstReportRequest;
 use App\Services\BranchContext;
 use App\Services\DayBookService;
+use App\Services\ExpenseSummaryService;
 use App\Services\GstReportService;
 use App\Services\ReportService;
 use App\Services\SalesInsightsService;
@@ -25,6 +27,7 @@ class ReportsController extends Controller
         private SalesInsightsService $salesInsightsService,
         private GstReportService $gstReportService,
         private TargetTrackerService $targetTrackerService,
+        private ExpenseSummaryService $expenseSummaryService,
     ) {}
 
     public function index(Request $request): View
@@ -67,6 +70,19 @@ class ReportsController extends Controller
             'from' => $from,
             'to' => $to,
             ...$this->dayBookService->forRange($from, $to),
+        ]);
+    }
+
+    public function expenseSummary(ExpenseFilterRequest $request): View
+    {
+        abort_unless($request->user()->can('dashboard.view'), 403);
+
+        [$from, $to] = $request->range();
+
+        return view('admin.reports.expenseSummary', [
+            'from' => $from,
+            'to' => $to,
+            ...$this->expenseSummaryService->forRange($from, $to),
         ]);
     }
 

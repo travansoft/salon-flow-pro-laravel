@@ -169,7 +169,7 @@ class IncentiveService
     public function splitLine(BillLineItem $lineItem, IncentiveSetting $setting, ?Bill $bill = null): array
     {
         $bill ??= $lineItem->relationLoaded('bill') ? $lineItem->bill : null;
-        $basis = $this->afterRefund($lineItem->totalWithTax(), $bill);
+        $basis = $this->afterRefund($lineItem->targetValue(), $bill);
         $hasDistinctReferrer = $lineItem->referred_by_staff_profile_id !== null
             && $lineItem->referred_by_staff_profile_id !== $lineItem->staff_profile_id;
 

@@ -79,6 +79,7 @@ class SettleQuickBillRequest extends FormRequest
             'items.*.quantity' => ['sometimes', 'integer', 'min:1'],
             'items.*.unit_price' => ['sometimes', 'numeric', 'min:0'],
             'payment_method' => ['required', Rule::in(['cash', 'card', 'upi'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

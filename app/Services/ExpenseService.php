@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Repositories\Contracts\ExpenseCategoryRepositoryInterface;
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -78,6 +79,12 @@ class ExpenseService
 
         return $this->expenseRepository->getBetweenDates($from, $to)
             ->reduce(fn (string $carry, Expense $expense): string => bcadd($carry, (string) $expense->amount, 2), '0.00');
+    }
+
+    /** @param Collection<int, Expense> $expenses */
+    public function totalOf(Collection $expenses): string
+    {
+        return $expenses->reduce(fn (string $carry, Expense $expense): string => bcadd($carry, (string) $expense->amount, 2), '0.00');
     }
 
     /** @param array<string, mixed> $data */

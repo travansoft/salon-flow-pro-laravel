@@ -181,6 +181,7 @@ class BillsController extends Controller
                 $request->user()->id,
                 (float) ($data['discount_percent'] ?? 0),
                 isset($data['discount_amount']) ? (float) $data['discount_amount'] : null,
+                $data['notes'] ?? null,
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
