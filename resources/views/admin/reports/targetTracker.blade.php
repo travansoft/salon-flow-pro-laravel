@@ -56,10 +56,10 @@
 
     <div class="sfp-card" style="padding:0;overflow:hidden;margin-bottom:14px">
         <div style="padding:14px 20px;font-weight:600;border-bottom:1px solid #E3EAE8">Staff summary</div>
-        <div style="display:grid;grid-template-columns:1.2fr repeat(4,1fr) 1.2fr .8fr;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
+        <div style="display:grid;grid-template-columns:minmax(110px,1.2fr) repeat(4,minmax(90px,1fr)) minmax(120px,1.2fr) minmax(70px,.8fr);column-gap:16px;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
             <span>Staff</span><span style="text-align:right">Target</span><span style="text-align:right">Expected</span><span style="text-align:right">Actual</span><span style="text-align:right">Variance</span><span>Progress</span><span>Status</span>
         </div>
-        <div style="display:grid;grid-template-columns:1.2fr repeat(4,1fr) 1.2fr .8fr;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;font-weight:600">
+        <div style="display:grid;grid-template-columns:minmax(110px,1.2fr) repeat(4,minmax(90px,1fr)) minmax(120px,1.2fr) minmax(70px,.8fr);column-gap:16px;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;font-weight:600">
             <a href="{{ $tenantUrl->route('reports.targetTracker') }}?{{ http_build_query($monthQuery) }}" class="sfp-action-link">Salon (all staff)</a>
             <span class="sfp-mono" style="text-align:right">{{ number_format((float) $salon['target'], 2) }}</span>
             <span class="sfp-mono" style="text-align:right">{{ number_format((float) $salon['expectedToDate'], 2) }}</span>
@@ -72,7 +72,7 @@
             <span style="color:{{ $statusStyles[$salon['status'] ?? 'no-target']['color'] }}">{{ $salon['status'] ? $statusStyles[$salon['status']]['label'] : '—' }}</span>
         </div>
         @forelse ($staffRows as $row)
-            <div style="display:grid;grid-template-columns:1.2fr repeat(4,1fr) 1.2fr .8fr;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;{{ $selectedStaff && $selectedStaff['staff']->id === $row['staff']->id ? 'background:#F3F8F6' : '' }}">
+            <div style="display:grid;grid-template-columns:minmax(110px,1.2fr) repeat(4,minmax(90px,1fr)) minmax(120px,1.2fr) minmax(70px,.8fr);column-gap:16px;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;{{ $selectedStaff && $selectedStaff['staff']->id === $row['staff']->id ? 'background:#F3F8F6' : '' }}">
                 <a href="{{ $tenantUrl->route('reports.targetTracker') }}?{{ http_build_query([...$monthQuery, 'staff' => $row['staff']->id]) }}" class="sfp-action-link">{{ $row['staff']->name }}</a>
                 <span class="sfp-mono" style="text-align:right">{{ $row['hasTarget'] ? number_format((float) $row['target'], 2) : '—' }}</span>
                 <span class="sfp-mono" style="text-align:right">{{ number_format((float) $row['expectedToDate'], 2) }}</span>
@@ -95,11 +95,11 @@
 
     <div class="sfp-card" style="padding:0;overflow:hidden;margin-bottom:14px">
         <div style="padding:14px 20px;font-weight:600;border-bottom:1px solid #E3EAE8">Week-wise: {{ $selectedStaff ? $selectedStaff['staff']->name : 'Salon' }}</div>
-        <div style="display:grid;grid-template-columns:1.4fr repeat(4,1fr) .8fr;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
+        <div style="display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(4,minmax(90px,1fr)) minmax(70px,.8fr);column-gap:16px;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
             <span>Week</span><span style="text-align:right">Expected</span><span style="text-align:right">Actual</span><span style="text-align:right">Variance</span><span style="text-align:right">% of week</span><span>Status</span>
         </div>
         @foreach ($detail['weeks'] as $week)
-            <div style="display:grid;grid-template-columns:1.4fr repeat(4,1fr) .8fr;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px">
+            <div style="display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(4,minmax(90px,1fr)) minmax(70px,.8fr);column-gap:16px;padding:13px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px">
                 <span>Week {{ $week['number'] }} <span style="color:#94A19D">({{ $week['from']->format('d M') }} - {{ $week['to']->format('d M') }})</span></span>
                 <span class="sfp-mono" style="text-align:right">{{ number_format((float) $week['expected'], 2) }}</span>
                 <span class="sfp-mono" style="text-align:right">{{ $week['actual'] !== null ? number_format((float) $week['actual'], 2) : '—' }}</span>
@@ -112,11 +112,11 @@
 
     <div class="sfp-card" style="padding:0;overflow:hidden">
         <div style="padding:14px 20px;font-weight:600;border-bottom:1px solid #E3EAE8">Day-wise: {{ $selectedStaff ? $selectedStaff['staff']->name : 'Salon' }}</div>
-        <div style="display:grid;grid-template-columns:1fr repeat(6,1fr) .8fr;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
+        <div style="display:grid;grid-template-columns:minmax(100px,1fr) repeat(5,minmax(90px,1fr)) minmax(40px,.5fr) minmax(70px,.8fr);column-gap:16px;padding:14px 20px;background:#F8FAF9;border-bottom:1px solid #E3EAE8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#94A19D">
             <span>Date</span><span style="text-align:right">Expected</span><span style="text-align:right">Actual</span><span style="text-align:right">Cum. expected</span><span style="text-align:right">Cum. actual</span><span style="text-align:right">Variance</span><span></span><span>Status</span>
         </div>
         @foreach ($detail['days'] as $day)
-            <div style="display:grid;grid-template-columns:1fr repeat(6,1fr) .8fr;padding:11px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;{{ $day['isToday'] ? 'background:#F3F8F6' : '' }}">
+            <div style="display:grid;grid-template-columns:minmax(100px,1fr) repeat(5,minmax(90px,1fr)) minmax(40px,.5fr) minmax(70px,.8fr);column-gap:16px;padding:11px 20px;border-bottom:1px solid #EDF1F0;align-items:center;font-size:13.5px;{{ $day['isToday'] ? 'background:#F3F8F6' : '' }}">
                 <span>{{ $day['date']->format('D, d M') }}</span>
                 <span class="sfp-mono" style="text-align:right">{{ number_format((float) $day['expected'], 2) }}</span>
                 <span class="sfp-mono" style="text-align:right">{{ $day['actual'] !== null ? number_format((float) $day['actual'], 2) : '—' }}</span>

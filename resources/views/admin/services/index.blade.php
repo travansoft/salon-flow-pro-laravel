@@ -18,6 +18,20 @@
         </div>
     </div>
 
+    <form method="GET" action="{{ $tenantUrl->route('services.index') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <input type="search" name="search" class="sfp-input" style="max-width:280px" placeholder="Search name or code" value="{{ $search }}">
+        <select name="category" class="sfp-input" style="max-width:220px">
+            <option value="">All categories</option>
+            @foreach($categories as $category)
+                <option value="{{ $category->id }}" @selected($categoryId === $category->id)>{{ $category->name }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="sfp-btn-primary">Filter</button>
+        @if($search !== '' || $categoryId)
+            <a href="{{ $tenantUrl->route('services.index') }}" class="sfp-btn-outline">Clear</a>
+        @endif
+    </form>
+
     <div style="display:grid;gap:12px">
         @forelse ($services->groupBy(fn ($service) => $service->category?->name ?: 'Uncategorised') as $category => $categoryServices)
             <div class="sfp-table-wrap">
@@ -63,7 +77,7 @@
             </div>
         @empty
             <div class="sfp-card">
-                <p style="color:#66736F;margin:0">No services yet.</p>
+                <p style="color:#66736F;margin:0">{{ $search !== '' || $categoryId ? 'No services match your filters.' : 'No services yet.' }}</p>
             </div>
         @endforelse
     </div>
