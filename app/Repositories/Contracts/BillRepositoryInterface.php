@@ -61,4 +61,7 @@ interface BillRepositoryInterface
 
     /** @param array<string, mixed> $data */
     public function update(Bill $bill, array $data): Bill;
+
+    /** @return Collection<int, Bill> Recent non-void bills not yet attached to any bridal engagement. */
+    public function getAttachableToEngagement(int $limit = 100): Collection;
 }

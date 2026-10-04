@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\BridalDressType;
+use App\Enums\BridalVenueType;
 use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\BridalEngagementFactory;
@@ -14,7 +16,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['tenant_id', 'branch_id', 'client_id', 'event_date', 'venue', 'notes', 'status'])]
+#[Fillable([
+    'tenant_id', 'branch_id', 'client_id', 'event_name', 'event_date', 'venue', 'venue_type', 'home_location',
+    'has_studio_trial', 'trial_date', 'ready_time', 'total_amount', 'advance_amount', 'guest_makeup_count',
+    'groom_makeup', 'dress_type', 'saree_drapist_name', 'notes', 'status',
+])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class BridalEngagement extends Model
 {
@@ -38,7 +44,25 @@ class BridalEngagement extends Model
     {
         return [
             'event_date' => 'date',
+            'trial_date' => 'date',
+            'venue_type' => BridalVenueType::class,
+            'dress_type' => BridalDressType::class,
+            'has_studio_trial' => 'boolean',
+            'groom_makeup' => 'boolean',
+            'total_amount' => 'decimal:2',
+            'advance_amount' => 'decimal:2',
         ];
+    }
+
+    public function balanceAmount(): string
+    {
+        return bcsub((string) $this->total_amount, (string) $this->advance_amount, 2);
+    }
+
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class);
     }
 
     /** @return BelongsTo<Tenant, $this> */

@@ -148,4 +148,15 @@ class BillRepository implements BillRepositoryInterface
 
         return $bill;
     }
+
+    /** @return Collection<int, Bill> */
+    public function getAttachableToEngagement(int $limit = 100): Collection
+    {
+        return $this->model->whereNull('bridal_engagement_id')
+            ->where('status', '!=', Bill::StatusVoid)
+            ->with('client')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
 }

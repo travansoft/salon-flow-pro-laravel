@@ -2,10 +2,9 @@
 
 namespace Tests\Feature\BridalEngagements;
 
+use App\Models\Bill;
+use App\Models\BridalEngagement;
 use App\Models\Client;
-use App\Models\Service;
-use App\Models\StaffProfile;
-use App\Models\StaffShift;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,72 +23,142 @@ class CreateBridalEngagementTest extends TestCase
         $this->seed(PermissionSeeder::class);
     }
 
-    public function test_front_desk_can_create_a_bridal_engagement_with_trial_and_event_day(): void
+    private function frontDesk(): User
     {
-        $frontDesk = User::factory()->for($this->tenant)->create();
-        $frontDesk->assignRole('FrontDesk');
+        $user = User::factory()->for($this->tenant)->create();
+        $user->assignRole('FrontDesk');
 
-        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $trialStart = now()->next(1)->setTime(10, 0);
-        $eventStart = now()->next(1)->addWeeks(2)->setTime(9, 0);
-
-        $trialStaff = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
-        StaffShift::factory()->create([
-            'tenant_id' => $this->tenant->id,
-            'staff_profile_id' => $trialStaff->id,
-            'day_of_week' => $trialStart->dayOfWeek,
-            'start_time' => '09:00',
-            'end_time' => '20:00',
-            'is_working' => true,
-        ]);
-
-        $eventStaff = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
-        StaffShift::factory()->create([
-            'tenant_id' => $this->tenant->id,
-            'staff_profile_id' => $eventStaff->id,
-            'day_of_week' => $eventStart->dayOfWeek,
-            'start_time' => '09:00',
-            'end_time' => '20:00',
-            'is_working' => true,
-        ]);
-
-        $service = Service::factory()->create(['tenant_id' => $this->tenant->id]);
-
-        $response = $this->actingAs($frontDesk)->postToTenant('/bridal-engagements', [
-            'client_id' => $client->id,
-            'event_date' => $eventStart->toDateString(),
-            'venue' => 'The Grand Ballroom',
-            'trial_staff_profile_id' => $trialStaff->id,
-            'trial_start_at' => $trialStart->toDateTimeString(),
-            'trial_services' => [['service_id' => $service->id]],
-            'event_staff_profile_id' => $eventStaff->id,
-            'event_start_at' => $eventStart->toDateTimeString(),
-            'event_services' => [['service_id' => $service->id]],
-        ]);
-
-        $response->assertRedirect();
-        $this->assertDatabaseHas('bridal_engagements', ['client_id' => $client->id, 'venue' => 'The Grand Ballroom']);
-        $this->assertDatabaseHas('appointments', ['client_id' => $client->id, 'engagement_role' => 'trial']);
-        $this->assertDatabaseHas('appointments', ['client_id' => $client->id, 'engagement_role' => 'event_day']);
+        return $user;
     }
 
-    public function test_validation_rejects_missing_event_services(): void
+    /** @return array<string, mixed> */
+    private function validPayload(array $overrides = []): array
     {
-        $frontDesk = User::factory()->for($this->tenant)->create();
-        $frontDesk->assignRole('FrontDesk');
-        $client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
-        $staffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id]);
-
-        $response = $this->actingAs($frontDesk)->postToTenant('/bridal-engagements', [
-            'client_id' => $client->id,
+        return [
+            'contact_number' => '9876543210',
+            'bride_name' => 'Anjali Menon',
+            'event_name' => 'Wedding',
             'event_date' => now()->addMonth()->toDateString(),
-            'trial_staff_profile_id' => $staffProfile->id,
-            'trial_start_at' => now()->addDay()->toDateTimeString(),
-            'trial_services' => [['service_id' => 1]],
-            'event_staff_profile_id' => $staffProfile->id,
-            'event_start_at' => now()->addWeeks(2)->toDateTimeString(),
-        ]);
+            'venue_type' => 'home',
+            'home_location' => '12 Lake Road',
+            'has_studio_trial' => '1',
+            'trial_date' => now()->addWeek()->toDateString(),
+            'ready_time' => '06:30',
+            'total_amount' => '30000',
+            'advance_amount' => '5000',
+            'guest_makeup_count' => '3',
+            'groom_makeup' => '1',
+            'dress_type' => 'saree',
+            'saree_drapist_name' => 'Latha',
+            'notes' => 'Allergic to latex',
+            ...$overrides,
+        ];
+    }
 
-        $response->assertSessionHasErrors('event_services');
+    public function test_front_desk_can_create_engagement_and_bride_becomes_a_client(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', $this->validPayload());
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('clients', ['name' => 'Anjali Menon', 'phone' => '9876543210']);
+        $this->assertDatabaseHas('bridal_engagements', [
+            'event_name' => 'Wedding',
+            'venue_type' => 'home',
+            'home_location' => '12 Lake Road',
+            'total_amount' => '30000.00',
+            'advance_amount' => '5000.00',
+            'saree_drapist_name' => 'Latha',
+        ]);
+    }
+
+    public function test_existing_client_is_reused_by_phone(): void
+    {
+        $client = Client::factory()->create(['tenant_id' => $this->tenant->id, 'phone' => '9876543210']);
+
+        $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', $this->validPayload());
+
+        $this->assertDatabaseCount('clients', 1);
+        $this->assertDatabaseHas('bridal_engagements', ['client_id' => $client->id]);
+    }
+
+    public function test_home_location_is_required_for_home_venue(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', $this->validPayload(['home_location' => '']));
+
+        $response->assertSessionHasErrors('home_location');
+    }
+
+    public function test_trial_date_is_required_when_trial_is_yes(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', $this->validPayload(['trial_date' => '']));
+
+        $response->assertSessionHasErrors('trial_date');
+    }
+
+    public function test_advance_cannot_exceed_total(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', $this->validPayload(['advance_amount' => '40000']));
+
+        $response->assertSessionHasErrors('advance_amount');
+    }
+
+    public function test_required_fields_are_validated(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bridal-engagements', []);
+
+        $response->assertSessionHasErrors(['contact_number', 'bride_name', 'event_date', 'venue_type', 'ready_time', 'total_amount', 'dress_type']);
+    }
+
+    public function test_create_form_renders(): void
+    {
+        $response = $this->actingAs($this->frontDesk())->getFromTenant('/bridal-engagements/create');
+
+        $response->assertOk()->assertSee('Contact number')->assertSee('Name of saree drapist');
+    }
+
+    public function test_front_desk_can_edit_engagement(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($this->frontDesk())->putToTenant(
+            "/bridal-engagements/{$engagement->id}",
+            $this->validPayload(['event_name' => 'Reception', 'client_id' => $engagement->client_id]),
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bridal_engagements', ['id' => $engagement->id, 'event_name' => 'Reception']);
+    }
+
+    public function test_create_bill_for_event_attaches_bill_and_uses_total_amount(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id, 'total_amount' => 30000]);
+
+        $response = $this->actingAs($this->frontDesk())->postToTenant("/bridal-engagements/{$engagement->id}/bills");
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('bills', ['bridal_engagement_id' => $engagement->id, 'client_id' => $engagement->client_id, 'total' => '30000.00']);
+    }
+
+    public function test_existing_bill_can_be_attached_and_detached(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user = $this->frontDesk();
+
+        $this->actingAs($user)->postToTenant("/bridal-engagements/{$engagement->id}/bills/attach", ['bill_id' => $bill->id]);
+        $this->assertDatabaseHas('bills', ['id' => $bill->id, 'bridal_engagement_id' => $engagement->id]);
+
+        $this->actingAs($user)->deleteFromTenant("/bridal-engagements/{$engagement->id}/bills/{$bill->id}");
+        $this->assertDatabaseHas('bills', ['id' => $bill->id, 'bridal_engagement_id' => null]);
+    }
+
+    public function test_show_page_lists_attached_bills(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
+        $bill = Bill::factory()->create(['tenant_id' => $this->tenant->id, 'bridal_engagement_id' => $engagement->id]);
+
+        $response = $this->actingAs($this->frontDesk())->getFromTenant("/bridal-engagements/{$engagement->id}");
+
+        $response->assertOk()->assertSee($bill->invoiceNumber());
     }
 }

@@ -19,7 +19,7 @@ class BridalEngagementRepository implements BridalEngagementRepositoryInterface
     public function getUpcoming(): Collection
     {
         return $this->model->where('event_date', '>=', now()->toDateString())
-            ->with(['client', 'appointments', 'travelingStaff.user'])
+            ->with(['client', 'bills'])
             ->orderBy('event_date')
             ->get();
     }
@@ -28,5 +28,18 @@ class BridalEngagementRepository implements BridalEngagementRepositoryInterface
     public function create(array $data): BridalEngagement
     {
         return $this->model->create($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function update(BridalEngagement $engagement, array $data): BridalEngagement
+    {
+        $engagement->update($data);
+
+        return $engagement;
+    }
+
+    public function delete(BridalEngagement $engagement): void
+    {
+        $engagement->delete();
     }
 }

@@ -2,132 +2,173 @@
 
 namespace Tests\Unit\BridalEngagements;
 
+use App\Models\Bill;
 use App\Models\Branch;
 use App\Models\BridalEngagement;
 use App\Models\Client;
-use App\Models\Service;
-use App\Models\StaffProfile;
-use App\Models\StaffShift;
 use App\Models\Tenant;
+use App\Repositories\Contracts\BillRepositoryInterface;
+use App\Repositories\Contracts\BridalEngagementRepositoryInterface;
+use App\Repositories\Contracts\ClientRepositoryInterface;
+use App\Services\BillingService;
 use App\Services\BranchContext;
 use App\Services\BridalEngagementService;
 use App\Services\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
+use InvalidArgumentException;
+use Mockery;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class BridalEngagementServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function workingStaff(Tenant $tenant, Carbon $at): StaffProfile
+    private MockInterface $engagements;
+
+    private MockInterface $clients;
+
+    private MockInterface $bills;
+
+    private MockInterface $billing;
+
+    protected function setUp(): void
     {
-        $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
+        parent::setUp();
 
-        StaffShift::factory()->create([
-            'tenant_id' => $tenant->id,
-            'staff_profile_id' => $staffProfile->id,
-            'day_of_week' => $at->dayOfWeek,
-            'start_time' => '09:00',
-            'end_time' => '20:00',
-            'is_working' => true,
-        ]);
-
-        return $staffProfile;
-    }
-
-    public function test_create_engagement_links_trial_and_event_day_appointments_together(): void
-    {
         $tenant = Tenant::factory()->create();
         app(TenantContext::class)->set($tenant);
-        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
-        app(BranchContext::class)->set($branch);
+        app(BranchContext::class)->set(Branch::factory()->create(['tenant_id' => $tenant->id]));
 
-        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $trialStart = now()->next(1)->setTime(10, 0);
-        $eventStart = now()->next(1)->addWeeks(2)->setTime(9, 0);
-        $trialStaff = $this->workingStaff($tenant, $trialStart);
-        $eventStaff = $this->workingStaff($tenant, $eventStart);
-        $service = Service::factory()->create(['tenant_id' => $tenant->id]);
-
-        $engagement = app(BridalEngagementService::class)->createEngagement(
-            clientId: $client->id,
-            eventDate: $eventStart,
-            venue: 'The Grand Ballroom',
-            trialStaffProfileId: $trialStaff->id,
-            trialStartAt: $trialStart,
-            trialLineItems: [['service_id' => $service->id]],
-            eventStaffProfileId: $eventStaff->id,
-            eventStartAt: $eventStart,
-            eventLineItems: [['service_id' => $service->id]],
-        );
-
-        $this->assertSame(2, $engagement->appointments()->count());
-        $this->assertNotNull($engagement->trialAppointment());
-        $this->assertNotNull($engagement->eventDayAppointment());
-        $this->assertSame(BridalEngagement::RoleTrial, $engagement->trialAppointment()->engagement_role);
-        $this->assertSame(BridalEngagement::RoleEventDay, $engagement->eventDayAppointment()->engagement_role);
+        $this->engagements = Mockery::mock(BridalEngagementRepositoryInterface::class);
+        $this->clients = Mockery::mock(ClientRepositoryInterface::class);
+        $this->bills = Mockery::mock(BillRepositoryInterface::class);
+        $this->billing = Mockery::mock(BillingService::class);
     }
 
-    public function test_create_engagement_marks_event_day_as_on_location_by_default(): void
+    private function service(): BridalEngagementService
     {
-        $tenant = Tenant::factory()->create();
-        app(TenantContext::class)->set($tenant);
-        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
-        app(BranchContext::class)->set($branch);
-
-        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $trialStart = now()->next(1)->setTime(10, 0);
-        $eventStart = now()->next(1)->addWeeks(2)->setTime(9, 0);
-        $trialStaff = $this->workingStaff($tenant, $trialStart);
-        $eventStaff = $this->workingStaff($tenant, $eventStart);
-        $service = Service::factory()->create(['tenant_id' => $tenant->id]);
-
-        $engagement = app(BridalEngagementService::class)->createEngagement(
-            clientId: $client->id,
-            eventDate: $eventStart,
-            venue: 'The Grand Ballroom',
-            trialStaffProfileId: $trialStaff->id,
-            trialStartAt: $trialStart,
-            trialLineItems: [['service_id' => $service->id]],
-            eventStaffProfileId: $eventStaff->id,
-            eventStartAt: $eventStart,
-            eventLineItems: [['service_id' => $service->id]],
+        return new BridalEngagementService(
+            $this->engagements,
+            $this->clients,
+            $this->bills,
+            $this->billing,
+            app(TenantContext::class),
+            app(BranchContext::class),
         );
-
-        $this->assertTrue($engagement->eventDayAppointment()->is_on_location);
-        $this->assertSame('The Grand Ballroom', $engagement->eventDayAppointment()->venue_address);
-        $this->assertFalse($engagement->trialAppointment()->is_on_location);
     }
 
-    public function test_create_engagement_assigns_traveling_staff(): void
+    /** @return array<string, mixed> */
+    private function payload(array $overrides = []): array
     {
-        $tenant = Tenant::factory()->create();
-        app(TenantContext::class)->set($tenant);
-        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
-        app(BranchContext::class)->set($branch);
+        return [
+            'contact_number' => '9999900000',
+            'bride_name' => 'Anjali',
+            'event_name' => 'Wedding',
+            'event_date' => '2026-12-01',
+            'venue_type' => 'home',
+            'home_location' => '12 Lake Road',
+            'has_studio_trial' => false,
+            'trial_date' => '2026-11-20',
+            'ready_time' => '06:30',
+            'total_amount' => 30000,
+            'advance_amount' => 5000,
+            'dress_type' => 'others',
+            'saree_drapist_name' => 'Should be dropped',
+            ...$overrides,
+        ];
+    }
 
-        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
-        $trialStart = now()->next(1)->setTime(10, 0);
-        $eventStart = now()->next(1)->addWeeks(2)->setTime(9, 0);
-        $trialStaff = $this->workingStaff($tenant, $trialStart);
-        $eventStaff = $this->workingStaff($tenant, $eventStart);
-        $travelingStaff = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
-        $service = Service::factory()->create(['tenant_id' => $tenant->id]);
+    public function test_create_reuses_existing_client_found_by_phone(): void
+    {
+        $client = Client::factory()->create();
+        $this->clients->shouldReceive('findByPhone')->once()->with('9999900000')->andReturn($client);
+        $this->clients->shouldReceive('create')->never();
+        $this->engagements->shouldReceive('create')->once()
+            ->withArgs(fn (array $data) => $data['client_id'] === $client->id && $data['status'] === BridalEngagement::StatusPlanned)
+            ->andReturn(new BridalEngagement);
 
-        $engagement = app(BridalEngagementService::class)->createEngagement(
-            clientId: $client->id,
-            eventDate: $eventStart,
-            venue: 'The Grand Ballroom',
-            trialStaffProfileId: $trialStaff->id,
-            trialStartAt: $trialStart,
-            trialLineItems: [['service_id' => $service->id]],
-            eventStaffProfileId: $eventStaff->id,
-            eventStartAt: $eventStart,
-            eventLineItems: [['service_id' => $service->id]],
-            travelingStaffProfileIds: [$travelingStaff->id],
-        );
+        $this->service()->createEngagement($this->payload());
+    }
 
-        $this->assertTrue($engagement->travelingStaff->contains($travelingStaff));
+    public function test_create_makes_a_new_client_when_phone_is_unknown(): void
+    {
+        $client = Client::factory()->create();
+        $this->clients->shouldReceive('findByPhone')->once()->andReturn(null);
+        $this->clients->shouldReceive('create')->once()
+            ->withArgs(fn (array $data) => $data['name'] === 'Anjali' && $data['phone'] === '9999900000')
+            ->andReturn($client);
+        $this->engagements->shouldReceive('create')->once()->andReturn(new BridalEngagement);
+
+        $this->service()->createEngagement($this->payload());
+    }
+
+    public function test_create_clears_conditional_fields_that_do_not_apply(): void
+    {
+        $client = Client::factory()->create();
+        $this->clients->shouldReceive('findByPhone')->andReturn($client);
+        $this->engagements->shouldReceive('create')->once()
+            ->withArgs(fn (array $data) => $data['trial_date'] === null
+                && $data['saree_drapist_name'] === null
+                && $data['home_location'] === '12 Lake Road')
+            ->andReturn(new BridalEngagement);
+
+        $this->service()->createEngagement($this->payload());
+    }
+
+    public function test_create_bill_requires_a_total_amount(): void
+    {
+        $engagement = new BridalEngagement(['total_amount' => 0]);
+        $this->billing->shouldReceive('createManualBill')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->createBill($engagement, 1);
+    }
+
+    public function test_attach_rejects_void_bill(): void
+    {
+        $this->bills->shouldReceive('update')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->attachBill(new BridalEngagement, new Bill(['status' => Bill::StatusVoid]));
+    }
+
+    public function test_attach_rejects_bill_linked_to_another_event(): void
+    {
+        $engagement = new BridalEngagement;
+        $engagement->id = 1;
+        $this->bills->shouldReceive('update')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->attachBill($engagement, new Bill(['status' => Bill::StatusUnpaid, 'bridal_engagement_id' => 2]));
+    }
+
+    public function test_detach_rejects_bill_not_attached_to_the_event(): void
+    {
+        $engagement = new BridalEngagement;
+        $engagement->id = 1;
+        $this->bills->shouldReceive('update')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->detachBill($engagement, new Bill(['bridal_engagement_id' => 2]));
+    }
+
+    public function test_summary_ignores_void_bills_and_nets_refunds(): void
+    {
+        $engagement = new BridalEngagement(['total_amount' => 30000, 'advance_amount' => 5000]);
+        $engagement->setRelation('bills', collect([
+            new Bill(['status' => Bill::StatusPartial, 'total' => 20000, 'amount_paid' => 12000, 'amount_refunded' => 2000]),
+            new Bill(['status' => Bill::StatusVoid, 'total' => 9999, 'amount_paid' => 9999, 'amount_refunded' => 0]),
+        ]));
+
+        $summary = $this->service()->summarize($engagement);
+
+        $this->assertSame('20000.00', $summary['billed']);
+        $this->assertSame('10000.00', $summary['collected']);
+        $this->assertSame('10000.00', $summary['outstanding']);
     }
 }

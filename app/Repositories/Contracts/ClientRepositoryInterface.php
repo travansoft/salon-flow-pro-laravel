@@ -9,6 +9,8 @@ interface ClientRepositoryInterface
 {
     public function findById(int $id): ?Client;
 
+    public function findByPhone(string $phone): ?Client;
+
     /** @return Collection<int, Client> */
     public function getAll(): Collection;
 
