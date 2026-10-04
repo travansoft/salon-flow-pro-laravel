@@ -424,7 +424,7 @@ class BillingService
         });
     }
 
-    /** @param array<int, array{staff_profile_id: int, referred_by_staff_profile_id?: int|null}> $lineStaff keyed by line item id */
+    /** @param array<int, array{staff_profile_id: int|null, referred_by_staff_profile_id?: int|null}> $lineStaff keyed by line item id */
     private function updateLineStaff(Bill $bill, array $lineStaff, int $changedBy): void
     {
         $bill->loadMissing(['lineItems.staffProfile', 'lineItems.referredByStaffProfile']);
@@ -436,7 +436,8 @@ class BillingService
                 continue;
             }
 
-            $newServicingId = (int) $lineStaff[$lineItem->id]['staff_profile_id'];
+            $newServicingId = $lineStaff[$lineItem->id]['staff_profile_id'] ?? null;
+            $newServicingId = $newServicingId === null || $newServicingId === '' ? null : (int) $newServicingId;
             $newReferrerId = $lineStaff[$lineItem->id]['referred_by_staff_profile_id'] ?? null;
             $newReferrerId = $newReferrerId === null ? null : (int) $newReferrerId;
 
@@ -519,10 +520,6 @@ class BillingService
     {
         $comboItems = $combo->comboItems;
 
-        if ($comboItems->pluck('component_service_id')->sort()->values()->all() !== collect($staffByComponent)->keys()->map(fn ($id): int => (int) $id)->sort()->values()->all()) {
-            throw new InvalidArgumentException("Select a staff member for every service in \"{$combo->name}\".");
-        }
-
         $weightTotal = $comboItems->reduce(fn (string $sum, $comboItem): string => bcadd($sum, (string) $comboItem->price, 2), '0');
         $discount = (string) $lineItem->discount_amount;
         $tax = bcadd(bcadd((string) $lineItem->cgst_amount, (string) $lineItem->sgst_amount, 2), (string) $lineItem->igst_amount, 2);
@@ -537,9 +534,9 @@ class BillingService
 
         foreach ($comboItems as $index => $comboItem) {
             $component = $comboItem->component;
-            $staffProfileId = $staffByComponent[$comboItem->component_service_id];
+            $staffProfileId = $staffByComponent[$comboItem->component_service_id] ?? null;
 
-            if (! $component->staff->contains('id', $staffProfileId)) {
+            if ($staffProfileId !== null && ! $component->staff->contains('id', $staffProfileId)) {
                 throw new InvalidArgumentException("The selected staff member is not eligible to perform \"{$component->name}\".");
             }
 
@@ -624,7 +621,7 @@ class BillingService
     private function describeSplit(Service $combo, array $staffByComponent): string
     {
         return $combo->comboItems
-            ->map(fn ($comboItem): string => "{$comboItem->component->name}: {$this->staffName((int) $staffByComponent[$comboItem->component_service_id])}")
+            ->map(fn ($comboItem): string => "{$comboItem->component->name}: {$this->staffName(isset($staffByComponent[$comboItem->component_service_id]) ? (int) $staffByComponent[$comboItem->component_service_id] : null)}")
             ->implode(', ');
     }
 
@@ -655,8 +652,12 @@ class BillingService
         return $comboReferrers;
     }
 
-    private function staffName(int $staffProfileId): ?string
+    private function staffName(?int $staffProfileId): ?string
     {
+        if ($staffProfileId === null) {
+            return 'None';
+        }
+
         return $this->staffProfileRepository->findById($staffProfileId)?->name;
     }
 

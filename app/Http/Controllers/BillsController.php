@@ -14,6 +14,7 @@ use App\Models\Bill;
 use App\Models\BillPayment;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
+use App\Services\BillDraftService;
 use App\Services\BillingService;
 use App\Services\IncentiveService;
 use App\Services\QuickBillService;
@@ -33,6 +34,7 @@ class BillsController extends Controller
         private BillRepositoryInterface $billRepository,
         private BillingService $billingService,
         private QuickBillService $quickBillService,
+        private BillDraftService $billDraftService,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -53,6 +55,9 @@ class BillsController extends Controller
             'toDate' => $toDate,
             'clientName' => $clientName,
             'clientPhone' => $clientPhone,
+            'drafts' => $request->user()->can('billing.create')
+                ? $this->billDraftService->listForUser($request->user())
+                : collect(),
         ]);
     }
 
@@ -96,8 +101,17 @@ class BillsController extends Controller
     {
         abort_unless($request->user()->can('billing.create'), 403);
 
+        $draft = null;
+
+        if ($request->filled('draft')) {
+            $draft = $this->billDraftService->findForUser($request->user(), (int) $request->query('draft'));
+
+            abort_if($draft === null, 404);
+        }
+
         return view('admin.bills.create', [
             'referrers' => $staffProfileRepository->getActive(),
+            'draft' => $draft,
         ]);
     }
 
@@ -185,6 +199,10 @@ class BillsController extends Controller
             );
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        if (! empty($data['draft_id'])) {
+            $this->billDraftService->discard($request->user(), (int) $data['draft_id']);
         }
 
         return response()->json([

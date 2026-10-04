@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Repositories\Contracts\AppointmentRepositoryInterface;
+use App\Repositories\Contracts\BillDraftRepositoryInterface;
 use App\Repositories\Contracts\BillLineItemRepositoryInterface;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\BranchRepositoryInterface;
@@ -29,6 +30,7 @@ use App\Repositories\Contracts\TenantRepositoryInterface;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
 use App\Repositories\Contracts\TimeSlotRepositoryInterface;
 use App\Repositories\Eloquent\AppointmentRepository;
+use App\Repositories\Eloquent\BillDraftRepository;
 use App\Repositories\Eloquent\BillLineItemRepository;
 use App\Repositories\Eloquent\BillRepository;
 use App\Repositories\Eloquent\BranchRepository;
@@ -89,6 +91,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
         $this->app->bind(BridalEngagementRepositoryInterface::class, BridalEngagementRepository::class);
         $this->app->bind(BillRepositoryInterface::class, BillRepository::class);
+        $this->app->bind(BillDraftRepositoryInterface::class, BillDraftRepository::class);
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(InventoryCategoryRepositoryInterface::class, InventoryCategoryRepository::class);
         $this->app->bind(ExpenseRepositoryInterface::class, ExpenseRepository::class);

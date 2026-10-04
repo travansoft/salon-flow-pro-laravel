@@ -100,15 +100,26 @@ class EditComboBillSplitTest extends TestCase
         $this->assertDatabaseHas('bill_audits', ['bill_id' => $this->bill->id, 'field' => 'combo_split']);
     }
 
-    public function test_split_needs_staff_for_every_service(): void
+    public function test_split_can_leave_a_service_without_staff(): void
     {
         $split = $this->fullSplit();
         array_pop($split);
 
         $response = $this->actingAs($this->owner)->putToTenant("/bills/{$this->bill->id}", $this->payload($split));
 
-        $response->assertSessionHasErrors('combo_split');
-        $this->assertDatabaseHas('bill_line_items', ['id' => $this->line->id]);
+        $response->assertSessionHasNoErrors();
+        $this->assertSame(1, $this->bill->lineItems()->whereNull('staff_profile_id')->count());
+        $this->assertSame(2, $this->bill->lineItems()->count());
+    }
+
+    public function test_edit_can_clear_the_servicing_staff_of_a_line(): void
+    {
+        $other = BillLineItem::factory()->create(['tenant_id' => $this->tenant->id, 'branch_id' => $this->branch->id, 'bill_id' => $this->bill->id, 'staff_profile_id' => $this->line->staff_profile_id]);
+
+        $response = $this->actingAs($this->owner)->putToTenant("/bills/{$this->bill->id}", ['items' => [$other->id => ['staff_profile_id' => '', 'referred_by_staff_profile_id' => '']]]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertNull($other->refresh()->staff_profile_id);
     }
 
     public function test_split_rejects_staff_not_eligible_for_the_service(): void

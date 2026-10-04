@@ -35,8 +35,8 @@ class ExpandCombo
         $staffByComponent = $this->staffByComponent($item['components'] ?? []);
         $comboItems = $combo->comboItems;
 
-        if ($comboItems->pluck('component_service_id')->sort()->values()->all() !== collect($staffByComponent)->keys()->map(fn ($id): int => (int) $id)->sort()->values()->all()) {
-            throw new InvalidArgumentException("Select a staff member for every service in \"{$combo->name}\".");
+        if (array_diff(array_keys($staffByComponent), $comboItems->pluck('component_service_id')->all()) !== []) {
+            throw new InvalidArgumentException("One of the services does not belong to \"{$combo->name}\".");
         }
 
         $targetTotal = (string) ($item['unit_price'] ?? $combo->price);
@@ -48,9 +48,9 @@ class ExpandCombo
 
         foreach ($comboItems as $index => $comboItem) {
             $component = $comboItem->component;
-            $staffProfileId = $staffByComponent[$comboItem->component_service_id];
+            $staffProfileId = $staffByComponent[$comboItem->component_service_id] ?? null;
 
-            if (! $component->staff()->where('staff_profiles.id', $staffProfileId)->exists()) {
+            if ($staffProfileId !== null && ! $component->staff()->where('staff_profiles.id', $staffProfileId)->exists()) {
                 throw new InvalidArgumentException("The selected staff member is not eligible to perform \"{$component->name}\".");
             }
 
@@ -83,18 +83,14 @@ class ExpandCombo
 
     /**
      * @param  array<int, array{service_id: int, staff_profile_id: int|null}>  $components
-     * @return array<int, int>
+     * @return array<int, int|null>
      */
     private function staffByComponent(array $components): array
     {
         $staffByComponent = [];
 
         foreach ($components as $component) {
-            if (empty($component['staff_profile_id'])) {
-                throw new InvalidArgumentException('A staff member is required for every service in a combo.');
-            }
-
-            $staffByComponent[(int) $component['service_id']] = (int) $component['staff_profile_id'];
+            $staffByComponent[(int) $component['service_id']] = empty($component['staff_profile_id']) ? null : (int) $component['staff_profile_id'];
         }
 
         return $staffByComponent;

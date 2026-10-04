@@ -45,7 +45,7 @@ class SettleQuickBillRequest extends FormRequest
                 Rule::exists('services', 'id')->where('tenant_id', $tenantId),
             ],
             'items.*.staff_profile_id' => [
-                'exclude_with:items.*.components', 'required_with:items.*.service_id', 'nullable', 'integer',
+                'nullable', 'integer',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
                 function (string $attribute, mixed $value, Closure $fail): void {
                     $index = explode('.', $attribute)[1];
@@ -69,7 +69,7 @@ class SettleQuickBillRequest extends FormRequest
                 Rule::exists('services', 'id')->where('tenant_id', $tenantId),
             ],
             'items.*.components.*.staff_profile_id' => [
-                'required', 'integer',
+                'nullable', 'integer',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
             ],
             'items.*.referred_by_staff_profile_id' => [
@@ -80,6 +80,7 @@ class SettleQuickBillRequest extends FormRequest
             'items.*.unit_price' => ['sometimes', 'numeric', 'min:0'],
             'payment_method' => ['required', Rule::in(['cash', 'card', 'upi'])],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'draft_id' => ['nullable', 'integer'],
         ];
     }
 }

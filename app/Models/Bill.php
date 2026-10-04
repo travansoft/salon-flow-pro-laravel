@@ -86,6 +86,11 @@ class Bill extends Model
         return $this->hasMany(BillLineItem::class);
     }
 
+    public function hasMissingServiceStaff(): bool
+    {
+        return $this->lineItems->contains(fn (BillLineItem $lineItem): bool => $lineItem->service_id !== null && $lineItem->staff_profile_id === null);
+    }
+
     /** @return HasMany<BillPayment, $this> */
     public function payments(): HasMany
     {

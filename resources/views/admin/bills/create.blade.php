@@ -116,6 +116,10 @@
 
             <div class="sfp-form-actions">
                 <button type="button" id="bill-settle" class="sfp-btn-primary">Create bill</button>
+                <button type="button" id="bill-save-draft" class="sfp-btn-outline">Save as draft</button>
+                @if($draft)
+                    <button type="button" id="bill-discard-draft" class="sfp-btn-outline" style="color:#A8506B">Discard draft</button>
+                @endif
                 <a href="{{ $tenantUrl->route('bills.index') }}" class="sfp-btn-outline">Cancel</a>
             </div>
         </form>
@@ -227,6 +231,11 @@
     const paymentMethodSelect = document.getElementById('bill-payment-method');
     const feedback = document.getElementById('bill-feedback');
     const settleBtn = document.getElementById('bill-settle');
+    const saveDraftBtn = document.getElementById('bill-save-draft');
+    const discardDraftBtn = document.getElementById('bill-discard-draft');
+    const notesInput = document.getElementById('bill-notes');
+    const savedDraft = @json($draft ? ['id' => $draft->id, 'payload' => $draft->payload] : null);
+    let draftId = savedDraft ? savedDraft.id : null;
 
     let lines = [];
     let lineSeq = 0;
@@ -607,7 +616,7 @@
 
         row.innerHTML = `
             <span class="bill-line-description-wrap">
-                <span style="font-size:14px"><i class="bi bi-collection"></i> ${line.description}</span>
+                <span style="font-size:14px">${line.description}</span>
                 <span class="sfp-pill sfp-pill-green" style="margin-left:6px;font-size:10.5px">Combo</span>
             </span>
             <span style="font-size:12px;color:#66736F">Staff per service below</span>
@@ -741,24 +750,6 @@
             return false;
         }
 
-        for (const comboLine of lines.filter((line) => line.isCombo)) {
-            const missingComponent = comboLine.components.find((component) => !component.staffProfileId);
-
-            if (missingComponent) {
-                setFeedback(`Select the staff for ${missingComponent.name} in ${comboLine.description}.`, true);
-                itemsBox.querySelector(`[data-component-id="${missingComponent.serviceId}"]`)?.focus();
-                return false;
-            }
-        }
-
-        const missingStaff = lines.filter((line) => !line.isCombo).find((line) => !line.staffProfileId);
-
-        if (missingStaff) {
-            setFeedback(`Select the servicing staff for ${missingStaff.description}.`, true);
-            itemsBox.querySelector(`[data-line-id="${missingStaff.id}"] .bill-line-staff`)?.focus();
-            return false;
-        }
-
         return true;
     }
 
@@ -782,7 +773,8 @@
                     ...buildClientPayload(),
                     items: buildItemsPayload(),
                     payment_method: paymentMethodSelect.value,
-                    notes: document.getElementById('bill-notes').value.trim() || null,
+                    notes: notesInput.value.trim() || null,
+                    draft_id: draftId,
                 }),
             });
 
@@ -804,8 +796,100 @@
 
     settleBtn.addEventListener('click', createAndSettle);
 
+    // ----- Drafts -----
+
+    function collectDraftState() {
+        return {
+            client_id: clientIdInput.value || null,
+            client_name: clientSearch.value.trim() || null,
+            client_phone: clientPhoneInput.value.trim() || null,
+            client_gst_number: clientGstInput.value.trim() || null,
+            discount_mode: discountMode,
+            discount_value: discountInput.value === '' ? null : discountValue(),
+            payment_method: paymentMethodSelect.value,
+            notes: notesInput.value.trim() || null,
+            lines: lines,
+        };
+    }
+
+    function restoreDraft(state) {
+        clientIdInput.value = state.client_id || '';
+        clientSelection = state.client_id ? { id: state.client_id } : null;
+        clientSearch.value = state.client_name || '';
+        clientPhoneInput.value = state.client_phone || '';
+        clientGstInput.value = state.client_gst_number || '';
+        discountInput.value = state.discount_value ?? '';
+        paymentMethodSelect.value = state.payment_method || paymentMethodSelect.value;
+        notesInput.value = state.notes || '';
+
+        lines = (state.lines || []).map((line) => ({
+            ...line,
+            id: lineSeq++,
+            components: (line.components || []).map((component) => ({ ...component })),
+        }));
+
+        setDiscountMode(state.discount_mode === 'amount' ? 'amount' : 'percent');
+        renderLines();
+    }
+
+    async function saveDraft() {
+        saveDraftBtn.disabled = true;
+        setFeedback('Saving draft…', false);
+
+        try {
+            const response = await fetch(draftId
+                ? '{{ $tenantUrl->route("billDrafts.update", "__DRAFT_ID__") }}'.replace('__DRAFT_ID__', draftId)
+                : '{{ $tenantUrl->route("billDrafts.store") }}', {
+                method: draftId ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(collectDraftState()),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const firstError = data.errors ? Object.values(data.errors)[0][0] : null;
+                setFeedback(firstError || data.message || 'Could not save the draft.', true);
+                saveDraftBtn.disabled = false;
+                return;
+            }
+
+            draftId = data.draft_id;
+            setFeedback('Draft saved. Redirecting…', false);
+            window.location.href = data.redirect;
+        } catch (error) {
+            setFeedback('Network error saving the draft.', true);
+            saveDraftBtn.disabled = false;
+        }
+    }
+
+    saveDraftBtn.addEventListener('click', saveDraft);
+
+    if (discardDraftBtn) {
+        discardDraftBtn.addEventListener('click', () => {
+            if (!confirm('Discard this draft?')) {
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ $tenantUrl->route("billDrafts.destroy", "__DRAFT_ID__") }}'.replace('__DRAFT_ID__', draftId);
+            form.innerHTML = '<input type="hidden" name="_token" value="' + csrfToken + '"><input type="hidden" name="_method" value="DELETE">';
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
     setDiscountMode('percent');
     renderLines();
+
+    if (savedDraft) {
+        restoreDraft(savedDraft.payload);
+    }
 })();
 </script>
 @endsection
