@@ -281,9 +281,16 @@ class BillsController extends Controller
                 ->values(),
         ]);
 
+        $hiddenReferrerLineIds = $bill->lineItems
+            ->whereNotNull('combo_group')
+            ->groupBy('combo_group')
+            ->flatMap(fn ($group) => $group->slice(1)->pluck('id'))
+            ->all();
+
         return view('admin.bills.edit', [
             'bill' => $bill,
             'servicingOptions' => $servicingOptions,
+            'hiddenReferrerLineIds' => $hiddenReferrerLineIds,
             'referrers' => $activeStaff,
         ]);
     }

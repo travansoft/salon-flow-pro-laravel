@@ -19,14 +19,44 @@
                     <span style="font-size:13px;color:#66736F">{{ $draft->updated_at->diffForHumans() }}</span>
                     <span style="display:flex;gap:12px;align-items:center">
                         <a href="{{ $tenantUrl->route('bills.create') }}?draft={{ $draft->id }}" class="sfp-btn-primary" style="padding:4px 12px;font-size:12.5px">Continue</a>
-                        <form method="POST" action="{{ $tenantUrl->route('billDrafts.destroy', $draft->id) }}" onsubmit="return confirm('Discard this draft?')" style="margin:0">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="sfp-btn-outline" style="padding:4px 12px;font-size:12.5px">Discard</button>
-                        </form>
+                        <button type="button" class="sfp-btn-outline" style="padding:4px 12px;font-size:12.5px" data-bs-toggle="modal" data-bs-target="#discardDraftModal" data-discard-url="{{ $tenantUrl->route('billDrafts.destroy', $draft->id) }}" data-discard-client="{{ $draft->client_name ?? __('Walk-in customer') }}">Discard</button>
                     </span>
                 </div>
             @endforeach
         </div>
+
+        <div class="modal fade" id="discardDraftModal" tabindex="-1" aria-labelledby="discardDraftModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form id="discard-draft-form" method="POST" action="">
+                        @csrf
+                        @method('DELETE')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="discardDraftModalLabel">Discard draft</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p style="font-size:13.5px;color:#66736F;margin:0">
+                                Discard the draft for <strong id="discard-draft-client"></strong>? This cannot be undone.
+                            </p>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Keep draft</button>
+                            <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Discard</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.getElementById('discardDraftModal').addEventListener('show.bs.modal', (event) => {
+                document.getElementById('discard-draft-form').action = event.relatedTarget.dataset.discardUrl;
+                document.getElementById('discard-draft-client').textContent = event.relatedTarget.dataset.discardClient;
+            });
+        </script>
     @endif
 @endcan

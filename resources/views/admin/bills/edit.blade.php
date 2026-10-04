@@ -69,18 +69,22 @@
                                 <span class="sfp-invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
-                        <div>
-                            <div style="font-size:13px;color:#66736F;margin-bottom:4px">Referred by</div>
-                            <select name="items[{{ $lineItem->id }}][referred_by_staff_profile_id]" class="sfp-select">
-                                <option value="">Direct</option>
-                                @foreach ($referrers as $member)
-                                    <option value="{{ $member->id }}" @selected(old("items.{$lineItem->id}.referred_by_staff_profile_id", $lineItem->referred_by_staff_profile_id) == $member->id)>{{ $member->name }}</option>
-                                @endforeach
-                            </select>
-                            @error("items.{$lineItem->id}.referred_by_staff_profile_id")
-                                <span class="sfp-invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
+                        @if(in_array($lineItem->id, $hiddenReferrerLineIds, true))
+                            <input type="hidden" name="items[{{ $lineItem->id }}][referred_by_staff_profile_id]" value="{{ $lineItem->referred_by_staff_profile_id }}">
+                        @else
+                            <div>
+                                <div style="font-size:13px;color:#66736F;margin-bottom:4px">Referred by{{ $lineItem->combo_group ? ' (whole combo)' : '' }}</div>
+                                <select name="items[{{ $lineItem->id }}][referred_by_staff_profile_id]" class="sfp-select">
+                                    <option value="">Direct</option>
+                                    @foreach ($referrers as $member)
+                                        <option value="{{ $member->id }}" @selected(old("items.{$lineItem->id}.referred_by_staff_profile_id", $lineItem->referred_by_staff_profile_id) == $member->id)>{{ $member->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error("items.{$lineItem->id}.referred_by_staff_profile_id")
+                                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
                     </div>
                     @if ($lineItem->service?->is_combo && ! $lineItem->combo_group)
                         <div style="margin:-2px 0 14px;padding:10px 12px;border:1px dashed #C9D3D0;border-radius:10px">

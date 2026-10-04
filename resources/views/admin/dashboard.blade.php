@@ -10,8 +10,6 @@
         </div>
     </div>
 
-    @include('admin.bills.partials.drafts', ['drafts' => $drafts])
-
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px">
         <div class="sfp-card">
             <div class="sfp-label" style="margin-bottom:12px">Today's Revenue</div>
@@ -68,5 +66,9 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    <div style="margin-top:16px">
+        @include('admin.bills.partials.drafts', ['drafts' => $drafts])
     </div>
 @endsection

@@ -118,12 +118,39 @@
                 <button type="button" id="bill-settle" class="sfp-btn-primary">Create bill</button>
                 <button type="button" id="bill-save-draft" class="sfp-btn-outline">Save as draft</button>
                 @if($draft)
-                    <button type="button" id="bill-discard-draft" class="sfp-btn-outline" style="color:#A8506B">Discard draft</button>
+                    <button type="button" class="sfp-btn-outline" style="color:#A8506B" data-bs-toggle="modal" data-bs-target="#discardDraftModal">Discard draft</button>
                 @endif
                 <a href="{{ $tenantUrl->route('bills.index') }}" class="sfp-btn-outline">Cancel</a>
             </div>
         </form>
     </div>
+
+    @if($draft)
+        <div class="modal fade" id="discardDraftModal" tabindex="-1" aria-labelledby="discardDraftModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{{ $tenantUrl->route('billDrafts.destroy', $draft->id) }}">
+                        @csrf
+                        @method('DELETE')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="discardDraftModalLabel">Discard draft</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p style="font-size:13.5px;color:#66736F;margin:0">This draft will be deleted and cannot be recovered.</p>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Keep draft</button>
+                            <button type="submit" class="sfp-btn-primary" style="background:#A8506B;border-color:#A8506B">Discard</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
 
 @section('styles')
@@ -232,7 +259,6 @@
     const feedback = document.getElementById('bill-feedback');
     const settleBtn = document.getElementById('bill-settle');
     const saveDraftBtn = document.getElementById('bill-save-draft');
-    const discardDraftBtn = document.getElementById('bill-discard-draft');
     const notesInput = document.getElementById('bill-notes');
     const savedDraft = @json($draft ? ['id' => $draft->id, 'payload' => $draft->payload] : null);
     let draftId = savedDraft ? savedDraft.id : null;
@@ -868,21 +894,6 @@
     }
 
     saveDraftBtn.addEventListener('click', saveDraft);
-
-    if (discardDraftBtn) {
-        discardDraftBtn.addEventListener('click', () => {
-            if (!confirm('Discard this draft?')) {
-                return;
-            }
-
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ $tenantUrl->route("billDrafts.destroy", "__DRAFT_ID__") }}'.replace('__DRAFT_ID__', draftId);
-            form.innerHTML = '<input type="hidden" name="_token" value="' + csrfToken + '"><input type="hidden" name="_method" value="DELETE">';
-            document.body.appendChild(form);
-            form.submit();
-        });
-    }
 
     setDiscountMode('percent');
     renderLines();
