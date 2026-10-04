@@ -11,7 +11,7 @@ use Tests\Concerns\ActsAsTenant;
 use Tests\Concerns\CreatesEligibleStaff;
 use Tests\TestCase;
 
-class ServicingStaffRequiredOnNewBillFixTest extends TestCase
+class ServicingStaffOptionalOnNewBillFixTest extends TestCase
 {
     use ActsAsTenant, CreatesEligibleStaff, RefreshDatabase;
 
@@ -30,7 +30,11 @@ class ServicingStaffRequiredOnNewBillFixTest extends TestCase
         $this->client = Client::factory()->create(['tenant_id' => $this->tenant->id]);
     }
 
-    public function test_a_bill_can_no_longer_be_settled_without_the_servicing_staff(): void
+    /**
+     * Change: servicing staff is no longer mandatory when billing; the bill
+     * is flagged as incomplete instead.
+     */
+    public function test_a_bill_can_be_settled_without_the_servicing_staff(): void
     {
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
@@ -41,11 +45,11 @@ class ServicingStaffRequiredOnNewBillFixTest extends TestCase
             'payment_method' => 'cash',
         ]);
 
-        $response->assertJsonValidationErrors('items.0.staff_profile_id');
-        $this->assertDatabaseCount('bills', 0);
+        $response->assertOk();
+        $this->assertDatabaseHas('bill_line_items', ['bill_id' => $response->json('bill_id'), 'staff_profile_id' => null]);
     }
 
-    public function test_a_backdated_bill_can_no_longer_be_saved_without_the_servicing_staff(): void
+    public function test_a_backdated_bill_can_be_saved_without_the_servicing_staff(): void
     {
         $owner = User::factory()->for($this->tenant)->create();
         $owner->assignRole('Owner');
@@ -57,11 +61,11 @@ class ServicingStaffRequiredOnNewBillFixTest extends TestCase
             'payment_method' => 'cash',
         ]);
 
-        $response->assertJsonValidationErrors('items.0.staff_profile_id');
-        $this->assertDatabaseCount('bills', 0);
+        $response->assertOk();
+        $this->assertDatabaseCount('bills', 1);
     }
 
-    public function test_every_service_line_needs_its_own_servicing_staff(): void
+    public function test_a_bill_with_staff_on_only_some_service_lines_is_accepted(): void
     {
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
@@ -76,8 +80,8 @@ class ServicingStaffRequiredOnNewBillFixTest extends TestCase
             'payment_method' => 'cash',
         ]);
 
-        $response->assertJsonValidationErrors('items.1.staff_profile_id');
-        $response->assertJsonMissingValidationErrors('items.0.staff_profile_id');
+        $response->assertOk();
+        $this->assertDatabaseHas('bill_line_items', ['bill_id' => $response->json('bill_id'), 'service_id' => $secondService->id, 'staff_profile_id' => null]);
     }
 
     public function test_a_bill_with_servicing_staff_on_every_service_line_is_accepted(): void

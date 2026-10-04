@@ -36,6 +36,7 @@
                 @endif
             @endcan
             <a href="{{ $tenantUrl->route('bills.print', $bill) }}" target="_blank" class="sfp-btn-outline">Print</a>
+            <x-missing-staff-warning :bill="$bill" :show-label="true" />
             <span class="sfp-pill {{ $statusPillClass }}">{{ ucfirst($bill->status) }}</span>
         </div>
     </div>

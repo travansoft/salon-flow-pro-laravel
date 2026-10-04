@@ -606,7 +606,7 @@
 
         row.innerHTML = `
             <span class="bill-line-description-wrap">
-                <span style="font-size:14px"><i class="bi bi-collection"></i> ${line.description}</span>
+                <span style="font-size:14px">${line.description}</span>
                 <span class="sfp-pill sfp-pill-green" style="margin-left:6px;font-size:10.5px">Combo</span>
             </span>
             <span style="font-size:12px;color:#66736F">Staff per service below</span>
@@ -730,24 +730,6 @@
     function validateLines() {
         if (lines.length === 0) {
             setFeedback('Add at least one item before creating the bill.', true);
-            return false;
-        }
-
-        for (const comboLine of lines.filter((line) => line.isCombo)) {
-            const missingComponent = comboLine.components.find((component) => !component.staffProfileId);
-
-            if (missingComponent) {
-                setFeedback(`Select the staff for ${missingComponent.name} in ${comboLine.description}.`, true);
-                itemsBox.querySelector(`[data-component-id="${missingComponent.serviceId}"]`)?.focus();
-                return false;
-            }
-        }
-
-        const missingStaff = lines.filter((line) => !line.isCombo).find((line) => !line.staffProfileId);
-
-        if (missingStaff) {
-            setFeedback(`Select the servicing staff for ${missingStaff.description}.`, true);
-            itemsBox.querySelector(`[data-line-id="${missingStaff.id}"] .bill-line-staff`)?.focus();
             return false;
         }
 

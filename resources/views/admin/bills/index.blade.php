@@ -18,6 +18,8 @@
         </div>
     </div>
 
+    @include('admin.bills.partials.drafts', ['drafts' => $drafts])
+
     <form method="GET" class="sfp-card" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
         <div class="sfp-field" style="margin-bottom:0">
             <label class="sfp-label" for="bills-from-date">From date</label>
@@ -65,7 +67,7 @@
                 };
             @endphp
             <div class="sfp-table-row" style="grid-template-columns:1fr 1fr 1fr 150px 120px 120px 110px 130px">
-                <span class="sfp-mono" style="font-size:13.5px">{{ $bill->bill_number }}</span>
+                <span class="sfp-mono" style="font-size:13.5px">{{ $bill->bill_number }} <x-missing-staff-warning :bill="$bill" /></span>
                 <span style="font-size:14px">{{ $bill->client->name }}</span>
                 <span style="font-size:13px;color:#66736F">{{ $bill->createdBy->name ?? '—' }}</span>
                 <span style="font-size:13px;color:#66736F">{{ $bill->created_at->format('d M Y, h:i A') }}</span>

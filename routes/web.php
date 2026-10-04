@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppointmentsController;
+use App\Http\Controllers\BillDraftsController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\BranchSwitcherController;
@@ -232,6 +233,9 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/services/{service}/eligible-staff', [ServicesController::class, 'eligibleStaff'])->name("services.eligibleStaff{$nameSuffix}");
             Route::post('/appointments/{appointment}/bill', [BillsController::class, 'generateFromAppointment'])->name("bills.generateFromAppointment{$nameSuffix}");
             Route::post('/bills/settle', [BillsController::class, 'settle'])->name("bills.settle{$nameSuffix}");
+            Route::post('/bill-drafts', [BillDraftsController::class, 'store'])->name("billDrafts.store{$nameSuffix}");
+            Route::put('/bill-drafts/{billDraft}', [BillDraftsController::class, 'update'])->name("billDrafts.update{$nameSuffix}");
+            Route::delete('/bill-drafts/{billDraft}', [BillDraftsController::class, 'destroy'])->name("billDrafts.destroy{$nameSuffix}");
             Route::put('/bills/{bill}/payments', [BillsController::class, 'recordPayment'])->name("bills.recordPayment{$nameSuffix}");
         });
 

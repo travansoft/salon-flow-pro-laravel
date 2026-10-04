@@ -67,4 +67,8 @@
             @endif
         </div>
     </div>
+
+    <div style="margin-top:16px">
+        @include('admin.bills.partials.drafts', ['drafts' => $drafts])
+    </div>
 @endsection

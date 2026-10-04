@@ -8,7 +8,7 @@
 <div class="sfp-field" style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
     <input type="hidden" name="is_combo" value="0">
     <input type="checkbox" name="is_combo" value="1" id="is-combo" @checked($isCombo)>
-    <label class="sfp-label" for="is-combo" style="margin-bottom:0"><i class="bi bi-collection"></i> This is a combo &mdash; a package of several services sold at one price</label>
+    <label class="sfp-label" for="is-combo" style="margin-bottom:0">This is a combo &mdash; a package of several services sold at one price</label>
 </div>
 
 <div id="combo-panel" style="display:none;margin-bottom:24px">
@@ -18,7 +18,7 @@
     <div id="combo-rows"></div>
 
     <div style="display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap">
-        <button type="button" id="combo-add-row" class="sfp-btn-outline"><i class="bi bi-plus-lg"></i> Add service</button>
+        <button type="button" id="combo-add-row" class="sfp-btn-outline">Add service</button>
         <span style="font-size:13px;color:#66736F">Components total: <strong class="sfp-mono" id="combo-sum">₹0.00</strong></span>
         <button type="button" id="combo-reset-price" class="sfp-action-link" style="display:none;font-size:12.5px;background:none;border:0">Override active &ndash; reset price to total</button>
     </div>
@@ -86,7 +86,7 @@
         wrapper.innerHTML = `
             <div class="sfp-field" style="margin:0"><select name="combo_items[${index}][service_id]" class="sfp-select" data-combo-service>${options}</select></div>
             <div class="sfp-field" style="margin:0"><input type="number" step="0.01" min="0" name="combo_items[${index}][price]" class="sfp-input" data-combo-price placeholder="Price (incl. GST)"></div>
-            <button type="button" class="sfp-btn-outline" data-combo-remove aria-label="Remove"><i class="bi bi-trash"></i></button>`;
+            <button type="button" class="sfp-btn-outline" data-combo-remove aria-label="Remove">Remove</button>`;
 
         const select = wrapper.querySelector('[data-combo-service]');
         const price = wrapper.querySelector('[data-combo-price]');

@@ -78,25 +78,28 @@ class ExpandComboTest extends TestCase
         $this->assertSame([$referrer->id, $referrer->id], array_column($lines, 'referred_by_staff_profile_id'));
     }
 
-    public function test_missing_staff_for_a_component_is_rejected(): void
+    public function test_component_without_staff_is_left_unassigned(): void
     {
         $combo = $this->comboWith([500, 300]);
         $components = $this->eligibleComponentStaff($combo);
         $components[1]['staff_profile_id'] = null;
 
+        $lines = app(ExpandCombo::class)->execute(['service_id' => $combo->id, 'components' => $components]);
+
+        $this->assertSame($components[0]['staff_profile_id'], $lines[0]['staff_profile_id']);
+        $this->assertNull($lines[1]['staff_profile_id']);
+    }
+
+    public function test_component_that_is_not_part_of_the_combo_is_rejected(): void
+    {
+        $combo = $this->comboWith([500, 300]);
+        $stranger = $this->comboWith([100, 100]);
+        $components = $this->eligibleComponentStaff($combo);
+        $components[0]['service_id'] = $stranger->comboItems[0]->component_service_id;
+
         $this->expectException(InvalidArgumentException::class);
 
         app(ExpandCombo::class)->execute(['service_id' => $combo->id, 'components' => $components]);
-    }
-
-    public function test_incomplete_component_list_is_rejected(): void
-    {
-        $combo = $this->comboWith([500, 300]);
-        $components = $this->eligibleComponentStaff($combo);
-
-        $this->expectException(InvalidArgumentException::class);
-
-        app(ExpandCombo::class)->execute(['service_id' => $combo->id, 'components' => [$components[0]]]);
     }
 
     public function test_ineligible_staff_for_a_component_is_rejected(): void

@@ -128,12 +128,12 @@ class EditBillLineStaffTest extends TestCase
         $response->assertSee('Servicing staff changed');
     }
 
-    public function test_servicing_staff_cannot_be_blank(): void
+    public function test_servicing_staff_can_be_cleared(): void
     {
         $response = $this->actingAs($this->owner)->putToTenant("/bills/{$this->bill->id}", $this->payload(null));
 
-        $response->assertSessionHasErrors("items.{$this->line->id}.staff_profile_id");
-        $this->assertSame($this->rizwan->id, $this->line->refresh()->staff_profile_id);
+        $response->assertSessionHasNoErrors();
+        $this->assertNull($this->line->refresh()->staff_profile_id);
     }
 
     public function test_staff_who_cannot_perform_the_service_is_rejected(): void

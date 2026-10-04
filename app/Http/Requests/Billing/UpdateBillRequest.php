@@ -46,7 +46,7 @@ class UpdateBillRequest extends FormRequest
                 },
             ],
             'items.*.staff_profile_id' => [
-                'required', 'integer',
+                'nullable', 'integer',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),
                 function (string $attribute, mixed $value, Closure $fail): void {
                     $lineItem = $this->bill()->lineItems()->find(explode('.', $attribute)[1]);

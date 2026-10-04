@@ -82,22 +82,22 @@ class SettleComboBillTest extends TestCase
         $this->assertDatabaseHas('bills', ['id' => $response->json('bill_id'), 'total' => 700]);
     }
 
-    public function test_staff_is_required_for_every_component(): void
+    public function test_staff_is_optional_for_a_component(): void
     {
         $combo = $this->comboWith([500, 300]);
         $components = $this->eligibleComponentStaff($combo);
-        unset($components[1]['staff_profile_id']);
+        $components[1]['staff_profile_id'] = null;
 
-        $response = $this->withHeader('Accept', 'application/json')->actingAs($this->frontDesk())->postToTenant('/bills/settle', [
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/bills/settle', [
             'items' => [['service_id' => $combo->id, 'components' => $components]],
             'payment_method' => 'cash',
         ]);
 
-        $response->assertUnprocessable();
-        $this->assertDatabaseCount('bills', 0);
+        $response->assertOk();
+        $this->assertDatabaseHas('bill_line_items', ['bill_id' => $response->json('bill_id'), 'service_id' => $combo->comboItems[1]->component_service_id, 'staff_profile_id' => null]);
     }
 
-    public function test_omitting_a_component_is_rejected(): void
+    public function test_omitting_a_component_leaves_it_without_staff(): void
     {
         $combo = $this->comboWith([500, 300]);
         $components = $this->eligibleComponentStaff($combo);
@@ -107,8 +107,8 @@ class SettleComboBillTest extends TestCase
             'payment_method' => 'cash',
         ]);
 
-        $response->assertUnprocessable();
-        $this->assertDatabaseCount('bills', 0);
+        $response->assertOk();
+        $this->assertDatabaseCount('bill_line_items', 2);
     }
 
     public function test_staff_not_eligible_for_a_component_is_rejected(): void
