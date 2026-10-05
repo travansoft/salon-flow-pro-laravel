@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\BridalEngagementRepositoryInterface;
 use App\Repositories\Contracts\ClientRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -73,25 +74,59 @@ class BridalEngagementService
         return $engagement->refresh();
     }
 
-    public function createBill(BridalEngagement $engagement, int $createdBy): Bill
+    /**
+     * Creates a paid bill for the event. The first line carries the billed
+     * amount; every staff line credits that staff member's split towards
+     * their target, so the splits need not add up to the bill total.
+     *
+     * @param  array<int, array{staff_profile_id: int, amount: float|string}>  $staffSplits
+     */
+    public function createBill(BridalEngagement $engagement, int $createdBy, CarbonInterface $billDate, float $amount, string $paymentMethod, array $staffSplits): Bill
     {
-        if ((float) $engagement->total_amount <= 0) {
-            throw new InvalidArgumentException('Set a total amount on the event before creating its bill.');
+        if ($amount <= 0) {
+            throw new InvalidArgumentException('The bill amount must be greater than zero.');
+        }
+
+        if ($staffSplits === []) {
+            throw new InvalidArgumentException('Add at least one servicing staff member.');
+        }
+
+        $staffIds = array_column($staffSplits, 'staff_profile_id');
+
+        if (count($staffIds) !== count(array_unique($staffIds))) {
+            throw new InvalidArgumentException('A staff member can only be added once.');
         }
 
         $description = $engagement->event_name
             ? "Bridal makeup - {$engagement->event_name}"
             : 'Bridal makeup';
 
-        return DB::transaction(function () use ($engagement, $createdBy, $description): Bill {
-            $bill = $this->billingService->createManualBill($engagement->client_id, $createdBy, [[
-                'description' => $description,
-                'quantity' => 1,
-                'unit_price' => (float) $engagement->total_amount,
-            ]]);
+        $lineItems = [];
 
-            return $this->billRepository->update($bill, ['bridal_engagement_id' => $engagement->id]);
+        foreach (array_values($staffSplits) as $index => $split) {
+            $lineItems[] = [
+                'description' => $index === 0 ? $description : "{$description} (staff credit)",
+                'quantity' => 1,
+                'unit_price' => $index === 0 ? $amount : 0,
+                'staff_profile_id' => $split['staff_profile_id'],
+                'target_amount' => (string) $split['amount'],
+            ];
+        }
+
+        return DB::transaction(function () use ($engagement, $createdBy, $billDate, $paymentMethod, $lineItems): Bill {
+            $bill = $this->billingService->createManualBill($engagement->client_id, $createdBy, $lineItems, billDate: $billDate);
+            $bill = $this->billRepository->update($bill, ['bridal_engagement_id' => $engagement->id]);
+            $bill = $this->billingService->recordPayments($bill, [['method' => $paymentMethod, 'amount' => (float) $bill->total]], $createdBy);
+
+            $bill->payments()->update(['created_at' => $billDate, 'updated_at' => $billDate]);
+
+            return $bill;
         });
+    }
+
+    public function findBillByNumber(string $number): ?Bill
+    {
+        return $this->billRepository->findByInvoiceNumber($number);
     }
 
     public function attachBill(BridalEngagement $engagement, Bill $bill): Bill

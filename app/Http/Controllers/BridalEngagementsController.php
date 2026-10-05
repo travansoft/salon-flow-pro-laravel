@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BridalEngagements\StoreBridalEngagementRequest;
 use App\Http\Requests\BridalEngagements\UpdateBridalEngagementRequest;
 use App\Models\BridalEngagement;
-use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Repositories\Contracts\BridalEngagementRepositoryInterface;
+use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\BridalEngagementService;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +17,7 @@ class BridalEngagementsController extends Controller
 {
     public function __construct(
         private BridalEngagementRepositoryInterface $bridalEngagementRepository,
-        private BillRepositoryInterface $billRepository,
+        private StaffProfileRepositoryInterface $staffProfileRepository,
         private BridalEngagementService $bridalEngagementService,
         private TenantUrl $tenantUrl,
     ) {}
@@ -56,9 +56,7 @@ class BridalEngagementsController extends Controller
         return view('admin.bridal-engagements.show', [
             'engagement' => $bridalEngagement,
             'summary' => $this->bridalEngagementService->summarize($bridalEngagement),
-            'attachableBills' => $request->user()->can('billing.create')
-                ? $this->billRepository->getAttachableToEngagement()
-                : collect(),
+            'staffProfiles' => $this->staffProfileRepository->getActive(),
         ]);
     }
 

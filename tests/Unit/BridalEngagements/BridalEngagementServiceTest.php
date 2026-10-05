@@ -116,14 +116,42 @@ class BridalEngagementServiceTest extends TestCase
         $this->service()->createEngagement($this->payload());
     }
 
-    public function test_create_bill_requires_a_total_amount(): void
+    public function test_create_bill_requires_a_positive_amount(): void
     {
-        $engagement = new BridalEngagement(['total_amount' => 0]);
         $this->billing->shouldReceive('createManualBill')->never();
 
         $this->expectException(InvalidArgumentException::class);
 
-        $this->service()->createBill($engagement, 1);
+        $this->service()->createBill(new BridalEngagement, 1, now(), 0, 'cash', [['staff_profile_id' => 1, 'amount' => 10]]);
+    }
+
+    public function test_create_bill_requires_staff(): void
+    {
+        $this->billing->shouldReceive('createManualBill')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->createBill(new BridalEngagement, 1, now(), 100, 'cash', []);
+    }
+
+    public function test_create_bill_rejects_duplicate_staff(): void
+    {
+        $this->billing->shouldReceive('createManualBill')->never();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service()->createBill(new BridalEngagement, 1, now(), 100, 'cash', [
+            ['staff_profile_id' => 1, 'amount' => 10],
+            ['staff_profile_id' => 1, 'amount' => 20],
+        ]);
+    }
+
+    public function test_find_bill_by_number_delegates_to_repository(): void
+    {
+        $bill = new Bill;
+        $this->bills->shouldReceive('findByInvoiceNumber')->once()->with('42')->andReturn($bill);
+
+        $this->assertSame($bill, $this->service()->findBillByNumber('42'));
     }
 
     public function test_attach_rejects_void_bill(): void

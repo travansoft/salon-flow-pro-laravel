@@ -234,6 +234,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
         });
 
         Route::middleware('permission:billing.create')->group(function () use ($nameSuffix): void {
+            Route::get('/bridal-engagements/{bridalEngagement}/bills/lookup', [BridalEngagementBillsController::class, 'lookup'])->name("bridalEngagements.bills.lookup{$nameSuffix}");
             Route::post('/bridal-engagements/{bridalEngagement}/bills', [BridalEngagementBillsController::class, 'store'])->name("bridalEngagements.bills.store{$nameSuffix}");
             Route::post('/bridal-engagements/{bridalEngagement}/bills/attach', [BridalEngagementBillsController::class, 'attach'])->name("bridalEngagements.bills.attach{$nameSuffix}");
             Route::delete('/bridal-engagements/{bridalEngagement}/bills/{bill}', [BridalEngagementBillsController::class, 'detach'])->name("bridalEngagements.bills.detach{$nameSuffix}");

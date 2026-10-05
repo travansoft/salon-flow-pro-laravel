@@ -103,26 +103,12 @@
         </div>
 
         @can('billing.create')
-            <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px">
-                <form action="{{ $tenantUrl->route('bridalEngagements.bills.store', $engagement) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="sfp-btn-primary">Create bill for event</button>
-                </form>
-
-                <form action="{{ $tenantUrl->route('bridalEngagements.bills.attach', $engagement) }}" method="POST" style="display:flex;gap:8px;align-items:flex-end">
-                    @csrf
-                    <div class="sfp-field" style="margin:0">
-                        <label class="sfp-label">Attach existing bill</label>
-                        <select name="bill_id" class="sfp-select">
-                            <option value="">Select a bill</option>
-                            @foreach ($attachableBills as $attachable)
-                                <option value="{{ $attachable->id }}">{{ $attachable->invoiceNumber() }} &middot; {{ $attachable->client->name }} &middot; {{ number_format((float) $attachable->total, 2) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="submit" class="sfp-btn-outline">Attach</button>
-                </form>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+                <button type="button" class="sfp-btn-primary" data-bs-toggle="modal" data-bs-target="#createEventBillModal">Create bill for event</button>
+                <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#attachEventBillModal">Attach existing bill</button>
             </div>
         @endcan
     </div>
+
+    @include('admin.bridal-engagements.partials.bill-modals')
 @endsection

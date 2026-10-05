@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\BridalEngagements\AttachBridalEngagementBillRequest;
+use App\Http\Requests\BridalEngagements\CreateBridalEngagementBillRequest;
 use App\Models\Bill;
 use App\Models\BridalEngagement;
 use App\Repositories\Contracts\BillRepositoryInterface;
 use App\Services\BridalEngagementService;
 use App\Services\TenantUrl;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
 class BridalEngagementBillsController extends Controller
@@ -20,14 +23,56 @@ class BridalEngagementBillsController extends Controller
         private TenantUrl $tenantUrl,
     ) {}
 
-    public function store(Request $request, string $subdomain, BridalEngagement $bridalEngagement): RedirectResponse
+    public function lookup(Request $request, string $subdomain, BridalEngagement $bridalEngagement): JsonResponse
     {
         abort_unless($request->user()->can('billing.create'), 403);
 
+        $bill = $this->bridalEngagementService->findBillByNumber((string) $request->query('number', ''));
+
+        if ($bill === null) {
+            return response()->json(['message' => 'No bill found with that number.'], 404);
+        }
+
+        $bill->load(['client', 'branch']);
+
+        $unavailableReason = match (true) {
+            $bill->status === Bill::StatusVoid => 'This bill is void and cannot be attached.',
+            $bill->bridal_engagement_id === $bridalEngagement->id => 'This bill is already attached to this event.',
+            $bill->bridal_engagement_id !== null => 'This bill is already attached to another event.',
+            default => null,
+        };
+
+        return response()->json([
+            'bill' => [
+                'id' => $bill->id,
+                'invoice_number' => $bill->invoiceNumber(),
+                'client' => $bill->client?->name,
+                'date' => $bill->created_at->format('d M Y'),
+                'total' => number_format((float) $bill->total, 2),
+                'paid' => number_format((float) $bill->amount_paid, 2),
+                'status' => ucfirst($bill->status),
+                'unavailable_reason' => $unavailableReason,
+            ],
+        ]);
+    }
+
+    public function store(CreateBridalEngagementBillRequest $request, string $subdomain, BridalEngagement $bridalEngagement): RedirectResponse
+    {
+        abort_unless($request->user()->can('billing.create'), 403);
+
+        $data = $request->validated();
+
         try {
-            $bill = $this->bridalEngagementService->createBill($bridalEngagement, $request->user()->id);
+            $bill = $this->bridalEngagementService->createBill(
+                $bridalEngagement,
+                $request->user()->id,
+                Carbon::parse($data['bill_date'])->startOfDay(),
+                (float) $data['amount'],
+                $data['payment_method'],
+                $data['staff'],
+            );
         } catch (InvalidArgumentException $exception) {
-            return back()->withErrors(['bill' => $exception->getMessage()]);
+            return back()->withErrors(['bill' => $exception->getMessage()])->withInput();
         }
 
         return redirect($this->tenantUrl->route('bills.show', ['bill' => $bill]))->with('status', 'Bill created for event.');
