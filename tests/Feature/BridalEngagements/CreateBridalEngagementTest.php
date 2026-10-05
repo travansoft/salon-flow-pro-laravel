@@ -257,6 +257,26 @@ class CreateBridalEngagementTest extends TestCase
         $this->assertDatabaseHas('bills', ['id' => $bill->id, 'bridal_engagement_id' => null]);
     }
 
+    public function test_index_shows_billed_amount_excluding_void_bills(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
+        Bill::factory()->create(['tenant_id' => $this->tenant->id, 'bridal_engagement_id' => $engagement->id, 'total' => 4000]);
+        Bill::factory()->create(['tenant_id' => $this->tenant->id, 'bridal_engagement_id' => $engagement->id, 'total' => 9999, 'status' => Bill::StatusVoid]);
+
+        $response = $this->actingAs($this->frontDesk())->getFromTenant('/bridal-engagements');
+
+        $response->assertOk()->assertSee('Billed 4,000.00');
+    }
+
+    public function test_ready_time_is_shown_with_am_pm_on_index_and_show(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id, 'ready_time' => '14:30']);
+        $user = $this->frontDesk();
+
+        $this->actingAs($user)->getFromTenant('/bridal-engagements')->assertSee('02:30 PM');
+        $this->actingAs($user)->getFromTenant("/bridal-engagements/{$engagement->id}")->assertSee('02:30 PM');
+    }
+
     public function test_show_page_lists_attached_bills(): void
     {
         $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
