@@ -1,11 +1,11 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Engagement')
+@section('title', 'Edit Event')
 
 @section('content')
     <div class="sfp-page-header">
         <div>
-            <h1 class="sfp-page-title">Edit bridal engagement</h1>
+            <h1 class="sfp-page-title">Edit event</h1>
             <p class="sfp-page-subtitle">{{ $engagement->client->name }}</p>
         </div>
     </div>

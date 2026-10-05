@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Engagement')
+@section('title', 'Event')
 
 @section('content')
     @php
@@ -19,7 +19,7 @@
             'Home location' => $engagement->home_location,
             'Studio trial' => $engagement->has_studio_trial ? 'Yes' : 'No',
             'Date of trial' => $engagement->trial_date?->format('d M Y'),
-            'Time to get ready' => $engagement->ready_time ? \Illuminate\Support\Str::substr($engagement->ready_time, 0, 5) : null,
+            'Time to get ready' => $engagement->readyTimeLabel(),
             'Guest makeup' => $engagement->guest_makeup_count,
             'Groom makeup' => $engagement->groom_makeup ? 'Yes' : 'No',
             'Dress' => $engagement->dress_type ? ucfirst($engagement->dress_type->value) : null,
@@ -30,19 +30,19 @@
     <div class="sfp-page-header">
         <div>
             <h1 class="sfp-page-title">{{ $engagement->client->name }}</h1>
-            <p class="sfp-page-subtitle">{{ $engagement->event_name ?: 'Bridal engagement' }} &middot; {{ $engagement->event_date->format('d M Y') }}</p>
+            <p class="sfp-page-subtitle">{{ $engagement->event_name ?: 'Event' }} &middot; {{ $engagement->event_date->format('d M Y') }}</p>
         </div>
         <div style="display:flex;gap:10px">
             @can('appointments.edit')
                 <a href="{{ $tenantUrl->route('bridalEngagements.edit', $engagement) }}" class="sfp-btn-outline">Edit</a>
             @endcan
-            <a href="{{ $tenantUrl->route('bridalEngagements.index') }}" class="sfp-btn-outline">Back to engagements</a>
+            <a href="{{ $tenantUrl->route('bridalEngagements.index') }}" class="sfp-btn-outline">Back to events</a>
         </div>
     </div>
 
     <div class="sfp-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px">
-            <div class="sfp-mono" style="font-size:11px;color:#94A19D">Engagement #{{ $engagement->id }}</div>
+            <div class="sfp-mono" style="font-size:11px;color:#94A19D">Event #{{ $engagement->id }}</div>
             <span class="sfp-pill {{ $pillClass }}">{{ ucfirst(str_replace('_', ' ', $engagement->status)) }}</span>
         </div>
 

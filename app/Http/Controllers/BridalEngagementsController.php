@@ -44,7 +44,7 @@ class BridalEngagementsController extends Controller
 
         $engagement = $this->bridalEngagementService->createEngagement($request->validated());
 
-        return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $engagement]))->with('status', 'Bridal engagement created.');
+        return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $engagement]))->with('status', 'Event created.');
     }
 
     public function show(Request $request, string $subdomain, BridalEngagement $bridalEngagement): View
@@ -75,7 +75,7 @@ class BridalEngagementsController extends Controller
 
         $this->bridalEngagementService->updateEngagement($bridalEngagement, $request->validated());
 
-        return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $bridalEngagement]))->with('status', 'Bridal engagement updated.');
+        return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $bridalEngagement]))->with('status', 'Event updated.');
     }
 
     public function destroy(Request $request, string $subdomain, BridalEngagement $bridalEngagement): RedirectResponse
@@ -84,6 +84,6 @@ class BridalEngagementsController extends Controller
 
         $this->bridalEngagementService->deleteEngagement($bridalEngagement);
 
-        return redirect($this->tenantUrl->route('bridalEngagements.index'))->with('status', 'Bridal engagement deleted.');
+        return redirect($this->tenantUrl->route('bridalEngagements.index'))->with('status', 'Event deleted.');
     }
 }

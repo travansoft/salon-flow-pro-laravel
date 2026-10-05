@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 #[Fillable([
     'tenant_id', 'branch_id', 'client_id', 'event_name', 'event_date', 'venue', 'venue_type', 'home_location',
@@ -57,6 +58,16 @@ class BridalEngagement extends Model
     public function balanceAmount(): string
     {
         return bcsub((string) $this->total_amount, (string) $this->advance_amount, 2);
+    }
+
+    public function readyTimeLabel(): ?string
+    {
+        return $this->ready_time ? Carbon::parse($this->ready_time)->format('h:i A') : null;
+    }
+
+    public function billedAmount(): string
+    {
+        return number_format((float) $this->bills->where('status', '!=', Bill::StatusVoid)->sum('total'), 2, '.', '');
     }
 
     /** @return HasMany<Bill, $this> */

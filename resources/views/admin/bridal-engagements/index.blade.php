@@ -6,10 +6,10 @@
     <div class="sfp-page-header">
         <div>
             <h1 class="sfp-page-title">Bridal &amp; events</h1>
-            <p class="sfp-page-subtitle">{{ $engagements->count() }} live engagements</p>
+            <p class="sfp-page-subtitle">{{ $engagements->count() }} live events</p>
         </div>
         @can('appointments.create')
-            <a href="{{ $tenantUrl->route('bridalEngagements.create') }}" class="sfp-btn-pill-dark">+ New engagement</a>
+            <a href="{{ $tenantUrl->route('bridalEngagements.create') }}" class="sfp-btn-pill-dark">+ New event</a>
         @endcan
     </div>
 
@@ -32,7 +32,7 @@
                     <div>
                         <div class="sfp-heading" style="font-weight:600;font-size:23px;letter-spacing:-.01em">{{ $engagement->client->name }}</div>
                         <div class="sfp-mono" style="font-size:11px;color:#94A19D;margin-top:4px">
-                            {{ $engagement->event_name ?: "Engagement #{$engagement->id}" }} &middot; {{ $engagement->event_date->format('d M Y') }}
+                            {{ $engagement->event_name ?: "Event #{$engagement->id}" }} &middot; {{ $engagement->event_date->format('d M Y') }}
                         </div>
                     </div>
                     <span class="sfp-pill sfp-pill-sage">{{ ucfirst($engagement->venue_type->value) }}</span>
@@ -42,7 +42,7 @@
                     <div style="display:flex;gap:12px;padding:13px 15px;border-radius:13px;background:#F3F6F5;border:1px solid #F0E7E1">
                         <span class="sfp-mono" style="font-size:10px;color:#2E5F4C;width:42px;flex:none;padding-top:3px">READY</span>
                         <div style="font-size:13px;line-height:1.5">
-                            {{ $engagement->ready_time ? \Illuminate\Support\Str::substr($engagement->ready_time, 0, 5) : 'Not set' }}
+                            {{ $engagement->readyTimeLabel() ?? 'Not set' }}
                             @if ($engagement->has_studio_trial && $engagement->trial_date)
                                 &middot; Trial {{ $engagement->trial_date->format('d M Y') }}
                             @endif
@@ -54,6 +54,7 @@
                             Total {{ number_format((float) $engagement->total_amount, 2) }}
                             &middot; Advance {{ number_format((float) $engagement->advance_amount, 2) }}
                             &middot; Balance {{ number_format((float) $engagement->balanceAmount(), 2) }}
+                            &middot; Billed {{ number_format((float) $engagement->billedAmount(), 2) }}
                         </div>
                     </div>
                 </div>
@@ -73,7 +74,7 @@
             </div>
         @empty
             <div class="sfp-card">
-                <p style="color:#66736F;margin:0">No bridal engagements yet.</p>
+                <p style="color:#66736F;margin:0">No events yet.</p>
             </div>
         @endforelse
     </div>
