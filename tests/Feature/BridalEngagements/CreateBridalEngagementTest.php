@@ -158,7 +158,25 @@ class CreateBridalEngagementTest extends TestCase
         $this->assertDatabaseHas('bill_line_items', ['bill_id' => $bill->id, 'staff_profile_id' => $staffB->id, 'target_amount' => '5000.00']);
     }
 
-    public function test_create_bill_requires_staff_and_valid_fields(): void
+    public function test_create_bill_without_staff_makes_a_single_staffless_paid_bill(): void
+    {
+        $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->actingAs($this->frontDesk())->postToTenant("/bridal-engagements/{$engagement->id}/bills", [
+            'bill_date' => now()->toDateString(),
+            'amount' => '12000',
+            'payment_method' => 'cash',
+            'staff' => [['staff_profile_id' => '', 'amount' => '']],
+        ]);
+
+        $response->assertRedirect();
+        $bill = Bill::where('bridal_engagement_id', $engagement->id)->firstOrFail();
+        $this->assertSame(Bill::StatusPaid, $bill->status);
+        $this->assertDatabaseCount('bill_line_items', 1);
+        $this->assertDatabaseHas('bill_line_items', ['bill_id' => $bill->id, 'staff_profile_id' => null, 'target_amount' => null]);
+    }
+
+    public function test_create_bill_validates_date_amount_and_payment_mode(): void
     {
         $engagement = BridalEngagement::factory()->create(['tenant_id' => $this->tenant->id]);
 
@@ -168,7 +186,7 @@ class CreateBridalEngagementTest extends TestCase
             'payment_method' => 'cheque',
         ]);
 
-        $response->assertSessionHasErrors(['bill_date', 'amount', 'payment_method', 'staff']);
+        $response->assertSessionHasErrors(['bill_date', 'amount', 'payment_method']);
         $this->assertDatabaseCount('bills', 0);
     }
 

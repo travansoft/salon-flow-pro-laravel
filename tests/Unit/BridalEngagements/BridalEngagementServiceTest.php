@@ -125,15 +125,6 @@ class BridalEngagementServiceTest extends TestCase
         $this->service()->createBill(new BridalEngagement, 1, now(), 0, 'cash', [['staff_profile_id' => 1, 'amount' => 10]]);
     }
 
-    public function test_create_bill_requires_staff(): void
-    {
-        $this->billing->shouldReceive('createManualBill')->never();
-
-        $this->expectException(InvalidArgumentException::class);
-
-        $this->service()->createBill(new BridalEngagement, 1, now(), 100, 'cash', []);
-    }
-
     public function test_create_bill_rejects_duplicate_staff(): void
     {
         $this->billing->shouldReceive('createManualBill')->never();

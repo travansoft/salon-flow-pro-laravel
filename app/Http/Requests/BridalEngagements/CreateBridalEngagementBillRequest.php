@@ -15,6 +15,16 @@ class CreateBridalEngagementBillRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $rows = collect($this->input('staff', []))
+            ->filter(fn ($row) => is_array($row) && (($row['staff_profile_id'] ?? '') !== '' || ($row['amount'] ?? '') !== ''))
+            ->values()
+            ->all();
+
+        $this->merge(['staff' => $rows]);
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -26,7 +36,7 @@ class CreateBridalEngagementBillRequest extends FormRequest
             'bill_date' => ['required', 'date', 'before_or_equal:today'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'payment_method' => ['required', Rule::in([BillPayment::MethodCash, BillPayment::MethodCard, BillPayment::MethodUpi])],
-            'staff' => ['required', 'array', 'min:1'],
+            'staff' => ['nullable', 'array'],
             'staff.*.staff_profile_id' => [
                 'required', 'integer', 'distinct',
                 Rule::exists('staff_profiles', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at'),

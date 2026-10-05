@@ -1,7 +1,8 @@
 @can('billing.create')
     @php
         $staffOptions = $staffProfiles->map(fn ($staff) => ['id' => $staff->id, 'name' => $staff->name])->values();
-        $oldStaff = old('staff', [['staff_profile_id' => '', 'amount' => '']]);
+        $oldStaff = old('staff', []);
+        $remainingToBill = (float) $summary['total'] - (float) $summary['billed'];
         $createBillHasErrors = $errors->hasAny(['bill_date', 'amount', 'payment_method', 'staff']) || collect($errors->keys())->contains(fn ($key) => str_starts_with($key, 'staff.'));
     @endphp
 
@@ -28,7 +29,7 @@
 
                             <div class="sfp-field">
                                 <label class="sfp-label">Amount to bill</label>
-                                <input type="number" step="0.01" min="0.01" name="amount" class="sfp-input" value="{{ old('amount', (float) $engagement->total_amount > 0 ? $engagement->total_amount : '') }}">
+                                <input type="number" step="0.01" min="0.01" name="amount" class="sfp-input" value="{{ old('amount', $remainingToBill > 0 ? number_format($remainingToBill, 2, '.', '') : '') }}">
                                 @error('amount')
                                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -48,10 +49,10 @@
                         </div>
 
                         <div class="sfp-field">
-                            <label class="sfp-label">Servicing staff and target split</label>
+                            <label class="sfp-label">Servicing staff and target split (optional)</label>
                             <div id="event-bill-staff-rows" style="display:grid;gap:8px"></div>
                             <button type="button" id="event-bill-add-staff" class="sfp-btn-outline" style="margin-top:8px">+ Add staff</button>
-                            <div style="font-size:12px;color:#66736F;margin-top:6px">Each amount is credited to that staff member's target. The split need not equal the bill amount.</div>
+                            <div style="font-size:12px;color:#66736F;margin-top:6px">Each amount is credited to that staff member's target. The split need not equal the bill amount. Leave empty if no staff assisted.</div>
                             @error('staff')
                                 <span class="sfp-invalid-feedback">{{ $message }}</span>
                             @enderror
@@ -136,10 +137,8 @@
             remove.className = 'sfp-btn-outline';
             remove.textContent = '×';
             remove.addEventListener('click', () => {
-                if (rowsBox.children.length > 1) {
-                    wrapper.remove();
-                    renumber();
-                }
+                wrapper.remove();
+                renumber();
             });
 
             wrapper.append(select, amount, remove);
@@ -154,7 +153,7 @@
             });
         };
 
-        (initialRows.length ? initialRows : [{}]).forEach(addStaffRow);
+        initialRows.forEach(addStaffRow);
         document.getElementById('event-bill-add-staff').addEventListener('click', () => addStaffRow());
 
         @if ($createBillHasErrors)

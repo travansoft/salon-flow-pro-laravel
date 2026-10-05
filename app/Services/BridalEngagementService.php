@@ -77,7 +77,8 @@ class BridalEngagementService
     /**
      * Creates a paid bill for the event. The first line carries the billed
      * amount; every staff line credits that staff member's split towards
-     * their target, so the splits need not add up to the bill total.
+     * their target, so the splits need not add up to the bill total. With no
+     * splits the bill is a single line without servicing staff.
      *
      * @param  array<int, array{staff_profile_id: int, amount: float|string}>  $staffSplits
      */
@@ -85,10 +86,6 @@ class BridalEngagementService
     {
         if ($amount <= 0) {
             throw new InvalidArgumentException('The bill amount must be greater than zero.');
-        }
-
-        if ($staffSplits === []) {
-            throw new InvalidArgumentException('Add at least one servicing staff member.');
         }
 
         $staffIds = array_column($staffSplits, 'staff_profile_id');
@@ -102,6 +99,10 @@ class BridalEngagementService
             : 'Bridal makeup';
 
         $lineItems = [];
+
+        if ($staffSplits === []) {
+            $lineItems[] = ['description' => $description, 'quantity' => 1, 'unit_price' => $amount];
+        }
 
         foreach (array_values($staffSplits) as $index => $split) {
             $lineItems[] = [
