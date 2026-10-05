@@ -61,4 +61,10 @@ interface BillRepositoryInterface
 
     /** @param array<string, mixed> $data */
     public function update(Bill $bill, array $data): Bill;
+
+    /** Matches the full invoice number (PREFIX/FY/00001) or just the bill number, newest financial year first. */
+    public function findByInvoiceNumber(string $number): ?Bill;
+
+    /** @return Collection<int, Bill> Recent non-void bills not yet attached to any bridal engagement. */
+    public function getAttachableToEngagement(int $limit = 100): Collection;
 }

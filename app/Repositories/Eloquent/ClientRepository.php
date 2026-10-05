@@ -15,6 +15,11 @@ class ClientRepository implements ClientRepositoryInterface
         return $this->model->find($id);
     }
 
+    public function findByPhone(string $phone): ?Client
+    {
+        return $this->model->where('phone', $phone)->first();
+    }
+
     /** @return Collection<int, Client> */
     public function getAll(): Collection
     {

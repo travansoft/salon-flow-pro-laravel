@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\StaffUnavailableException;
 use App\Http\Requests\BridalEngagements\StoreBridalEngagementRequest;
+use App\Http\Requests\BridalEngagements\UpdateBridalEngagementRequest;
 use App\Models\BridalEngagement;
 use App\Repositories\Contracts\BridalEngagementRepositoryInterface;
+use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\BridalEngagementService;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\View\View;
-use InvalidArgumentException;
 
 class BridalEngagementsController extends Controller
 {
     public function __construct(
         private BridalEngagementRepositoryInterface $bridalEngagementRepository,
+        private StaffProfileRepositoryInterface $staffProfileRepository,
         private BridalEngagementService $bridalEngagementService,
         private TenantUrl $tenantUrl,
     ) {}
@@ -42,25 +42,7 @@ class BridalEngagementsController extends Controller
     {
         abort_unless($request->user()->can('appointments.create'), 403);
 
-        $data = $request->validated();
-
-        try {
-            $engagement = $this->bridalEngagementService->createEngagement(
-                clientId: $data['client_id'],
-                eventDate: Carbon::parse($data['event_date']),
-                venue: $data['venue'] ?? null,
-                trialStaffProfileId: $data['trial_staff_profile_id'],
-                trialStartAt: Carbon::parse($data['trial_start_at']),
-                trialLineItems: $data['trial_services'],
-                eventStaffProfileId: $data['event_staff_profile_id'],
-                eventStartAt: Carbon::parse($data['event_start_at']),
-                eventLineItems: $data['event_services'],
-                travelingStaffProfileIds: $data['traveling_staff_profile_ids'] ?? [],
-                eventIsOnLocation: $data['event_is_on_location'] ?? true,
-            );
-        } catch (StaffUnavailableException|InvalidArgumentException $exception) {
-            return back()->withErrors(['trial_staff_profile_id' => $exception->getMessage()])->withInput();
-        }
+        $engagement = $this->bridalEngagementService->createEngagement($request->validated());
 
         return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $engagement]))->with('status', 'Bridal engagement created.');
     }
@@ -69,8 +51,39 @@ class BridalEngagementsController extends Controller
     {
         abort_unless($request->user()->can('appointments.view'), 403);
 
-        $bridalEngagement->load(['client', 'appointments.staffProfiles', 'travelingStaff']);
+        $bridalEngagement->load(['client', 'bills.client']);
 
-        return view('admin.bridal-engagements.show', ['engagement' => $bridalEngagement]);
+        return view('admin.bridal-engagements.show', [
+            'engagement' => $bridalEngagement,
+            'summary' => $this->bridalEngagementService->summarize($bridalEngagement),
+            'staffProfiles' => $this->staffProfileRepository->getActive(),
+        ]);
+    }
+
+    public function edit(Request $request, string $subdomain, BridalEngagement $bridalEngagement): View
+    {
+        abort_unless($request->user()->can('appointments.edit'), 403);
+
+        $bridalEngagement->load('client');
+
+        return view('admin.bridal-engagements.edit', ['engagement' => $bridalEngagement]);
+    }
+
+    public function update(UpdateBridalEngagementRequest $request, string $subdomain, BridalEngagement $bridalEngagement): RedirectResponse
+    {
+        abort_unless($request->user()->can('appointments.edit'), 403);
+
+        $this->bridalEngagementService->updateEngagement($bridalEngagement, $request->validated());
+
+        return redirect($this->tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $bridalEngagement]))->with('status', 'Bridal engagement updated.');
+    }
+
+    public function destroy(Request $request, string $subdomain, BridalEngagement $bridalEngagement): RedirectResponse
+    {
+        abort_unless($request->user()->can('appointments.delete'), 403);
+
+        $this->bridalEngagementService->deleteEngagement($bridalEngagement);
+
+        return redirect($this->tenantUrl->route('bridalEngagements.index'))->with('status', 'Bridal engagement deleted.');
     }
 }

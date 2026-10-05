@@ -5,6 +5,7 @@ use App\Http\Controllers\BillDraftsController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\BranchSwitcherController;
+use App\Http\Controllers\BridalEngagementBillsController;
 use App\Http\Controllers\BridalEngagementsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\DesignationsController;
@@ -221,6 +222,22 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:appointments.view')->group(function () use ($nameSuffix): void {
             Route::get('/bridal-engagements/{bridalEngagement}', [BridalEngagementsController::class, 'show'])->name("bridalEngagements.show{$nameSuffix}");
+        });
+
+        Route::middleware('permission:appointments.edit')->group(function () use ($nameSuffix): void {
+            Route::get('/bridal-engagements/{bridalEngagement}/edit', [BridalEngagementsController::class, 'edit'])->name("bridalEngagements.edit{$nameSuffix}");
+            Route::put('/bridal-engagements/{bridalEngagement}', [BridalEngagementsController::class, 'update'])->name("bridalEngagements.update{$nameSuffix}");
+        });
+
+        Route::middleware('permission:appointments.delete')->group(function () use ($nameSuffix): void {
+            Route::delete('/bridal-engagements/{bridalEngagement}', [BridalEngagementsController::class, 'destroy'])->name("bridalEngagements.destroy{$nameSuffix}");
+        });
+
+        Route::middleware('permission:billing.create')->group(function () use ($nameSuffix): void {
+            Route::get('/bridal-engagements/{bridalEngagement}/bills/lookup', [BridalEngagementBillsController::class, 'lookup'])->name("bridalEngagements.bills.lookup{$nameSuffix}");
+            Route::post('/bridal-engagements/{bridalEngagement}/bills', [BridalEngagementBillsController::class, 'store'])->name("bridalEngagements.bills.store{$nameSuffix}");
+            Route::post('/bridal-engagements/{bridalEngagement}/bills/attach', [BridalEngagementBillsController::class, 'attach'])->name("bridalEngagements.bills.attach{$nameSuffix}");
+            Route::delete('/bridal-engagements/{bridalEngagement}/bills/{bill}', [BridalEngagementBillsController::class, 'detach'])->name("bridalEngagements.bills.detach{$nameSuffix}");
         });
 
         Route::middleware('permission:billing.view')->group(function () use ($nameSuffix): void {

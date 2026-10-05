@@ -148,4 +148,34 @@ class BillRepository implements BillRepositoryInterface
 
         return $bill;
     }
+
+    public function findByInvoiceNumber(string $number): ?Bill
+    {
+        $number = trim($number);
+
+        if (preg_match('#^[^/]+/([^/]+)/(\d+)$#', $number, $matches) === 1) {
+            return $this->model->where('financial_year', $matches[1])
+                ->where('bill_number', (int) $matches[2])
+                ->first();
+        }
+
+        if (ctype_digit($number) === false) {
+            return null;
+        }
+
+        return $this->model->where('bill_number', (int) $number)
+            ->orderByDesc('financial_year')
+            ->first();
+    }
+
+    /** @return Collection<int, Bill> */
+    public function getAttachableToEngagement(int $limit = 100): Collection
+    {
+        return $this->model->whereNull('bridal_engagement_id')
+            ->where('status', '!=', Bill::StatusVoid)
+            ->with('client')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
 }

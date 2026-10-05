@@ -22,6 +22,11 @@
                 @if ($bill->createdBy)
                     &middot; Billed by {{ $bill->createdBy->name }}
                 @endif
+                @if ($bill->bridal_engagement_id)
+                    @can('appointments.view')
+                        &middot; <a href="{{ $tenantUrl->route('bridalEngagements.show', ['bridalEngagement' => $bill->bridal_engagement_id]) }}" style="color:#1B4B8F">Bridal event</a>
+                    @endcan
+                @endif
             </p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
