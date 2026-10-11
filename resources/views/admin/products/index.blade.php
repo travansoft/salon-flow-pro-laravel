@@ -16,6 +16,7 @@
         </div>
         <div class="sfp-row">
             @can('inventory.view')
+                <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-btn-outline">Low stock report</a>
                 <a href="{{ $tenantUrl->route('productCategories.index') }}" class="sfp-btn-outline">Manage categories</a>
             @endcan
             @can('inventory.create')
@@ -25,7 +26,7 @@
     </div>
 
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns:2fr 1fr 100px 100px 1.4fr 90px">
+        <div class="sfp-table-head-row" style="grid-template-columns:2fr 1fr 110px 110px 1.4fr 200px">
             <span>Product</span>
             <span>Category</span>
             <span style="text-align:right">On hand</span>
@@ -38,7 +39,7 @@
             @php
                 $isLowStock = $product->quantity_on_hand <= $product->reorder_level;
             @endphp
-            <div class="sfp-table-row" style="grid-template-columns:2fr 1fr 100px 100px 1.4fr 90px">
+            <div class="sfp-table-row" style="grid-template-columns:2fr 1fr 110px 110px 1.4fr 200px">
                 <div>
                     <div style="font-size:14.5px">
                         <span class="sfp-stock-dot {{ $isLowStock ? 'sfp-stock-dot-low' : '' }}"></span>{{ $product->name }}
@@ -50,7 +51,17 @@
                 <span class="sfp-mono" style="font-size:13px;text-align:right">{{ number_format($product->reorder_level, 2) }} {{ $product->unit }}</span>
                 <span style="font-size:12.5px;color:#66736F">{{ $product->services->pluck('name')->join(', ') ?: '—' }}</span>
                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px">
-                    <a href="{{ $tenantUrl->route('products.show', $product) }}" style="font-size:12.5px;color:#1B4B8F">Adjust</a>
+                    <a href="{{ $tenantUrl->route('products.show', $product) }}" style="font-size:12.5px;color:#1B4B8F">View</a>
+                    @can('inventory.edit')
+                        <a href="{{ $tenantUrl->route('products.edit', $product) }}" style="font-size:12.5px;color:#1B4B8F">Edit</a>
+                    @endcan
+                    @can('inventory.delete')
+                        <form action="{{ $tenantUrl->route('products.destroy', $product) }}" method="POST" style="display:inline" onsubmit="return confirm('Delete this product?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="sfp-btn-link-danger">Delete</button>
+                        </form>
+                    @endcan
                 </div>
             </div>
         @empty

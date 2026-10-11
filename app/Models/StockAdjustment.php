@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StockMovementType;
 use App\Models\Scopes\BranchScope;
 use App\Models\Scopes\TenantScope;
 use Database\Factories\StockAdjustmentFactory;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'branch_id', 'product_id', 'adjusted_by', 'quantity_delta', 'reason'])]
+#[Fillable(['tenant_id', 'branch_id', 'product_id', 'adjusted_by', 'quantity_delta', 'reason', 'type', 'bill_id', 'purchase_id'])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class StockAdjustment extends Model
 {
@@ -23,6 +24,7 @@ class StockAdjustment extends Model
     {
         return [
             'quantity_delta' => 'decimal:2',
+            'type' => StockMovementType::class,
         ];
     }
 

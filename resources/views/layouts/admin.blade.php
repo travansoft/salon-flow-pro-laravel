@@ -36,10 +36,7 @@
                     @can('appointments.create')
                         <a href="{{ $tenantUrl->route('appointments.create') }}" class="sfp-btn-dark">+ New appointment</a>
                     @endcan
-                    <form action="{{ $tenantUrl->route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="sfp-avatar-btn" title="Sign out">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</button>
-                    </form>
+                    <x-user-menu :tenant-url="$tenantUrl" />
                 </div>
             </div>
 
@@ -94,9 +91,17 @@
                     @endcan
 
                     @can('inventory.view')
-                        <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Inventory
-                        </a>
+                        <x-nav-group label="Inventory" :active="request()->routeIs('products.*', 'productCategories.*', 'stockPurchases.*', 'lowStockReport.*')">
+                            <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
+                                Products
+                            </a>
+                            <a href="{{ $tenantUrl->route('stockPurchases.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('stockPurchases.*') ? 'active' : '' }}">
+                                Purchases
+                            </a>
+                            <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('lowStockReport.*') ? 'active' : '' }}">
+                                Low stock
+                            </a>
+                        </x-nav-group>
                     @endcan
 
                     @can('dashboard.view')

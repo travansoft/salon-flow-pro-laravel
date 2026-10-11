@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\StockMovementType;
 use App\Models\InventoryCategory;
 use App\Models\Product;
 use App\Repositories\Contracts\InventoryCategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class InventoryService
 {
@@ -51,22 +53,73 @@ class InventoryService
         return $this->productRepository->delete($product);
     }
 
-    public function adjustStock(Product $product, float $quantityDelta, string $reason, int $adjustedById): Product
-    {
-        return DB::transaction(function () use ($product, $quantityDelta, $reason, $adjustedById): Product {
-            $product->stockAdjustments()->create([
-                'tenant_id' => $product->tenant_id,
-                'branch_id' => $product->branch_id,
+    public function adjustStock(
+        Product $product,
+        float $quantityDelta,
+        string $reason,
+        int $adjustedById,
+        StockMovementType $type = StockMovementType::Manual,
+        ?int $billId = null,
+        ?int $purchaseId = null,
+    ): Product {
+        return DB::transaction(function () use ($product, $quantityDelta, $reason, $adjustedById, $type, $billId, $purchaseId): Product {
+            $lockedProduct = $this->productRepository->findForUpdate($product->id) ?? $product;
+
+            $lockedProduct->stockAdjustments()->create([
+                'tenant_id' => $lockedProduct->tenant_id,
+                'branch_id' => $lockedProduct->branch_id,
                 'adjusted_by' => $adjustedById,
                 'quantity_delta' => $quantityDelta,
                 'reason' => $reason,
+                'type' => $type,
+                'bill_id' => $billId,
+                'purchase_id' => $purchaseId,
             ]);
 
-            $newQuantity = bcadd((string) $product->quantity_on_hand, (string) $quantityDelta, 2);
+            $newQuantity = bcadd((string) $lockedProduct->quantity_on_hand, (string) $quantityDelta, 2);
 
-            $this->productRepository->update($product, ['quantity_on_hand' => $newQuantity]);
+            $this->productRepository->update($lockedProduct, ['quantity_on_hand' => $newQuantity]);
 
             return $product->refresh();
+        });
+    }
+
+    /**
+     * Removes expired or damaged stock. The quantity is entered as a positive
+     * amount and recorded as a deduction.
+     */
+    public function writeOffStock(Product $product, float $quantity, StockMovementType $type, ?string $reason, int $userId): Product
+    {
+        if (! in_array($type, [StockMovementType::Expired, StockMovementType::Damaged], true)) {
+            throw new InvalidArgumentException('A write-off must be of type expired or damaged.');
+        }
+
+        if ($quantity <= 0) {
+            throw new InvalidArgumentException('Write-off quantity must be greater than zero.');
+        }
+
+        return $this->adjustStock($product, -abs($quantity), $reason ?: $type->label(), $userId, $type);
+    }
+
+    /**
+     * Resets stock to a physically counted quantity. Bill-time usage is only
+     * an estimate, so the counted figure simply overrides the system figure;
+     * the difference is recorded as an estimate variance, never as a purchase.
+     */
+    public function recordCount(Product $product, float $countedQuantity, int $userId): Product
+    {
+        return DB::transaction(function () use ($product, $countedQuantity, $userId): Product {
+            $lockedProduct = $this->productRepository->findForUpdate($product->id) ?? $product;
+
+            $difference = bcsub((string) $countedQuantity, (string) $lockedProduct->quantity_on_hand, 2);
+
+            return $this->adjustStock(
+                $lockedProduct,
+                (float) $difference,
+                'Physical count',
+                $userId,
+                StockMovementType::CountCorrection,
+            );
         });
     }
 

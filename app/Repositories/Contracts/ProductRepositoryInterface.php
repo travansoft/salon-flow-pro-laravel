@@ -9,6 +9,8 @@ interface ProductRepositoryInterface
 {
     public function findById(int $id): ?Product;
 
+    public function findForUpdate(int $id): ?Product;
+
     /** @return Collection<int, Product> */
     public function getAll(): Collection;
 

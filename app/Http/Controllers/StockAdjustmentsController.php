@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StockMovementType;
 use App\Http\Requests\Inventory\AdjustStockRequest;
 use App\Models\Product;
 use App\Services\InventoryService;
@@ -19,13 +20,27 @@ class StockAdjustmentsController extends Controller
     {
         abort_unless($request->user()->can('inventory.edit'), 403);
 
-        $this->inventoryService->adjustStock(
+        $type = StockMovementType::tryFrom((string) $request->validated('type')) ?? StockMovementType::Manual;
+
+        if ($type === StockMovementType::Manual) {
+            $this->inventoryService->adjustStock(
+                $product,
+                (float) $request->validated('quantity_delta'),
+                $request->validated('reason'),
+                $request->user()->id,
+            );
+
+            return redirect($this->tenantUrl->route('products.show', ['product' => $product]))->with('status', 'Stock adjusted.');
+        }
+
+        $this->inventoryService->writeOffStock(
             $product,
             (float) $request->validated('quantity_delta'),
+            $type,
             $request->validated('reason'),
             $request->user()->id,
         );
 
-        return redirect($this->tenantUrl->route('products.show', ['product' => $product]))->with('status', 'Stock adjusted.');
+        return redirect($this->tenantUrl->route('products.show', ['product' => $product]))->with('status', 'Stock written off.');
     }
 }

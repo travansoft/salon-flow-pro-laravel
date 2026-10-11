@@ -15,6 +15,11 @@ class ProductRepository implements ProductRepositoryInterface
         return $this->model->find($id);
     }
 
+    public function findForUpdate(int $id): ?Product
+    {
+        return $this->model->lockForUpdate()->find($id);
+    }
+
     /** @return Collection<int, Product> */
     public function getAll(): Collection
     {
@@ -30,7 +35,7 @@ class ProductRepository implements ProductRepositoryInterface
     /** @return Collection<int, Product> */
     public function getLowStock(): Collection
     {
-        return $this->model->lowStock()->with('category')->orderBy('name')->get();
+        return $this->model->active()->lowStock()->with('category')->orderBy('name')->get();
     }
 
     /** @param array<string, mixed> $data */
