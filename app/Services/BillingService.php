@@ -27,6 +27,7 @@ class BillingService
         private TenantContext $tenantContext,
         private BranchContext $branchContext,
         private ExpandCombo $expandCombo,
+        private StockUsageService $stockUsageService,
     ) {}
 
     /**
@@ -238,7 +239,11 @@ class BillingService
                 $bill->lineItems()->create(['tenant_id' => $tenant->id, 'branch_id' => $branch->id, ...$item]);
             }
 
-            return $bill->load('lineItems');
+            $bill->load('lineItems');
+
+            $this->stockUsageService->consumeForBill($bill);
+
+            return $bill;
         });
     }
 
@@ -361,6 +366,8 @@ class BillingService
             $updated = $this->billRepository->update($bill, ['status' => Bill::StatusVoid]);
 
             $this->recordAudit($bill, BillAudit::ActionCancelled, null, null, null, $changedBy);
+
+            $this->stockUsageService->restoreForBill($bill);
 
             return $updated;
         });

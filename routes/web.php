@@ -15,9 +15,11 @@ use App\Http\Controllers\IncentiveProgressController;
 use App\Http\Controllers\IncentiveSettingsController;
 use App\Http\Controllers\InventoryCategoriesController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\LowStockReportController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ServiceCategoriesController;
+use App\Http\Controllers\ServiceProductsController;
 use App\Http\Controllers\ServicesController;
 use App\Http\Controllers\StaffBonusesController;
 use App\Http\Controllers\StaffLeaveRequestsController;
@@ -25,6 +27,8 @@ use App\Http\Controllers\StaffLoginController;
 use App\Http\Controllers\StaffsController;
 use App\Http\Controllers\StaffTargetsController;
 use App\Http\Controllers\StockAdjustmentsController;
+use App\Http\Controllers\StockCountsController;
+use App\Http\Controllers\StockPurchasesController;
 use App\Http\Controllers\StopImpersonationController;
 use App\Http\Controllers\SuperAdmin\PlatformAdminsController;
 use App\Http\Controllers\SuperAdmin\SuperAdminActivityLogsController;
@@ -108,6 +112,9 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
         Route::middleware('permission:services.edit')->group(function () use ($nameSuffix): void {
             Route::get('/services/{service}/edit', [ServicesController::class, 'edit'])->name("services.edit{$nameSuffix}");
             Route::put('/services/{service}', [ServicesController::class, 'update'])->name("services.update{$nameSuffix}");
+            Route::post('/services/{service}/products', [ServiceProductsController::class, 'store'])->name("services.products.store{$nameSuffix}");
+            Route::put('/services/{service}/products/{usage}', [ServiceProductsController::class, 'update'])->name("services.products.update{$nameSuffix}");
+            Route::delete('/services/{service}/products/{usage}', [ServiceProductsController::class, 'destroy'])->name("services.products.destroy{$nameSuffix}");
             Route::get('/services/categories/{category}/edit', [ServiceCategoriesController::class, 'edit'])->name("serviceCategories.edit{$nameSuffix}");
             Route::put('/services/categories/{category}', [ServiceCategoriesController::class, 'update'])->name("serviceCategories.update{$nameSuffix}");
         });
@@ -128,11 +135,15 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
         Route::middleware('permission:inventory.view')->group(function () use ($nameSuffix): void {
             Route::get('/products', [ProductsController::class, 'index'])->name("products.index{$nameSuffix}");
             Route::get('/products/categories', [InventoryCategoriesController::class, 'index'])->name("productCategories.index{$nameSuffix}");
+            Route::get('/inventory/low-stock', [LowStockReportController::class, 'index'])->name("lowStockReport.index{$nameSuffix}");
+            Route::get('/stock-purchases', [StockPurchasesController::class, 'index'])->name("stockPurchases.index{$nameSuffix}");
         });
 
         Route::middleware('permission:inventory.create')->group(function () use ($nameSuffix): void {
             Route::get('/products/create', [ProductsController::class, 'create'])->name("products.create{$nameSuffix}");
             Route::post('/products', [ProductsController::class, 'store'])->name("products.store{$nameSuffix}");
+            Route::get('/stock-purchases/create', [StockPurchasesController::class, 'create'])->name("stockPurchases.create{$nameSuffix}");
+            Route::post('/stock-purchases', [StockPurchasesController::class, 'store'])->name("stockPurchases.store{$nameSuffix}");
             Route::get('/products/categories/create', [InventoryCategoriesController::class, 'create'])->name("productCategories.create{$nameSuffix}");
             Route::post('/products/categories', [InventoryCategoriesController::class, 'store'])->name("productCategories.store{$nameSuffix}");
         });
@@ -141,6 +152,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::get('/products/{product}/edit', [ProductsController::class, 'edit'])->name("products.edit{$nameSuffix}");
             Route::put('/products/{product}', [ProductsController::class, 'update'])->name("products.update{$nameSuffix}");
             Route::post('/products/{product}/stock-adjustments', [StockAdjustmentsController::class, 'store'])->name("products.stockAdjustments.store{$nameSuffix}");
+            Route::post('/products/{product}/stock-counts', [StockCountsController::class, 'store'])->name("products.stockCounts.store{$nameSuffix}");
             Route::get('/products/categories/{category}/edit', [InventoryCategoriesController::class, 'edit'])->name("productCategories.edit{$nameSuffix}");
             Route::put('/products/categories/{category}', [InventoryCategoriesController::class, 'update'])->name("productCategories.update{$nameSuffix}");
         });

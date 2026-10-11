@@ -16,6 +16,7 @@
         </div>
         <div class="sfp-row">
             @can('inventory.view')
+                <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-btn-outline">Low stock report</a>
                 <a href="{{ $tenantUrl->route('productCategories.index') }}" class="sfp-btn-outline">Manage categories</a>
             @endcan
             @can('inventory.create')

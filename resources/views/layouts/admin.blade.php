@@ -97,6 +97,12 @@
                         <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
                             <span class="sfp-nav-bar"></span>Inventory
                         </a>
+                        <a href="{{ $tenantUrl->route('stockPurchases.index') }}" class="sfp-nav-item {{ request()->routeIs('stockPurchases.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Purchases
+                        </a>
+                        <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-nav-item {{ request()->routeIs('lowStockReport.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Low stock
+                        </a>
                     @endcan
 
                     @can('dashboard.view')

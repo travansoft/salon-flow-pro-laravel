@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Inventory;
 
+use App\Enums\StockMovementType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AdjustStockRequest extends FormRequest
 {
@@ -22,9 +24,18 @@ class AdjustStockRequest extends FormRequest
      */
     public function rules(): array
     {
+        $isWriteOff = in_array($this->input('type'), [StockMovementType::Expired->value, StockMovementType::Damaged->value], true);
+
         return [
-            'quantity_delta' => ['required', 'numeric'],
-            'reason' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', Rule::in([
+                StockMovementType::Manual->value,
+                StockMovementType::Expired->value,
+                StockMovementType::Damaged->value,
+            ])],
+            'quantity_delta' => $isWriteOff
+                ? ['required', 'numeric', 'gt:0']
+                : ['required', 'numeric'],
+            'reason' => [$isWriteOff ? 'nullable' : 'required', 'string', 'max:255'],
         ];
     }
 }

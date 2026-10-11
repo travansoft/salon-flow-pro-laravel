@@ -62,6 +62,70 @@
         </div>
     @endif
 
+    @unless ($service->is_combo)
+        <h2 class="sfp-card-title" id="service-products">Products used (estimate per service)</h2>
+        <div class="sfp-table-wrap" style="margin-bottom:16px">
+            <div class="sfp-table-head-row" style="grid-template-columns:2fr 1.4fr 1fr">
+                <span>Product</span>
+                <span>Quantity used</span>
+                <span></span>
+            </div>
+
+            @forelse ($usages as $usage)
+                <div class="sfp-table-row" style="grid-template-columns:2fr 1.4fr 1fr">
+                    <span style="font-size:14px">{{ $usage->product->name }}</span>
+                    @can('services.edit')
+                        <form action="{{ $tenantUrl->route('services.products.update', ['service' => $service, 'usage' => $usage]) }}" method="POST" style="display:flex;gap:6px;align-items:center">
+                            @csrf
+                            @method('PUT')
+                            <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" value="{{ $usage->quantity_used }}" style="width:100px">
+                            <span style="font-size:12.5px;color:#66736F">{{ $usage->product->unit }}</span>
+                            <button type="submit" class="sfp-btn-outline">Save</button>
+                        </form>
+                        <form action="{{ $tenantUrl->route('services.products.destroy', ['service' => $service, 'usage' => $usage]) }}" method="POST" style="text-align:right">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="sfp-btn-outline">Remove</button>
+                        </form>
+                    @else
+                        <span class="sfp-mono" style="font-size:13px">{{ number_format($usage->quantity_used, 2) }} {{ $usage->product->unit }}</span>
+                        <span></span>
+                    @endcan
+                </div>
+            @empty
+                <div class="sfp-table-row" style="grid-template-columns:1fr">
+                    <span style="color:#94A19D;font-size:13.5px">No products linked. Stock is not reduced when this service is billed.</span>
+                </div>
+            @endforelse
+
+            @can('services.edit')
+                <div class="sfp-table-row" style="grid-template-columns:1fr">
+                    <form action="{{ $tenantUrl->route('services.products.store', $service) }}" method="POST" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+                        @csrf
+                        <div>
+                            <select name="product_id" class="sfp-select" style="min-width:240px">
+                                <option value="">Add a product&hellip;</option>
+                                @foreach ($availableProducts as $product)
+                                    <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }} ({{ $product->unit }})</option>
+                                @endforeach
+                            </select>
+                            @error('product_id')
+                                <span class="sfp-invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div>
+                            <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" placeholder="Quantity" value="{{ old('quantity_used') }}" style="width:120px">
+                            @error('quantity_used')
+                                <span class="sfp-invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <button type="submit" class="sfp-btn-primary">Add</button>
+                    </form>
+                </div>
+            @endcan
+        </div>
+    @endunless
+
     <h2 class="sfp-card-title">Price history</h2>
     <div class="sfp-table-wrap">
         <div class="sfp-table-head-row" style="grid-template-columns:1fr 1fr 1fr">

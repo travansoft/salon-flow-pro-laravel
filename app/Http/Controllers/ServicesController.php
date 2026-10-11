@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Services\StoreServiceRequest;
 use App\Http\Requests\Services\UpdateServiceRequest;
 use App\Models\Service;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\ServiceCategoryRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\ServiceCatalogService;
+use App\Services\ServiceProductService;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use Illuminate\Http\JsonResponse;
@@ -68,13 +70,22 @@ class ServicesController extends Controller
         return redirect($this->tenantUrl->route('services.show', ['service' => $service]))->with('status', 'Service created.');
     }
 
-    public function show(Request $request, string $subdomain, Service $service): View
-    {
+    public function show(
+        Request $request,
+        string $subdomain,
+        Service $service,
+        ServiceProductService $serviceProductService,
+        ProductRepositoryInterface $productRepository,
+    ): View {
         abort_unless($request->user()->can('services.view'), 403);
+
+        $usages = $serviceProductService->getForService($service);
 
         return view('admin.services.show', [
             'service' => $service->load('comboItems.component'),
             'tenant' => $this->tenantContext->get(),
+            'usages' => $usages,
+            'availableProducts' => $productRepository->getActive()->whereNotIn('id', $usages->pluck('product_id'))->values(),
         ]);
     }
 
