@@ -63,67 +63,133 @@
     @endif
 
     @unless ($service->is_combo)
-        <h2 class="sfp-card-title" id="service-products">Products used (estimate per service)</h2>
+        @php
+            $editingUsageId = (int) old('usage_id');
+            $addHasErrors = ! $editingUsageId && $errors->hasAny(['product_id', 'quantity_used']);
+        @endphp
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+            <h2 class="sfp-card-title" id="service-products" style="margin:0">Products used (estimate per service)</h2>
+            @can('services.edit')
+                <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#addServiceProductModal">+ Add product</button>
+            @endcan
+        </div>
+
         <div class="sfp-table-wrap" style="margin-bottom:16px">
-            <div class="sfp-table-head-row" style="grid-template-columns:2fr 1.4fr 1fr">
+            <div class="sfp-table-head-row" style="grid-template-columns:2fr 1.4fr 1.4fr">
                 <span>Product</span>
                 <span>Quantity used</span>
                 <span></span>
             </div>
 
             @forelse ($usages as $usage)
-                <div class="sfp-table-row" style="grid-template-columns:2fr 1.4fr 1fr">
+                <div class="sfp-table-row" style="grid-template-columns:2fr 1.4fr 1.4fr">
                     <span style="font-size:14px">{{ $usage->product->name }}</span>
-                    @can('services.edit')
-                        <form action="{{ $tenantUrl->route('services.products.update', ['service' => $service, 'usage' => $usage]) }}" method="POST" style="display:flex;gap:6px;align-items:center">
-                            @csrf
-                            @method('PUT')
-                            <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" value="{{ $usage->quantity_used }}" style="width:100px">
-                            <span style="font-size:12.5px;color:#66736F">{{ $usage->product->unit }}</span>
-                            <button type="submit" class="sfp-btn-outline">Save</button>
-                        </form>
-                        <form action="{{ $tenantUrl->route('services.products.destroy', ['service' => $service, 'usage' => $usage]) }}" method="POST" style="text-align:right">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="sfp-btn-outline">Remove</button>
-                        </form>
-                    @else
-                        <span class="sfp-mono" style="font-size:13px">{{ number_format($usage->quantity_used, 2) }} {{ $usage->product->unit }}</span>
-                        <span></span>
-                    @endcan
+                    <span class="sfp-mono" style="font-size:13px">{{ number_format($usage->quantity_used, 2) }} {{ $usage->product->unit }}</span>
+                    <span style="display:flex;gap:6px;justify-content:flex-end">
+                        @can('services.edit')
+                            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#editServiceProductModal{{ $usage->id }}">Edit</button>
+                            <form action="{{ $tenantUrl->route('services.products.destroy', ['service' => $service, 'usage' => $usage]) }}" method="POST" onsubmit="return confirm('Remove this product from the service?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="sfp-btn-outline">Remove</button>
+                            </form>
+                        @endcan
+                    </span>
                 </div>
             @empty
                 <div class="sfp-table-row" style="grid-template-columns:1fr">
                     <span style="color:#94A19D;font-size:13.5px">No products linked. Stock is not reduced when this service is billed.</span>
                 </div>
             @endforelse
-
-            @can('services.edit')
-                <div class="sfp-table-row" style="grid-template-columns:1fr">
-                    <form action="{{ $tenantUrl->route('services.products.store', $service) }}" method="POST" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
-                        @csrf
-                        <div>
-                            <select name="product_id" class="sfp-select" style="min-width:240px">
-                                <option value="">Add a product&hellip;</option>
-                                @foreach ($availableProducts as $product)
-                                    <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }} ({{ $product->unit }})</option>
-                                @endforeach
-                            </select>
-                            @error('product_id')
-                                <span class="sfp-invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <div>
-                            <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" placeholder="Quantity" value="{{ old('quantity_used') }}" style="width:120px">
-                            @error('quantity_used')
-                                <span class="sfp-invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <button type="submit" class="sfp-btn-primary">Add</button>
-                    </form>
-                </div>
-            @endcan
         </div>
+
+        @can('services.edit')
+            <div class="modal {{ $addHasErrors ? 'show' : '' }}" id="addServiceProductModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form action="{{ $tenantUrl->route('services.products.store', $service) }}" method="POST">
+                            @csrf
+
+                            <div class="modal-header">
+                                <h5 class="modal-title">Add product</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="sfp-field">
+                                    <label class="sfp-label">Product</label>
+                                    <select name="product_id" class="sfp-select">
+                                        <option value="">Select a product&hellip;</option>
+                                        @foreach ($availableProducts as $product)
+                                            <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }} ({{ $product->unit }})</option>
+                                        @endforeach
+                                    </select>
+                                    @error('product_id')
+                                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="sfp-field">
+                                    <label class="sfp-label">Quantity used</label>
+                                    <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" value="{{ $addHasErrors ? old('quantity_used') : '' }}">
+                                    @if ($addHasErrors)
+                                        @error('quantity_used')
+                                            <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="sfp-btn-primary">Add</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            @foreach ($usages as $usage)
+                @php
+                    $editHasErrors = $editingUsageId === $usage->id && $errors->has('quantity_used');
+                @endphp
+
+                <div class="modal {{ $editHasErrors ? 'show' : '' }}" id="editServiceProductModal{{ $usage->id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="{{ $tenantUrl->route('services.products.update', ['service' => $service, 'usage' => $usage]) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="usage_id" value="{{ $usage->id }}">
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit {{ $usage->product->name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div class="sfp-field">
+                                        <label class="sfp-label">Quantity used ({{ $usage->product->unit }})</label>
+                                        <input type="number" step="0.01" min="0.01" name="quantity_used" class="sfp-input" value="{{ $editHasErrors ? old('quantity_used') : $usage->quantity_used }}">
+                                        @if ($editHasErrors)
+                                            @error('quantity_used')
+                                                <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                            @enderror
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="sfp-btn-primary">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        @endcan
     @endunless
 
     <h2 class="sfp-card-title">Price history</h2>

@@ -91,15 +91,17 @@
                     @endcan
 
                     @can('inventory.view')
-                        <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Inventory
-                        </a>
-                        <a href="{{ $tenantUrl->route('stockPurchases.index') }}" class="sfp-nav-item {{ request()->routeIs('stockPurchases.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Purchases
-                        </a>
-                        <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-nav-item {{ request()->routeIs('lowStockReport.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Low stock
-                        </a>
+                        <x-nav-group label="Inventory" :active="request()->routeIs('products.*', 'productCategories.*', 'stockPurchases.*', 'lowStockReport.*')">
+                            <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
+                                Stock summary
+                            </a>
+                            <a href="{{ $tenantUrl->route('stockPurchases.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('stockPurchases.*') ? 'active' : '' }}">
+                                Purchases
+                            </a>
+                            <a href="{{ $tenantUrl->route('lowStockReport.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('lowStockReport.*') ? 'active' : '' }}">
+                                Low stock
+                            </a>
+                        </x-nav-group>
                     @endcan
 
                     @can('dashboard.view')

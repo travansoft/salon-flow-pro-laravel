@@ -46,65 +46,98 @@
     </div>
 
     @can('inventory.edit')
-        <h2 class="sfp-card-title">Physical count</h2>
-        <div class="sfp-card" style="margin-bottom:16px">
-            <p style="font-size:13px;color:#66736F;margin:0 0 12px">Stock used in bills is only an estimate. Enter what is actually on the shelf and the system figure is reset to it. A count never counts as a purchase.</p>
-            <form action="{{ $tenantUrl->route('products.stockCounts.store', $product) }}" method="POST">
-                @csrf
+        @php
+            $countHasErrors = $errors->has('counted_quantity');
+            $adjustHasErrors = $errors->hasAny(['type', 'quantity_delta', 'reason']);
+        @endphp
 
-                <div class="sfp-field">
-                    <label class="sfp-label">Counted quantity ({{ $product->unit }})</label>
-                    <input type="number" step="0.01" min="0" name="counted_quantity" class="sfp-input" value="{{ old('counted_quantity') }}">
-                    @error('counted_quantity')
-                        <span class="sfp-invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div class="sfp-form-actions">
-                    <button type="submit" class="sfp-btn-primary">Save count</button>
-                </div>
-            </form>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockCountModal">Adjust count</button>
+            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockAdjustmentModal">Write off / manual adjust</button>
         </div>
 
-        <h2 class="sfp-card-title">Write off or adjust stock</h2>
-        <div class="sfp-card" style="margin-bottom:16px">
-            <form action="{{ $tenantUrl->route('products.stockAdjustments.store', $product) }}" method="POST">
-                @csrf
+        <div class="modal {{ $countHasErrors ? 'show' : '' }}" id="stockCountModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('products.stockCounts.store', $product) }}" method="POST">
+                        @csrf
 
-                <div class="sfp-split-2">
-                    <div class="sfp-field">
-                        <label class="sfp-label">Type</label>
-                        <select name="type" class="sfp-select">
-                            <option value="expired" @selected(old('type') === 'expired')>Write off: expired</option>
-                            <option value="damaged" @selected(old('type') === 'damaged')>Write off: damaged</option>
-                            <option value="manual" @selected(old('type') === 'manual')>Manual adjustment (+ / -)</option>
-                        </select>
-                        @error('type')
-                            <span class="sfp-invalid-feedback">{{ $message }}</span>
-                        @enderror
-                    </div>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Adjust count</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
 
-                    <div class="sfp-field">
-                        <label class="sfp-label">Quantity</label>
-                        <input type="number" step="0.01" name="quantity_delta" class="sfp-input" value="{{ old('quantity_delta') }}" placeholder="Write-off: positive amount. Manual: e.g. -5 or 10">
-                        @error('quantity_delta')
-                            <span class="sfp-invalid-feedback">{{ $message }}</span>
-                        @enderror
-                    </div>
+                        <div class="modal-body">
+                            <p style="font-size:13px;color:#66736F;margin:0 0 12px">Stock used in bills is only an estimate. Enter what is actually on the shelf and the system figure is reset to it. A count never counts as a purchase.</p>
+
+                            <div class="sfp-field">
+                                <label class="sfp-label">Counted quantity ({{ $product->unit }})</label>
+                                <input type="number" step="0.01" min="0" name="counted_quantity" class="sfp-input" value="{{ old('counted_quantity') }}">
+                                @error('counted_quantity')
+                                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="sfp-btn-primary">Save count</button>
+                        </div>
+                    </form>
                 </div>
+            </div>
+        </div>
 
-                <div class="sfp-field">
-                    <label class="sfp-label">Reason</label>
-                    <input type="text" name="reason" class="sfp-input" value="{{ old('reason') }}" placeholder="Required for manual adjustments">
-                    @error('reason')
-                        <span class="sfp-invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
+        <div class="modal {{ $adjustHasErrors ? 'show' : '' }}" id="stockAdjustmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ $tenantUrl->route('products.stockAdjustments.store', $product) }}" method="POST">
+                        @csrf
 
-                <div class="sfp-form-actions">
-                    <button type="submit" class="sfp-btn-primary">Save</button>
+                        <div class="modal-header">
+                            <h5 class="modal-title">Write off or adjust stock</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="sfp-split-2">
+                                <div class="sfp-field">
+                                    <label class="sfp-label">Type</label>
+                                    <select name="type" class="sfp-select">
+                                        <option value="expired" @selected(old('type') === 'expired')>Write off: expired</option>
+                                        <option value="damaged" @selected(old('type') === 'damaged')>Write off: damaged</option>
+                                        <option value="manual" @selected(old('type') === 'manual')>Manual adjustment (+ / -)</option>
+                                    </select>
+                                    @error('type')
+                                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="sfp-field">
+                                    <label class="sfp-label">Quantity</label>
+                                    <input type="number" step="0.01" name="quantity_delta" class="sfp-input" value="{{ old('quantity_delta') }}" placeholder="Write-off: positive amount. Manual: e.g. -5 or 10">
+                                    @error('quantity_delta')
+                                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="sfp-field">
+                                <label class="sfp-label">Reason</label>
+                                <input type="text" name="reason" class="sfp-input" value="{{ old('reason') }}" placeholder="Required for manual adjustments">
+                                @error('reason')
+                                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="sfp-btn-primary">Save</button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     @endcan
 
