@@ -17,7 +17,7 @@
     </div>
 
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns:100px 2fr 100px 100px 1.4fr 1fr">
+        <div class="sfp-table-head-row" style="grid-template-columns:100px 2fr 110px 110px 1.4fr 1fr">
             <span>Date</span>
             <span>Product</span>
             <span style="text-align:right">Quantity</span>
@@ -27,7 +27,7 @@
         </div>
 
         @forelse ($purchases as $purchase)
-            <div class="sfp-table-row" style="grid-template-columns:100px 2fr 100px 100px 1.4fr 1fr">
+            <div class="sfp-table-row" style="grid-template-columns:100px 2fr 110px 110px 1.4fr 1fr">
                 <span style="font-size:13px;color:#66736F">{{ $purchase->purchased_at->format('d M Y') }}</span>
                 <span style="font-size:14px">{{ $purchase->product?->name ?? '—' }}</span>
                 <span class="sfp-mono" style="font-size:13px;text-align:right">{{ number_format($purchase->quantity, 2) }} {{ $purchase->product?->unit }}</span>

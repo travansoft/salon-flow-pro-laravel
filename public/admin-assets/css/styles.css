@@ -538,6 +538,7 @@ button.sfp-btn-link {
 
 .sfp-table-head-row {
     display: grid;
+    column-gap: 12px;
     padding: 14px 20px;
     background: #FDFAF8;
     border-bottom: 1px solid #E3EAE8;

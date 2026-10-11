@@ -17,9 +17,6 @@
                 @endif
             </p>
         </div>
-        @can('inventory.edit')
-            <a href="{{ $tenantUrl->route('products.edit', $product) }}" class="sfp-btn-outline">Edit product</a>
-        @endcan
     </div>
 
     <div class="sfp-card" style="margin-bottom:16px">
@@ -45,16 +42,24 @@
         </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        @can('inventory.edit')
+            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockCountModal">Adjust count</button>
+            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockAdjustmentModal">Write off / manual adjust</button>
+        @endcan
+        @can('inventory.create')
+            <a href="{{ $tenantUrl->route('stockPurchases.create') }}?product={{ $product->id }}" class="sfp-btn-outline">Record a purchase</a>
+        @endcan
+        @can('inventory.edit')
+            <a href="{{ $tenantUrl->route('products.edit', $product) }}" class="sfp-btn-outline">Edit product</a>
+        @endcan
+    </div>
+
     @can('inventory.edit')
         @php
             $countHasErrors = $errors->has('counted_quantity');
             $adjustHasErrors = $errors->hasAny(['type', 'quantity_delta', 'reason']);
         @endphp
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockCountModal">Adjust count</button>
-            <button type="button" class="sfp-btn-outline" data-bs-toggle="modal" data-bs-target="#stockAdjustmentModal">Write off / manual adjust</button>
-        </div>
 
         <div class="modal {{ $countHasErrors ? 'show' : '' }}" id="stockCountModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -139,10 +144,6 @@
                 </div>
             </div>
         </div>
-    @endcan
-
-    @can('inventory.create')
-        <p style="margin-bottom:16px"><a href="{{ $tenantUrl->route('stockPurchases.create') }}?product={{ $product->id }}" class="sfp-btn-outline">Record a purchase</a></p>
     @endcan
 
     <h2 class="sfp-card-title">Stock history</h2>

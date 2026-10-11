@@ -26,7 +26,7 @@
     </div>
 
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns:2fr 1fr 100px 100px 1.4fr 200px">
+        <div class="sfp-table-head-row" style="grid-template-columns:2fr 1fr 110px 110px 1.4fr 200px">
             <span>Product</span>
             <span>Category</span>
             <span style="text-align:right">On hand</span>
@@ -39,7 +39,7 @@
             @php
                 $isLowStock = $product->quantity_on_hand <= $product->reorder_level;
             @endphp
-            <div class="sfp-table-row" style="grid-template-columns:2fr 1fr 100px 100px 1.4fr 200px">
+            <div class="sfp-table-row" style="grid-template-columns:2fr 1fr 110px 110px 1.4fr 200px">
                 <div>
                     <div style="font-size:14.5px">
                         <span class="sfp-stock-dot {{ $isLowStock ? 'sfp-stock-dot-low' : '' }}"></span>{{ $product->name }}
