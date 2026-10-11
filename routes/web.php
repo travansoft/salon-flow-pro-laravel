@@ -16,7 +16,9 @@ use App\Http\Controllers\IncentiveSettingsController;
 use App\Http\Controllers\InventoryCategoriesController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LowStockReportController;
+use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProductsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ServiceCategoriesController;
 use App\Http\Controllers\ServiceProductsController;
@@ -61,6 +63,10 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
     Route::middleware('auth')->group(function () use ($nameSuffix): void {
         Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name("tenant.dashboard{$nameSuffix}");
+
+        Route::get('/profile', [ProfileController::class, 'show'])->name("profile.show{$nameSuffix}");
+        Route::get('/change-password', [PasswordController::class, 'edit'])->name("password.edit{$nameSuffix}");
+        Route::put('/change-password', [PasswordController::class, 'update'])->name("password.update{$nameSuffix}");
 
         Route::delete('/impersonation', [StopImpersonationController::class, 'destroy'])->name("impersonation.stop{$nameSuffix}");
 

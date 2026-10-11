@@ -39,3 +39,22 @@ document.addEventListener('wheel', (event) => {
         field.blur();
     }
 }, { passive: true });
+
+document.addEventListener('click', (event) => {
+    document.querySelectorAll('[data-user-menu]').forEach((menu) => {
+        const panel = menu.querySelector('.sfp-user-menu-panel');
+        const toggle = menu.querySelector('[data-user-menu-toggle]');
+        const clickedToggle = toggle.contains(event.target);
+
+        panel.hidden = clickedToggle ? ! panel.hidden : true;
+        toggle.setAttribute('aria-expanded', String(! panel.hidden));
+    });
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        document.querySelectorAll('.sfp-user-menu-panel').forEach((panel) => {
+            panel.hidden = true;
+        });
+    }
+});

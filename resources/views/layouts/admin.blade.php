@@ -36,10 +36,7 @@
                     @can('appointments.create')
                         <a href="{{ $tenantUrl->route('appointments.create') }}" class="sfp-btn-dark">+ New appointment</a>
                     @endcan
-                    <form action="{{ $tenantUrl->route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="sfp-avatar-btn" title="Sign out">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</button>
-                    </form>
+                    <x-user-menu :tenant-url="$tenantUrl" />
                 </div>
             </div>
 

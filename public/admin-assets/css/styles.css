@@ -474,6 +474,59 @@ button.sfp-btn-link {
     margin-bottom: 16px;
 }
 
+/* ---- User menu ---- */
+
+.sfp-user-menu {
+    position: relative;
+}
+
+.sfp-user-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #E3EAE8;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(22, 32, 29, 0.12);
+    padding: 6px;
+    z-index: 50;
+}
+
+.sfp-user-menu-head {
+    padding: 10px 12px;
+    border-bottom: 1px solid #E3EAE8;
+    margin-bottom: 6px;
+}
+
+.sfp-user-menu-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.sfp-user-menu-role {
+    color: #66736F;
+    font-size: 12.5px;
+}
+
+.sfp-user-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: #16201D;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.sfp-user-menu-item:hover {
+    background: #F1F5F3;
+}
+
 /* ---- Tables ---- */
 
 .sfp-table-wrap {
