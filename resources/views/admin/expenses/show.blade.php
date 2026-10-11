@@ -28,8 +28,24 @@
     <div class="sfp-card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">
             <div>
-                <div class="sfp-label" style="margin-bottom:6px">Amount</div>
+                <div class="sfp-label" style="margin-bottom:6px">Amount (excl. GST)</div>
+                <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($expense->base_amount, 2) }}</div>
+            </div>
+            <div>
+                <div class="sfp-label" style="margin-bottom:6px">GST</div>
+                <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($expense->gst_amount, 2) }}</div>
+            </div>
+            <div>
+                <div class="sfp-label" style="margin-bottom:6px">Total</div>
                 <div class="sfp-mono" style="font-size:20px">&#8377;{{ number_format($expense->amount, 2) }}</div>
+            </div>
+            <div>
+                <div class="sfp-label" style="margin-bottom:6px">Party</div>
+                <div style="font-size:16px">{{ $expense->party_name ?: '—' }}</div>
+            </div>
+            <div>
+                <div class="sfp-label" style="margin-bottom:6px">GST number</div>
+                <div class="sfp-mono" style="font-size:16px">{{ $expense->gst_number ?: '—' }}</div>
             </div>
             <div>
                 <div class="sfp-label" style="margin-bottom:6px">Expense date</div>

@@ -10,9 +10,11 @@ use App\Repositories\Contracts\ExpenseCategoryRepositoryInterface;
 use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Services\ExpenseService;
 use App\Services\TenantUrl;
+use App\Services\XlsxWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExpensesController extends Controller
 {
@@ -39,6 +41,37 @@ class ExpensesController extends Controller
             'categories' => $this->categoryRepository->getAll(),
             'total' => $this->expenseService->totalOf($expenses),
         ]);
+    }
+
+    public function export(ExpenseFilterRequest $request, XlsxWriter $xlsxWriter): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('expenses.view'), 403);
+
+        [$from, $to] = $request->range();
+
+        $expenses = $this->expenseRepository->getFiltered($from, $to, $request->filters());
+
+        $rows = $expenses->map(fn (Expense $expense): array => [
+            $expense->expense_date->format('d M Y'),
+            $expense->description,
+            $expense->party_name ?? '',
+            $expense->gst_number ?? '',
+            $expense->category?->name ?? 'Uncategorised',
+            ucfirst(str_replace('_', ' ', $expense->payment_method)),
+            (float) $expense->base_amount,
+            (float) $expense->gst_amount,
+            (float) $expense->amount,
+        ])->all();
+
+        $path = $xlsxWriter->build(
+            'Expenses',
+            ['Date', 'Description', 'Party name', 'GST number', 'Category', 'Paid via', 'Amount', 'GST', 'Total'],
+            $rows,
+        );
+
+        return response()
+            ->download($path, "expenses-{$from->format('Y-m-d')}-to-{$to->format('Y-m-d')}.xlsx")
+            ->deleteFileAfterSend();
     }
 
     public function create(Request $request): View
