@@ -93,7 +93,7 @@
                     @can('inventory.view')
                         <x-nav-group label="Inventory" :active="request()->routeIs('products.*', 'productCategories.*', 'stockPurchases.*', 'lowStockReport.*')">
                             <a href="{{ $tenantUrl->route('products.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('products.*') || request()->routeIs('productCategories.*') ? 'active' : '' }}">
-                                Stock summary
+                                Products
                             </a>
                             <a href="{{ $tenantUrl->route('stockPurchases.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('stockPurchases.*') ? 'active' : '' }}">
                                 Purchases
