@@ -51,6 +51,9 @@
             @if ($lowStockCount > 0)
                 <div class="sfp-heading" style="font-size:34px;line-height:1;color:#A8506B">{{ $lowStockCount }}</div>
                 <div style="font-size:12.5px;color:#94A19D;margin-top:8px">{{ Str::plural('item', $lowStockCount) }} at or below reorder level</div>
+                @can('inventory.view')
+                    <a href="{{ $tenantUrl->route('lowStockReport.index') }}" style="display:inline-block;margin-top:10px;font-size:12.5px;color:#1B4B8F">View low stock report</a>
+                @endcan
             @else
                 <div class="sfp-heading" style="font-size:22px;line-height:1.2;color:#2F6849">All stocked</div>
             @endif
