@@ -54,7 +54,7 @@
                     @endif
                 </span>
                 <span>{{ $entry['description'] }}</span>
-                <span style="text-transform:uppercase;font-size:12px;color:#66736F">{{ $entry['method'] }}</span>
+                <span style="text-transform:uppercase;font-size:12px;color:#66736F">{{ str_replace('_', ' ', $entry['method']) }}</span>
                 <span class="sfp-mono" style="text-align:right;color:#2F6849">@if($entry['type'] === 'in')&#8377;{{ number_format((float) $entry['amount'], 2) }}@endif</span>
                 <span class="sfp-mono" style="text-align:right;color:#A8506B">@if($entry['type'] === 'out')&#8377;{{ number_format((float) $entry['amount'], 2) }}@endif</span>
             </div>

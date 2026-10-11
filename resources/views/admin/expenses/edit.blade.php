@@ -36,7 +36,7 @@
             <div class="sfp-field">
                 <label class="sfp-label">Paid via</label>
                 <select name="payment_method" class="sfp-select">
-                    @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card'] as $value => $label)
+                    @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card', 'bank_transfer' => 'Bank Transfer'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('payment_method', $expense->payment_method) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
