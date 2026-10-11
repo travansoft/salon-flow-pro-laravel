@@ -19,6 +19,10 @@ use Illuminate\Support\Carbon;
     'branch_id',
     'category_id',
     'description',
+    'party_name',
+    'gst_number',
+    'base_amount',
+    'gst_amount',
     'amount',
     'payment_method',
     'is_recurring',
@@ -37,6 +41,8 @@ class Expense extends Model
     protected function casts(): array
     {
         return [
+            'base_amount' => 'decimal:2',
+            'gst_amount' => 'decimal:2',
             'amount' => 'decimal:2',
             'expense_date' => 'date',
             'is_recurring' => 'boolean',

@@ -300,6 +300,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:expenses.view')->group(function () use ($nameSuffix): void {
             Route::get('/expenses', [ExpensesController::class, 'index'])->name("expenses.index{$nameSuffix}");
+            Route::get('/expenses/export', [ExpensesController::class, 'export'])->name("expenses.export{$nameSuffix}");
             Route::get('/expenses/categories', [ExpenseCategoriesController::class, 'index'])->name("expenseCategories.index{$nameSuffix}");
         });
 

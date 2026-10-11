@@ -51,7 +51,12 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         if (! empty($filters['search'])) {
             $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $filters['search']);
 
-            $query->whereRaw("LOWER(description) LIKE ? ESCAPE '\\'", ['%'.mb_strtolower($term).'%']);
+            $pattern = '%'.mb_strtolower($term).'%';
+
+            $query->where(function ($query) use ($pattern): void {
+                $query->whereRaw("LOWER(description) LIKE ? ESCAPE '\\'", [$pattern])
+                    ->orWhereRaw("LOWER(party_name) LIKE ? ESCAPE '\\'", [$pattern]);
+            });
         }
 
         return $query->orderByDesc('expense_date')->orderByDesc('id')->get();

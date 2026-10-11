@@ -24,11 +24,44 @@
                 </div>
 
                 <div class="sfp-field">
-                    <label class="sfp-label">Amount</label>
-                    <input type="number" step="0.01" min="0.01" name="amount" class="sfp-input" value="{{ old('amount') }}">
+                    <label class="sfp-label">Party name</label>
+                    <input type="text" name="party_name" class="sfp-input" value="{{ old('party_name') }}">
+                    @error('party_name')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label">GST number</label>
+                    <input type="text" name="gst_number" class="sfp-input" maxlength="15" style="text-transform:uppercase" value="{{ old('gst_number') }}">
+                    @error('gst_number')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label">Amount (excl. GST)</label>
+                    <input type="number" step="0.01" min="0.01" name="amount" id="expense_amount" class="sfp-input" value="{{ old('amount') }}">
                     @error('amount')
                         <span class="sfp-invalid-feedback">{{ $message }}</span>
                     @enderror
+                </div>
+            </div>
+
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label">GST amount</label>
+                    <input type="number" step="0.01" min="0" name="gst_amount" id="expense_gst_amount" class="sfp-input" value="{{ old('gst_amount') }}">
+                    @error('gst_amount')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label">Total</label>
+                    <input type="text" id="expense_total" class="sfp-input" readonly tabindex="-1">
                 </div>
             </div>
 
@@ -103,4 +136,23 @@
             </div>
         </form>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        (function () {
+            var amount = document.getElementById('expense_amount');
+            var gst = document.getElementById('expense_gst_amount');
+            var total = document.getElementById('expense_total');
+
+            function refresh() {
+                var sum = (parseFloat(amount.value) || 0) + (parseFloat(gst.value) || 0);
+                total.value = sum.toFixed(2);
+            }
+
+            amount.addEventListener('input', refresh);
+            gst.addEventListener('input', refresh);
+            refresh();
+        })();
+    </script>
 @endsection

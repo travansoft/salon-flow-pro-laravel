@@ -32,7 +32,9 @@ class ExpenseService
             'branch_id' => $branch->id,
             'category_id' => $data['category_id'] ?? null,
             'description' => $data['description'],
-            'amount' => $data['amount'],
+            'party_name' => $data['party_name'] ?? null,
+            'gst_number' => $data['gst_number'] ?? null,
+            ...$this->splitAmounts($data['amount'], $data['gst_amount'] ?? 0),
             'payment_method' => $data['payment_method'] ?? BillPayment::MethodCash,
             'is_recurring' => $data['is_recurring'] ?? false,
             'recurrence_interval' => ($data['is_recurring'] ?? false) ? ($data['recurrence_interval'] ?? null) : null,
@@ -56,7 +58,12 @@ class ExpenseService
         return $this->expenseRepository->update($expense, [
             'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $expense->category_id,
             'description' => $data['description'] ?? $expense->description,
-            'amount' => $data['amount'] ?? $expense->amount,
+            'party_name' => array_key_exists('party_name', $data) ? $data['party_name'] : $expense->party_name,
+            'gst_number' => array_key_exists('gst_number', $data) ? $data['gst_number'] : $expense->gst_number,
+            ...$this->splitAmounts(
+                $data['amount'] ?? $expense->base_amount,
+                array_key_exists('gst_amount', $data) ? ($data['gst_amount'] ?? 0) : $expense->gst_amount,
+            ),
             'payment_method' => $data['payment_method'] ?? $expense->payment_method,
             'is_recurring' => $isRecurring,
             'recurrence_interval' => $isRecurring
@@ -105,6 +112,24 @@ class ExpenseService
     public function deleteCategory(ExpenseCategory $category): bool
     {
         return $this->expenseCategoryRepository->delete($category);
+    }
+
+    /**
+     * The submitted "amount" is the pre-GST figure; the stored `amount` column stays the
+     * grand total so day book and category reports keep summing a single column.
+     *
+     * @return array{base_amount: string, gst_amount: string, amount: string}
+     */
+    private function splitAmounts(string|int|float $baseAmount, string|int|float $gstAmount): array
+    {
+        $base = number_format((float) $baseAmount, 2, '.', '');
+        $gst = number_format((float) $gstAmount, 2, '.', '');
+
+        return [
+            'base_amount' => $base,
+            'gst_amount' => $gst,
+            'amount' => bcadd($base, $gst, 2),
+        ];
     }
 
     private function storeReceipt(?UploadedFile $receipt): ?string
