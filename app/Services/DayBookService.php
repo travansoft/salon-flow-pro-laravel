@@ -128,7 +128,7 @@ class DayBookService
     {
         $totals = [];
 
-        foreach ([...self::TrackedMethods, BillPayment::MethodCard] as $method) {
+        foreach ([...self::TrackedMethods, BillPayment::MethodCard, BillPayment::MethodBankTransfer] as $method) {
             $totals[$method] = ['in' => '0.00', 'out' => '0.00'];
         }
 

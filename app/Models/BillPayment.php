@@ -23,6 +23,8 @@ class BillPayment extends Model
 
     public const MethodUpi = 'upi';
 
+    public const MethodBankTransfer = 'bank_transfer';
+
     /** @return array<string, string> */
     protected function casts(): array
     {

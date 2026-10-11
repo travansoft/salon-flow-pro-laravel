@@ -24,7 +24,7 @@ class ExpenseFilterRequest extends FormRequest
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'month' => ['nullable', 'date_format:Y-m'],
             'category_id' => ['nullable', 'string', 'regex:/^(\d+|'.self::UncategorisedFilter.')$/'],
-            'payment_method' => ['nullable', Rule::in([BillPayment::MethodCash, BillPayment::MethodCard, BillPayment::MethodUpi])],
+            'payment_method' => ['nullable', Rule::in([BillPayment::MethodCash, BillPayment::MethodCard, BillPayment::MethodUpi, BillPayment::MethodBankTransfer])],
             'search' => ['nullable', 'string', 'max:100'],
         ];
     }

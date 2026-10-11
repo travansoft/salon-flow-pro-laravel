@@ -34,7 +34,7 @@
         </select>
         <select name="payment_method" class="sfp-input" style="margin-bottom:0;max-width:160px">
             <option value="">All payment modes</option>
-            @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card'] as $method => $label)
+            @foreach (['cash' => 'Cash', 'upi' => 'UPI', 'card' => 'Card', 'bank_transfer' => 'Bank Transfer'] as $method => $label)
                 <option value="{{ $method }}" @selected($filters['payment_method'] === $method)>{{ $label }}</option>
             @endforeach
         </select>
