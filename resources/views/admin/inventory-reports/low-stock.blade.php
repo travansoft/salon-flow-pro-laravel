@@ -25,14 +25,14 @@
     </form>
 
     <div class="sfp-table-wrap">
-        <div class="sfp-table-head-row" style="grid-template-columns:1.8fr 1fr 110px 110px 110px 1.2fr 230px">
+        <div class="sfp-table-head-row" style="grid-template-columns:1.8fr 1fr 110px 110px 110px 1.2fr 200px">
             <span>Product</span>
             <span>Category</span>
             <span style="text-align:right">System stock</span>
             <span style="text-align:right">Threshold</span>
             <span style="text-align:right">Suggested order</span>
             <span>Last counted</span>
-            <span>Physical count</span>
+            <span>Actions</span>
         </div>
 
         @forelse ($products as $product)
@@ -40,7 +40,7 @@
                 $stats = $countStats[$product->id] ?? ['last_counted_at' => null, 'usage_since_count' => '0.00'];
                 $suggested = max(0, $product->reorder_level * 2 - $product->quantity_on_hand);
             @endphp
-            <div class="sfp-table-row" style="grid-template-columns:1.8fr 1fr 110px 110px 110px 1.2fr 230px">
+            <div class="sfp-table-row" style="grid-template-columns:1.8fr 1fr 110px 110px 110px 1.2fr 200px">
                 <div>
                     <a href="{{ $tenantUrl->route('products.show', $product) }}" style="font-size:14.5px">
                         <span class="sfp-stock-dot sfp-stock-dot-low"></span>{{ $product->name }}
@@ -57,13 +57,9 @@
                     {{ $stats['last_counted_at'] ? \Illuminate\Support\Carbon::parse($stats['last_counted_at'])->format('d M Y') : 'Never' }}
                     <div class="sfp-mono" style="font-size:11.5px;color:#94A19D">{{ number_format((float) $stats['usage_since_count'], 2) }} est. used since</div>
                 </div>
-                <div>
+                <div style="display:flex;align-items:center;gap:14px">
                     @can('inventory.edit')
-                        <form action="{{ $tenantUrl->route('products.stockCounts.store', $product) }}" method="POST" style="display:flex;gap:6px">
-                            @csrf
-                            <input type="number" step="0.01" min="0" name="counted_quantity" class="sfp-input" placeholder="Counted" style="width:100px">
-                            <button type="submit" class="sfp-btn-outline">Save</button>
-                        </form>
+                        <a href="#" style="font-size:12.5px;color:#1B4B8F" data-bs-toggle="modal" data-bs-target="#stockCountModal{{ $product->id }}" onclick="event.preventDefault()">Adjust count</a>
                     @endcan
                     @can('inventory.create')
                         <a href="{{ $tenantUrl->route('stockPurchases.create') }}?product={{ $product->id }}" style="font-size:12.5px;color:#1B4B8F">Record purchase</a>
@@ -76,4 +72,47 @@
             </div>
         @endforelse
     </div>
+
+    @can('inventory.edit')
+        @foreach ($products as $product)
+            @php
+                $countHasErrors = (int) old('count_product_id') === $product->id && $errors->has('counted_quantity');
+            @endphp
+
+            <div class="modal {{ $countHasErrors ? 'show' : '' }}" id="stockCountModal{{ $product->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form action="{{ $tenantUrl->route('products.stockCounts.store', $product) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="count_product_id" value="{{ $product->id }}">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title">Adjust count: {{ $product->name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <p style="font-size:13px;color:#66736F;margin:0 0 12px">System stock is {{ number_format($product->quantity_on_hand, 2) }} {{ $product->unit }}. Enter what is actually on the shelf and the system figure is reset to it. A count never counts as a purchase.</p>
+
+                                <div class="sfp-field">
+                                    <label class="sfp-label">Counted quantity ({{ $product->unit }})</label>
+                                    <input type="number" step="0.01" min="0" name="counted_quantity" class="sfp-input" value="{{ $countHasErrors ? old('counted_quantity') : '' }}">
+                                    @if ($countHasErrors)
+                                        @error('counted_quantity')
+                                            <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="sfp-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="sfp-btn-primary">Save count</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endcan
 @endsection
