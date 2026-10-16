@@ -136,6 +136,18 @@
                         </a>
                     @endcan
 
+                    @can('users.view')
+                        <a href="{{ $tenantUrl->route('users.index') }}" class="sfp-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Users
+                        </a>
+                    @endcan
+
+                    @can('roles.view')
+                        <a href="{{ $tenantUrl->route('roles.index') }}" class="sfp-nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                            <span class="sfp-nav-bar"></span>Roles
+                        </a>
+                    @endcan
+
                     <div class="sfp-sidebar-footer">
                         Role: <strong>{{ auth()->user()->getRoleNames()->first() ?? '—' }}</strong>
                     </div>

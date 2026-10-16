@@ -3,6 +3,7 @@
 namespace App\Repositories\Eloquent;
 
 use App\Models\Branch;
+use App\Models\Tenant;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -19,6 +20,11 @@ class BranchRepository implements BranchRepositoryInterface
     public function getActive(): Collection
     {
         return $this->model->active()->orderBy('name')->get();
+    }
+
+    public function countActiveInTenant(Tenant $tenant): int
+    {
+        return $this->model->where('tenant_id', $tenant->id)->active()->count();
     }
 
     /** @param array<string, mixed> $data */

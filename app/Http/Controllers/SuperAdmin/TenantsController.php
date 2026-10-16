@@ -10,6 +10,7 @@ use App\Repositories\Contracts\TenantRepositoryInterface;
 use App\Services\SuperAdmin\SuperAdminActivityLogger;
 use App\Services\SuperAdmin\TenantService;
 use App\Services\SuperAdminUrl;
+use App\Services\TenantLimits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,6 +20,7 @@ class TenantsController extends Controller
     public function __construct(
         private TenantRepositoryInterface $tenantRepository,
         private TenantService $tenantService,
+        private TenantLimits $tenantLimits,
         private SuperAdminActivityLogger $activityLogger,
         private SuperAdminUrl $superAdminUrl,
     ) {}
@@ -49,7 +51,11 @@ class TenantsController extends Controller
 
     public function show(Tenant $tenant): View
     {
-        return view('super-admin.tenants.show', ['tenant' => $tenant]);
+        return view('super-admin.tenants.show', [
+            'tenant' => $tenant,
+            'activeUserCount' => $this->tenantLimits->activeUserCount($tenant),
+            'activeBranchCount' => $this->tenantLimits->activeBranchCount($tenant),
+        ]);
     }
 
     public function edit(Tenant $tenant): View

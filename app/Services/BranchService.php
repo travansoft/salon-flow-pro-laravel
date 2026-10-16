@@ -10,12 +10,17 @@ class BranchService
     public function __construct(
         private BranchRepositoryInterface $branchRepository,
         private TenantContext $tenantContext,
+        private TenantLimits $tenantLimits,
     ) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data): Branch
     {
         $tenant = $this->tenantContext->get();
+
+        if ($data['is_active'] ?? true) {
+            $this->tenantLimits->assertCanAddBranch($tenant);
+        }
 
         return $this->branchRepository->create([
             'tenant_id' => $tenant->id,
@@ -32,6 +37,12 @@ class BranchService
     /** @param array<string, mixed> $data */
     public function update(Branch $branch, array $data): Branch
     {
+        $isReactivating = ! $branch->is_active && ($data['is_active'] ?? false);
+
+        if ($isReactivating) {
+            $this->tenantLimits->assertCanAddBranch($this->tenantContext->get());
+        }
+
         return $this->branchRepository->update($branch, [
             'name' => $data['name'] ?? $branch->name,
             'slug' => $data['slug'] ?? $branch->slug,

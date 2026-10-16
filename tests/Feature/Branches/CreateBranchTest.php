@@ -17,6 +17,7 @@ class CreateBranchTest extends TestCase
         parent::setUp();
 
         $this->setUpTenant();
+        $this->tenant->update(['max_branches' => 10]);
         $this->seed(PermissionSeeder::class);
     }
 

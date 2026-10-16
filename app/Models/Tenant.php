@@ -26,6 +26,8 @@ class Tenant extends Model
         'default_gst_rate',
         'print_logo',
         'ui_logo',
+        'max_users',
+        'max_branches',
     ];
 
     /** @return array<string, string> */
@@ -35,6 +37,16 @@ class Tenant extends Model
             'is_active' => 'boolean',
             'default_gst_rate' => 'decimal:2',
         ];
+    }
+
+    public function userLimit(): int
+    {
+        return $this->max_users ?? config('tenancy.limits.max_users');
+    }
+
+    public function branchLimit(): int
+    {
+        return $this->max_branches ?? config('tenancy.limits.max_branches');
     }
 
     /** @return HasMany<User, $this> */

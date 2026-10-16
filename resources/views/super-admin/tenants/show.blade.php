@@ -21,5 +21,7 @@
         <p><strong>Legal name:</strong> {{ $tenant->legal_name ?? '—' }}</p>
         <p><strong>Phone:</strong> {{ $tenant->phone ?? '—' }}</p>
         <p><strong>GSTIN:</strong> {{ $tenant->gst_number ?? '—' }}</p>
+        <p><strong>Active users:</strong> {{ $activeUserCount }} of {{ $tenant->userLimit() }}</p>
+        <p><strong>Active branches:</strong> {{ $activeBranchCount }} of {{ $tenant->branchLimit() }}</p>
     </div>
 @endsection

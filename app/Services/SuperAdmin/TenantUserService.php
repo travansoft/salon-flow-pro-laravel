@@ -5,16 +5,24 @@ namespace App\Services\SuperAdmin;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
+use App\Services\RoleService;
+use App\Services\TenantLimits;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class TenantUserService
 {
-    public function __construct(private TenantUserRepositoryInterface $tenantUserRepository) {}
+    public function __construct(
+        private TenantUserRepositoryInterface $tenantUserRepository,
+        private RoleService $roleService,
+        private TenantLimits $tenantLimits,
+    ) {}
 
     /** @param array<string, mixed> $data */
     public function create(Tenant $tenant, array $data): User
     {
+        $this->tenantLimits->assertCanAddUser($tenant);
+
         return DB::transaction(function () use ($tenant, $data): User {
             $user = $this->tenantUserRepository->create([
                 'tenant_id' => $tenant->id,
@@ -24,7 +32,7 @@ class TenantUserService
                 'password' => Hash::make($data['password']),
             ]);
 
-            $user->syncRoles($data['roles'] ?? []);
+            $user->syncRoles($this->roleService->resolveForTenant($data['roles'] ?? [], $tenant->id));
             $user->branches()->sync($data['branch_ids'] ?? []);
 
             return $user;
@@ -48,7 +56,7 @@ class TenantUserService
             $this->tenantUserRepository->update($user, $profileData);
 
             if (array_key_exists('roles', $data)) {
-                $user->syncRoles($data['roles']);
+                $user->syncRoles($this->roleService->resolveForTenant($data['roles'], $user->tenant_id));
             }
 
             if (array_key_exists('branch_ids', $data)) {
@@ -70,6 +78,8 @@ class TenantUserService
 
     public function enableLogin(User $user): User
     {
+        $this->tenantLimits->assertCanAddUser($user->tenant);
+
         $this->tenantUserRepository->update($user, ['disabled_at' => null]);
 
         return $user->refresh();

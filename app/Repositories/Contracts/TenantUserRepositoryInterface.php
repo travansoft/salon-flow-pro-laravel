@@ -16,6 +16,8 @@ interface TenantUserRepositoryInterface
     /** @return Collection<int, User> */
     public function searchInTenant(Tenant $tenant, string $term): Collection;
 
+    public function countEnabledInTenant(Tenant $tenant): int;
+
     /** @param array<string, mixed> $data */
     public function create(array $data): User;
 

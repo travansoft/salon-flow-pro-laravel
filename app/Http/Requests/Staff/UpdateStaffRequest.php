@@ -41,7 +41,10 @@ class UpdateStaffRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
 
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', Rule::exists('roles', 'name')],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where(fn ($query) => $query->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenantId))),
+            ],
 
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', 'max:30'],

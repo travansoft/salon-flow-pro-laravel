@@ -22,6 +22,8 @@ class StaffService
     public function __construct(
         private StaffProfileRepositoryInterface $staffProfileRepository,
         private TenantContext $tenantContext,
+        private RoleService $roleService,
+        private TenantLimits $tenantLimits,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -34,6 +36,8 @@ class StaffService
             $profileData['tenant_id'] = $tenant->id;
 
             if (! empty($data['create_login'])) {
+                $this->tenantLimits->assertCanAddUser($tenant);
+
                 $user = User::create([
                     'tenant_id' => $tenant->id,
                     'name' => $data['name'],
@@ -42,7 +46,7 @@ class StaffService
                     'password' => Hash::make($data['password']),
                 ]);
 
-                $user->syncRoles($data['roles'] ?? []);
+                $user->syncRoles($this->roleService->resolveForTenant($data['roles'] ?? [], $tenant->id));
                 $user->branches()->sync($data['branch_ids'] ?? []);
 
                 $profileData['user_id'] = $user->id;
@@ -71,7 +75,7 @@ class StaffService
             }
 
             if ($staffProfile->hasLogin() && array_key_exists('roles', $data)) {
-                $staffProfile->user->syncRoles($data['roles']);
+                $staffProfile->user->syncRoles($this->roleService->resolveForTenant($data['roles'], $staffProfile->tenant_id));
             }
 
             if ($staffProfile->hasLogin() && array_key_exists('branch_ids', $data)) {
@@ -107,6 +111,8 @@ class StaffService
         if (! $staffProfile->hasLogin()) {
             throw new InvalidArgumentException('This staff member has no login to enable.');
         }
+
+        $this->tenantLimits->assertCanAddUser($this->tenantContext->get());
 
         $staffProfile->user->update(['disabled_at' => null]);
 

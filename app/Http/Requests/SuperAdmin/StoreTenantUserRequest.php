@@ -24,7 +24,10 @@ class StoreTenantUserRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->where('tenant_id', $tenant->id)],
             'password' => ['required', 'string', 'min:4'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', 'exists:roles,name'],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where(fn ($query) => $query->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id))),
+            ],
             'branch_ids' => ['required', 'array', 'min:1'],
             'branch_ids.*' => [
                 'integer',

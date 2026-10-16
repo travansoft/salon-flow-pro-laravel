@@ -25,6 +25,8 @@ class UpdateTenantRequest extends FormRequest
             'subdomain' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('tenants', 'subdomain')->ignore($tenant), new NotReservedSubdomain],
             'custom_domain' => ['nullable', 'string', 'max:255', Rule::unique('tenants', 'custom_domain')->ignore($tenant)],
             'is_active' => ['sometimes', 'boolean'],
+            'max_users' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'max_branches' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'print_logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg', 'max:500'],
             'ui_logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg', 'max:500'],
             'remove_print_logo' => ['sometimes', 'boolean'],

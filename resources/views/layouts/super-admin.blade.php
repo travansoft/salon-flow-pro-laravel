@@ -42,6 +42,10 @@
                         <span class="sfp-nav-bar"></span>Tenants
                     </a>
 
+                    <a href="{{ $superAdminUrl->route('superAdmin.roles.index') }}" class="sfp-nav-item {{ request()->routeIs('superAdmin.roles.*') ? 'active' : '' }}">
+                        <span class="sfp-nav-bar"></span>Roles
+                    </a>
+
                     <a href="{{ $superAdminUrl->route('superAdmin.platformAdmins.index') }}" class="sfp-nav-item {{ request()->routeIs('superAdmin.platformAdmins.*') ? 'active' : '' }}">
                         <span class="sfp-nav-bar"></span>Admin users
                     </a>
