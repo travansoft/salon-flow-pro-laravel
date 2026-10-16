@@ -54,9 +54,9 @@ class RoleAccessTest extends TestCase
         $this->actingAs($frontDesk)->postToTenant('/roles', ['name' => 'X', 'permissions' => ['staff.view']])->assertForbidden();
     }
 
-    public function test_executive_viewer_cannot_open_role_screens(): void
+    public function test_director_cannot_open_role_screens(): void
     {
-        $viewer = $this->userWithRole('ExecutiveViewer');
+        $viewer = $this->userWithRole('Director');
 
         $this->actingAs($viewer)->getFromTenant('/roles')->assertForbidden();
         $this->actingAs($viewer)->getFromTenant('/users')->assertForbidden();

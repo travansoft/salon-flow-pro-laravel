@@ -82,7 +82,7 @@ class PermissionSeeder extends Seeder
             'incentives.view',
         ]);
 
-        $this->seedRole('ExecutiveViewer', 'Read-only access to reports and records, for board members or the CEO. Cannot create, edit or delete anything.', [
+        $this->seedRole('Director', 'Read-only oversight for directors. Can view reports and records but cannot change anything.', [
             'dashboard.view',
             'reports.consolidated.view',
             'billing.view',

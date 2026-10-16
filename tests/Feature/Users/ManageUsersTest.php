@@ -36,7 +36,7 @@ class ManageUsersTest extends TestCase
             'name' => 'Board Member',
             'username' => 'boardmember',
             'password' => 'password123',
-            'roles' => ['ExecutiveViewer'],
+            'roles' => ['Director'],
             'branch_ids' => [$this->branch->id],
         ], $overrides);
     }
@@ -48,14 +48,14 @@ class ManageUsersTest extends TestCase
         $response->assertOk()->assertSee('1 of 5 active users');
     }
 
-    public function test_owner_can_add_a_user_with_the_executive_viewer_role(): void
+    public function test_owner_can_add_a_user_with_the_director_role(): void
     {
         $response = $this->actingAs($this->owner)->postToTenant('/users', $this->validPayload());
 
         $response->assertRedirect();
         $user = User::where('username', 'boardmember')->first();
         $this->assertSame($this->tenant->id, $user->tenant_id);
-        $this->assertTrue($user->hasRole('ExecutiveViewer'));
+        $this->assertTrue($user->hasRole('Director'));
         $this->assertTrue($user->branches->contains($this->branch));
     }
 
@@ -125,11 +125,11 @@ class ManageUsersTest extends TestCase
 
         $response = $this->actingAs($this->owner)->putToTenant("/users/{$member->id}", $this->validPayload([
             'username' => 'member',
-            'roles' => ['ExecutiveViewer'],
+            'roles' => ['Director'],
         ]));
 
         $response->assertRedirect();
-        $this->assertTrue($member->fresh()->hasRole('ExecutiveViewer'));
+        $this->assertTrue($member->fresh()->hasRole('Director'));
         $this->assertFalse($member->fresh()->hasRole('Stylist'));
     }
 

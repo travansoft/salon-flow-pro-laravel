@@ -47,7 +47,7 @@ class ManageRolesTest extends TestCase
 
         $response = $this->actingAs($this->owner)->getFromTenant('/roles');
 
-        $response->assertOk()->assertSee('Receptionist')->assertSee('ExecutiveViewer');
+        $response->assertOk()->assertSee('Receptionist')->assertSee('Director');
     }
 
     public function test_other_tenants_custom_roles_are_not_listed(): void

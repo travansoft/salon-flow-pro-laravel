@@ -22,9 +22,9 @@ class RoleDatabaseTest extends TestCase
         $this->seed(PermissionSeeder::class);
     }
 
-    public function test_seeder_creates_executive_viewer_with_view_only_permissions(): void
+    public function test_seeder_creates_director_with_view_only_permissions(): void
     {
-        $role = Role::where('name', 'ExecutiveViewer')->first();
+        $role = Role::where('name', 'Director')->first();
 
         $this->assertNotNull($role);
         $this->assertNull($role->tenant_id);

@@ -14,7 +14,7 @@ class Role extends SpatieRole
     use HasFactory;
 
     /** @var array<int, string> */
-    public const BuiltInNames = ['Owner', 'Manager', 'FrontDesk', 'Stylist', 'ExecutiveViewer'];
+    public const BuiltInNames = ['Owner', 'Manager', 'FrontDesk', 'Stylist', 'Director'];
 
     protected $fillable = ['name', 'guard_name', 'tenant_id', 'description'];
 

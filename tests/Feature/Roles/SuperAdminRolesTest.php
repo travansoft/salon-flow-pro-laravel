@@ -34,7 +34,7 @@ class SuperAdminRolesTest extends TestCase
 
         $response = $this->actingAs($this->admin, 'super_admin')->getFromSuperAdmin('/roles');
 
-        $response->assertOk()->assertSee('ExecutiveViewer')->assertDontSee('Tenant Only Role');
+        $response->assertOk()->assertSee('Director')->assertDontSee('Tenant Only Role');
     }
 
     public function test_super_admin_can_create_a_system_role(): void
@@ -106,7 +106,7 @@ class SuperAdminRolesTest extends TestCase
 
         $response = $this->actingAs($this->admin, 'super_admin')->getFromSuperAdmin("/tenants/{$tenant->id}/users/create");
 
-        $response->assertOk()->assertSee('Mine Role')->assertSee('ExecutiveViewer')->assertDontSee('Theirs Role');
+        $response->assertOk()->assertSee('Mine Role')->assertSee('Director')->assertDontSee('Theirs Role');
     }
 
     public function test_super_admin_cannot_assign_a_roles_from_another_tenant_to_a_user(): void
