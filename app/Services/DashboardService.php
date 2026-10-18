@@ -8,9 +8,12 @@ use Illuminate\Support\Carbon;
 class DashboardService
 {
     /** @return array<string, mixed> */
-    public function summaryFor(Carbon $day): array
+    public function summaryFor(Carbon $from, ?Carbon $to = null): array
     {
-        $todaysBills = Bill::whereDate('created_at', $day)
+        $to ??= $from;
+        $day = $to;
+
+        $periodBills = Bill::whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->where('status', '!=', Bill::StatusVoid)
             ->get();
 
@@ -26,29 +29,29 @@ class DashboardService
             ->where('status', '!=', Bill::StatusVoid)
             ->sum('total');
 
-        $todaysRevenue = number_format((float) $todaysBills->sum('total'), 2, '.', '');
-        $todaysCustomerCount = $todaysBills->pluck('client_id')->unique()->count();
-        $billCount = $todaysBills->count();
-        $averageBill = $billCount > 0 ? bcdiv($todaysRevenue, (string) $billCount, 2) : '0.00';
+        $revenue = number_format((float) $periodBills->sum('total'), 2, '.', '');
+        $customerCount = $periodBills->pluck('client_id')->unique()->count();
+        $billCount = $periodBills->count();
+        $averageBill = $billCount > 0 ? bcdiv($revenue, (string) $billCount, 2) : '0.00';
 
         $pendingPayments = Bill::unpaidOrPartial()->get()
             ->reduce(fn (string $carry, Bill $bill) => bcadd($carry, $bill->balanceDue(), 2), '0.00');
 
         return [
-            'todaysRevenue' => $todaysRevenue,
-            'customerCount' => $todaysCustomerCount,
+            'revenue' => $revenue,
+            'customerCount' => $customerCount,
             'averageBill' => $averageBill,
-            'topEmployee' => $this->topEmployeeFor($day),
-            'topService' => $this->topServiceFor($day),
+            'topEmployee' => $this->topEmployeeFor($from, $to),
+            'topService' => $this->topServiceFor($from, $to),
             'pendingPayments' => $pendingPayments,
             'monthRevenueChangePercent' => $this->percentChange($previousMonthToDateRevenue, $monthToDateRevenue),
         ];
     }
 
     /** @return array{name: string, revenue: string}|null */
-    private function topEmployeeFor(Carbon $day): ?array
+    private function topEmployeeFor(Carbon $from, Carbon $to): ?array
     {
-        $row = Bill::whereDate('bills.created_at', $day)
+        $row = Bill::whereBetween('bills.created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->where('bills.status', '!=', Bill::StatusVoid)
             ->join('bill_line_items', 'bill_line_items.bill_id', '=', 'bills.id')
             ->join('staff_profiles', 'staff_profiles.id', '=', 'bill_line_items.staff_profile_id')
@@ -65,9 +68,9 @@ class DashboardService
         return ['name' => $row->staff_name, 'revenue' => number_format((float) $row->revenue, 2, '.', '')];
     }
 
-    private function topServiceFor(Carbon $day): ?string
+    private function topServiceFor(Carbon $from, Carbon $to): ?string
     {
-        $row = Bill::whereDate('bills.created_at', $day)
+        $row = Bill::whereBetween('bills.created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->where('bills.status', '!=', Bill::StatusVoid)
             ->join('bill_line_items', 'bill_line_items.bill_id', '=', 'bills.id')
             ->join('services', 'services.id', '=', 'bill_line_items.service_id')

@@ -57,7 +57,7 @@ class DashboardDatabaseTest extends TestCase
         app(BranchContext::class)->set($branchA);
         $summary = app(DashboardService::class)->summaryFor(Carbon::today());
 
-        $this->assertSame('500.00', $summary['todaysRevenue']);
+        $this->assertSame('500.00', $summary['revenue']);
     }
 
     public function test_dashboard_summary_only_reflects_bills_for_the_current_branch_not_other_branches_in_the_same_tenant(): void
@@ -97,7 +97,7 @@ class DashboardDatabaseTest extends TestCase
         app(BranchContext::class)->set($branchB);
         $summaryForBranchB = app(DashboardService::class)->summaryFor(Carbon::today());
 
-        $this->assertSame('500.00', $summaryForBranchA['todaysRevenue']);
-        $this->assertSame('9000.00', $summaryForBranchB['todaysRevenue']);
+        $this->assertSame('500.00', $summaryForBranchA['revenue']);
+        $this->assertSame('9000.00', $summaryForBranchB['revenue']);
     }
 }
