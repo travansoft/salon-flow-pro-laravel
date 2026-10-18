@@ -37,6 +37,11 @@ class TenantUserRepository implements TenantUserRepositoryInterface
             ->get();
     }
 
+    public function countEnabledInTenant(Tenant $tenant): int
+    {
+        return $this->model->where('tenant_id', $tenant->id)->whereNull('disabled_at')->count();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): User
     {

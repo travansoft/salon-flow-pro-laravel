@@ -6,8 +6,10 @@ use App\Models\Designation;
 use App\Models\StaffProfile;
 use App\Models\Tenant;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
+use App\Services\RoleService;
 use App\Services\StaffService;
 use App\Services\TenantContext;
+use App\Services\TenantLimits;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -38,7 +40,7 @@ class StaffServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => StaffProfile::create($data));
 
-        $service = new StaffService($repository, $tenantContext);
+        $service = new StaffService($repository, $tenantContext, app(RoleService::class), app(TenantLimits::class));
 
         $staffProfile = $service->create([
             'name' => 'Priya Nair',
@@ -68,7 +70,7 @@ class StaffServiceTest extends TestCase
             ->once()
             ->andReturnUsing(fn (array $data) => StaffProfile::create($data));
 
-        $service = new StaffService($repository, $tenantContext);
+        $service = new StaffService($repository, $tenantContext, app(RoleService::class), app(TenantLimits::class));
 
         $staffProfile = $service->create([
             'name' => 'Ravi Kumar',
@@ -97,7 +99,7 @@ class StaffServiceTest extends TestCase
                 return $profile;
             });
 
-        $service = new StaffService($repository, $tenantContext);
+        $service = new StaffService($repository, $tenantContext, app(RoleService::class), app(TenantLimits::class));
 
         $service->update($staffProfile, ['name' => 'Updated Name', 'service_ids' => []]);
 

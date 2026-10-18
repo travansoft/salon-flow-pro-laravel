@@ -7,14 +7,15 @@ use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Models\StaffProfile;
 use App\Repositories\Contracts\BranchRepositoryInterface;
 use App\Repositories\Contracts\DesignationRepositoryInterface;
+use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
 use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Services\StaffService;
+use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Spatie\Permission\Models\Role;
 
 class StaffsController extends Controller
 {
@@ -23,6 +24,8 @@ class StaffsController extends Controller
         private DesignationRepositoryInterface $designationRepository,
         private ServiceRepositoryInterface $serviceRepository,
         private BranchRepositoryInterface $branchRepository,
+        private RoleRepositoryInterface $roleRepository,
+        private TenantContext $tenantContext,
         private StaffService $staffService,
         private TenantUrl $tenantUrl,
     ) {}
@@ -42,7 +45,7 @@ class StaffsController extends Controller
 
         return view('admin.staff.create', [
             'designations' => $this->designationRepository->getActive(),
-            'roles' => Role::all(),
+            'roles' => $this->roleRepository->getAssignableByTenant($this->tenantContext->get()->id),
             'services' => $this->serviceRepository->getActive(),
             'branches' => $this->branchRepository->getActive(),
         ]);
@@ -71,7 +74,7 @@ class StaffsController extends Controller
         return view('admin.staff.edit', [
             'staff' => $staff,
             'designations' => $this->designationRepository->getActive(),
-            'roles' => Role::all(),
+            'roles' => $this->roleRepository->getAssignableByTenant($this->tenantContext->get()->id),
             'services' => $this->serviceRepository->getActive(),
             'branches' => $this->branchRepository->getActive(),
         ]);

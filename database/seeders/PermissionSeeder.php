@@ -21,6 +21,8 @@ class PermissionSeeder extends Seeder
         'incentives',
         'settings',
         'branches',
+        'users',
+        'roles',
     ];
 
     /** @var array<int, string> */
@@ -48,14 +50,23 @@ class PermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
+        $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web'], [
+            'description' => 'Full access to every module, including users and roles.',
+        ]);
         $owner->syncPermissions($permissions);
 
-        $manager = Role::firstOrCreate(['name' => 'Manager', 'guard_name' => 'web']);
-        $manager->syncPermissions(array_diff($permissions, ['billing.editBill', 'billing.cancel']));
+        $accessManagement = array_merge(
+            $this->modulePermissions('users'),
+            $this->modulePermissions('roles'),
+        );
 
-        $frontDesk = Role::firstOrCreate(['name' => 'FrontDesk', 'guard_name' => 'web']);
-        $frontDesk->syncPermissions([
+        $this->seedRole('Manager', 'Runs the salon day to day; cannot manage users or roles.', array_diff(
+            $permissions,
+            ['billing.editBill', 'billing.cancel'],
+            $accessManagement,
+        ));
+
+        $this->seedRole('FrontDesk', 'Books appointments, bills clients and manages client records.', [
             'staff.view',
             'services.view',
             'appointments.view', 'appointments.create', 'appointments.edit',
@@ -65,11 +76,46 @@ class PermissionSeeder extends Seeder
             'dashboard.view',
         ]);
 
-        $stylist = Role::firstOrCreate(['name' => 'Stylist', 'guard_name' => 'web']);
-        $stylist->syncPermissions([
+        $this->seedRole('Stylist', 'Sees own appointments, clients and incentives.', [
             'appointments.view',
             'clients.view',
             'incentives.view',
         ]);
+
+        $this->seedRole('Director', 'Read-only oversight for directors. Can view reports and records but cannot change anything.', [
+            'dashboard.view',
+            'reports.consolidated.view',
+            'billing.view',
+            'expenses.view',
+            'inventory.view',
+            'clients.view',
+            'appointments.view',
+            'services.view',
+            'staff.view',
+            'incentives.view',
+            'branches.view',
+        ]);
+    }
+
+    /**
+     * Built-in roles other than Owner are only given their default permissions
+     * on first creation, so re-seeding never overwrites edits a super admin
+     * made through the role manager.
+     *
+     * @param  array<int, string>  $permissions
+     */
+    private function seedRole(string $name, string $description, array $permissions): void
+    {
+        $role = Role::firstOrCreate(['name' => $name, 'guard_name' => 'web'], ['description' => $description]);
+
+        if ($role->wasRecentlyCreated) {
+            $role->syncPermissions($permissions);
+        }
+    }
+
+    /** @return array<int, string> */
+    private function modulePermissions(string $module): array
+    {
+        return array_map(fn (string $action): string => "{$module}.{$action}", self::Actions);
     }
 }

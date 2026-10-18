@@ -21,4 +21,13 @@ return [
         'mail',
         'ftp',
     ],
+
+    /*
+     * Default plan limits applied to every tenant. A tenant row's max_users /
+     * max_branches columns (set by a super admin) override these per tenant.
+     */
+    'limits' => [
+        'max_users' => (int) env('TENANT_MAX_USERS', 5),
+        'max_branches' => (int) env('TENANT_MAX_BRANCHES', 1),
+    ],
 ];

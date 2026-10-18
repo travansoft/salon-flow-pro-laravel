@@ -55,6 +55,27 @@
                 <label class="form-check-label sfp-label" style="display: inline; text-transform: none; letter-spacing: normal;">Active</label>
             </div>
 
+            <div class="sfp-card-title" style="margin-top: 24px;">Plan limits</div>
+            <p style="color: #66736F; font-size: 13px; margin-top: -8px;">Leave blank to use the platform defaults ({{ config('tenancy.limits.max_users') }} users, {{ config('tenancy.limits.max_branches') }} {{ \Illuminate\Support\Str::plural('branch', config('tenancy.limits.max_branches')) }}).</p>
+
+            <div class="sfp-split-2">
+                <div class="sfp-field">
+                    <label class="sfp-label">Max active users</label>
+                    <input type="number" name="max_users" min="1" class="sfp-input" value="{{ old('max_users', $tenant->max_users ?? null) }}" placeholder="{{ config('tenancy.limits.max_users') }}">
+                    @error('max_users')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="sfp-field">
+                    <label class="sfp-label">Max active branches</label>
+                    <input type="number" name="max_branches" min="1" class="sfp-input" value="{{ old('max_branches', $tenant->max_branches ?? null) }}" placeholder="{{ config('tenancy.limits.max_branches') }}">
+                    @error('max_branches')
+                        <span class="sfp-invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
             <div class="sfp-card-title" style="margin-top: 24px;">Branding</div>
             <p style="color: #66736F; font-size: 13px; margin-top: -8px;">PNG, JPG or SVG, up to 500KB.</p>
 

@@ -49,7 +49,7 @@ class DashboardServiceTest extends TestCase
 
         $summary = app(DashboardService::class)->summaryFor(Carbon::today());
 
-        $this->assertSame('500.00', $summary['todaysRevenue']);
+        $this->assertSame('500.00', $summary['revenue']);
         $this->assertSame(2, $summary['customerCount']);
         $this->assertSame('250.00', $summary['averageBill']);
     }
@@ -82,7 +82,7 @@ class DashboardServiceTest extends TestCase
 
         $summary = app(DashboardService::class)->summaryFor(Carbon::today());
 
-        $this->assertSame('0.00', $summary['todaysRevenue']);
+        $this->assertSame('0.00', $summary['revenue']);
         $this->assertSame(0, $summary['customerCount']);
     }
 
@@ -252,5 +252,40 @@ class DashboardServiceTest extends TestCase
         $summary = app(DashboardService::class)->summaryFor($today);
 
         $this->assertSame(50.0, $summary['monthRevenueChangePercent']);
+    }
+
+    public function test_summary_over_range_sums_revenue_and_counts_unique_customers(): void
+    {
+        $tenant = Tenant::factory()->create();
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+
+        $client = Client::factory()->create(['tenant_id' => $tenant->id]);
+        $user = User::factory()->for($tenant)->create();
+        $today = Carbon::today();
+
+        foreach ([0, 1, 2] as $daysAgo) {
+            Bill::factory()->create([
+                'tenant_id' => $tenant->id,
+                'client_id' => $client->id,
+                'created_by' => $user->id,
+                'total' => 100,
+                'created_at' => $today->copy()->subDays($daysAgo)->addHours(12),
+            ]);
+        }
+        Bill::factory()->create([
+            'tenant_id' => $tenant->id,
+            'client_id' => $client->id,
+            'created_by' => $user->id,
+            'total' => 900,
+            'created_at' => $today->copy()->subDays(5),
+        ]);
+
+        $summary = app(DashboardService::class)->summaryFor($today->copy()->subDays(2), $today);
+
+        $this->assertSame('300.00', $summary['revenue']);
+        $this->assertSame(1, $summary['customerCount']);
+        $this->assertSame('100.00', $summary['averageBill']);
     }
 }

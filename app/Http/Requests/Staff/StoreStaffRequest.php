@@ -46,7 +46,10 @@ class StoreStaffRequest extends FormRequest
             ],
             'password' => ['required_if:create_login,1', 'nullable', 'string', 'min:8'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', Rule::exists('roles', 'name')],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where(fn ($query) => $query->where(fn ($query) => $query->whereNull('tenant_id')->orWhere('tenant_id', $tenantId))),
+            ],
 
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', 'max:30'],

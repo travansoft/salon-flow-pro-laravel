@@ -8,6 +8,7 @@ use App\Http\Requests\SuperAdmin\UpdateTenantUserRequest;
 use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\TenantUserRepositoryInterface;
 use App\Services\SuperAdmin\SuperAdminActivityLogger;
 use App\Services\SuperAdmin\TenantUserService;
@@ -16,13 +17,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
-use Spatie\Permission\Models\Role;
 
 class TenantUsersController extends Controller
 {
     public function __construct(
         private TenantUserRepositoryInterface $tenantUserRepository,
         private TenantUserService $tenantUserService,
+        private RoleRepositoryInterface $roleRepository,
         private SuperAdminActivityLogger $activityLogger,
         private SuperAdminUrl $superAdminUrl,
     ) {}
@@ -45,7 +46,7 @@ class TenantUsersController extends Controller
     {
         return view('super-admin.tenant-users.create', [
             'tenant' => $tenant,
-            'roles' => Role::all(),
+            'roles' => $this->roleRepository->getAssignableByTenant($tenant->id),
             'branches' => $this->branchesForTenant($tenant),
         ]);
     }
@@ -66,7 +67,7 @@ class TenantUsersController extends Controller
         return view('super-admin.tenant-users.edit', [
             'tenant' => $tenant,
             'tenantUser' => $tenantUser,
-            'roles' => Role::all(),
+            'roles' => $this->roleRepository->getAssignableByTenant($tenant->id),
             'branches' => $this->branchesForTenant($tenant),
             'assignedBranchIds' => $tenantUser->branches()->pluck('branches.id'),
         ]);

@@ -20,6 +20,7 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\RolesController;
 use App\Http\Controllers\ServiceCategoriesController;
 use App\Http\Controllers\ServiceProductsController;
 use App\Http\Controllers\ServicesController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\StockCountsController;
 use App\Http\Controllers\StockPurchasesController;
 use App\Http\Controllers\StopImpersonationController;
 use App\Http\Controllers\SuperAdmin\PlatformAdminsController;
+use App\Http\Controllers\SuperAdmin\RolesController as SuperAdminRolesController;
 use App\Http\Controllers\SuperAdmin\SuperAdminActivityLogsController;
 use App\Http\Controllers\SuperAdmin\SuperAdminProfileController;
 use App\Http\Controllers\SuperAdmin\TenantsController;
@@ -43,6 +45,7 @@ use App\Http\Controllers\SuperAdminLoginController;
 use App\Http\Controllers\TenantDashboardController;
 use App\Http\Controllers\TenantSettingsController;
 use App\Http\Controllers\TimeSlotsController;
+use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WalkInsController;
 use Illuminate\Support\Facades\Route;
 
@@ -399,6 +402,40 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
             Route::delete('/branches/{branch}', [BranchesController::class, 'destroy'])->name("branches.destroy{$nameSuffix}");
         });
 
+        Route::middleware('permission:roles.create')->group(function () use ($nameSuffix): void {
+            Route::get('/roles/create', [RolesController::class, 'create'])->name("roles.create{$nameSuffix}");
+            Route::post('/roles', [RolesController::class, 'store'])->name("roles.store{$nameSuffix}");
+        });
+
+        Route::middleware('permission:roles.view')->group(function () use ($nameSuffix): void {
+            Route::get('/roles', [RolesController::class, 'index'])->name("roles.index{$nameSuffix}");
+            Route::get('/roles/{role}', [RolesController::class, 'show'])->name("roles.show{$nameSuffix}");
+        });
+
+        Route::middleware('permission:roles.edit')->group(function () use ($nameSuffix): void {
+            Route::get('/roles/{role}/edit', [RolesController::class, 'edit'])->name("roles.edit{$nameSuffix}");
+            Route::put('/roles/{role}', [RolesController::class, 'update'])->name("roles.update{$nameSuffix}");
+        });
+
+        Route::middleware('permission:roles.delete')->group(function () use ($nameSuffix): void {
+            Route::delete('/roles/{role}', [RolesController::class, 'destroy'])->name("roles.destroy{$nameSuffix}");
+        });
+
+        Route::middleware('permission:users.create')->group(function () use ($nameSuffix): void {
+            Route::get('/users/create', [UsersController::class, 'create'])->name("users.create{$nameSuffix}");
+            Route::post('/users', [UsersController::class, 'store'])->name("users.store{$nameSuffix}");
+        });
+
+        Route::middleware('permission:users.view')->group(function () use ($nameSuffix): void {
+            Route::get('/users', [UsersController::class, 'index'])->name("users.index{$nameSuffix}");
+        });
+
+        Route::middleware('permission:users.edit')->group(function () use ($nameSuffix): void {
+            Route::get('/users/{managedUser}/edit', [UsersController::class, 'edit'])->name("users.edit{$nameSuffix}");
+            Route::put('/users/{managedUser}', [UsersController::class, 'update'])->name("users.update{$nameSuffix}");
+            Route::put('/users/{managedUser}/toggle-login', [UsersController::class, 'toggleLogin'])->name("users.toggleLogin{$nameSuffix}");
+        });
+
         Route::put('/branch-switch', [BranchSwitcherController::class, 'update'])->name("branchSwitcher.update{$nameSuffix}");
     });
 };
@@ -431,6 +468,13 @@ $registerSuperAdminRoutes = function (string $nameSuffix = ''): void {
         Route::get('/tenants/{tenant}/users/{tenantUser}/edit', [TenantUsersController::class, 'edit'])->name("superAdmin.tenants.users.edit{$nameSuffix}");
         Route::put('/tenants/{tenant}/users/{tenantUser}', [TenantUsersController::class, 'update'])->name("superAdmin.tenants.users.update{$nameSuffix}");
         Route::put('/tenants/{tenant}/users/{tenantUser}/toggle-login', [TenantUsersController::class, 'destroy'])->name("superAdmin.tenants.users.toggleLogin{$nameSuffix}");
+
+        Route::get('/roles', [SuperAdminRolesController::class, 'index'])->name("superAdmin.roles.index{$nameSuffix}");
+        Route::get('/roles/create', [SuperAdminRolesController::class, 'create'])->name("superAdmin.roles.create{$nameSuffix}");
+        Route::post('/roles', [SuperAdminRolesController::class, 'store'])->name("superAdmin.roles.store{$nameSuffix}");
+        Route::get('/roles/{role}/edit', [SuperAdminRolesController::class, 'edit'])->name("superAdmin.roles.edit{$nameSuffix}");
+        Route::put('/roles/{role}', [SuperAdminRolesController::class, 'update'])->name("superAdmin.roles.update{$nameSuffix}");
+        Route::delete('/roles/{role}', [SuperAdminRolesController::class, 'destroy'])->name("superAdmin.roles.destroy{$nameSuffix}");
 
         Route::get('/admins', [PlatformAdminsController::class, 'index'])->name("superAdmin.platformAdmins.index{$nameSuffix}");
         Route::get('/admins/create', [PlatformAdminsController::class, 'create'])->name("superAdmin.platformAdmins.create{$nameSuffix}");
