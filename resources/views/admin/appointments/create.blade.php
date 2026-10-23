@@ -8,9 +8,6 @@
             <h1 class="sfp-page-title">New appointment</h1>
             <div class="sfp-page-subtitle">Book a client in for a service</div>
         </div>
-        @can('appointments.view')
-            <a href="{{ $tenantUrl->route('timeSlots.index') }}" class="sfp-btn-outline">Manage time slots</a>
-        @endcan
     </div>
 
     <div class="sfp-card">
@@ -66,23 +63,18 @@
             </div>
 
             <div class="sfp-field">
-                <label class="sfp-label">Time slot</label>
-                <select id="appt-time-slot" class="sfp-input">
-                    <option value="">Select a time slot&hellip;</option>
-                    @foreach ($timeSlots as $slot)
-                        <option value="{{ substr($slot->start_time, 0, 5) }}">{{ $slot->label() }}</option>
-                    @endforeach
-                </select>
-                @if ($timeSlots->isEmpty())
-                    <p style="font-size:12.5px;color:#94A19D;margin-top:6px">
-                        No time slots configured yet.
-                        @can('appointments.create')
-                            <a href="{{ $tenantUrl->route('timeSlots.create') }}" class="sfp-action-link">Add one</a>
-                        @endcan
-                    </p>
-                @endif
+                <label class="sfp-label">Time</label>
+                <div style="display:flex;gap:12px;align-items:center">
+                    <input type="time" id="appt-from-time" class="sfp-input" style="margin-bottom:0" value="{{ old('start_at') ? substr(old('start_at'), 11, 5) : '' }}" aria-label="From">
+                    <span style="color:#66736F">to</span>
+                    <input type="time" id="appt-to-time" class="sfp-input" style="margin-bottom:0" value="{{ old('end_at') ? substr(old('end_at'), 11, 5) : '' }}" aria-label="To">
+                </div>
                 <input type="hidden" name="start_at" id="appt-start-at" value="{{ old('start_at') }}">
+                <input type="hidden" name="end_at" id="appt-end-at" value="{{ old('end_at') }}">
                 @error('start_at')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
+                @error('end_at')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
             </div>
@@ -111,7 +103,9 @@
     const resultsBox = document.getElementById('appt-client-results');
     const clientIdInput = document.getElementById('appt-client-id');
     const dateInput = document.getElementById('appt-date');
-    const slotSelect = document.getElementById('appt-time-slot');
+    const fromTimeInput = document.getElementById('appt-from-time');
+    const toTimeInput = document.getElementById('appt-to-time');
+    const endAtInput = document.getElementById('appt-end-at');
     const startAtInput = document.getElementById('appt-start-at');
     const serviceSearchInput = document.getElementById('appt-service-search');
     const serviceResultsBox = document.getElementById('appt-service-results');
@@ -346,15 +340,13 @@
     });
 
     function updateStartAt() {
-        if (dateInput.value && slotSelect.value) {
-            startAtInput.value = dateInput.value + 'T' + slotSelect.value;
-        } else {
-            startAtInput.value = '';
-        }
+        startAtInput.value = dateInput.value && fromTimeInput.value ? dateInput.value + 'T' + fromTimeInput.value : '';
+        endAtInput.value = dateInput.value && toTimeInput.value ? dateInput.value + 'T' + toTimeInput.value : '';
     }
 
     dateInput.addEventListener('change', updateStartAt);
-    slotSelect.addEventListener('change', updateStartAt);
+    fromTimeInput.addEventListener('input', updateStartAt);
+    toTimeInput.addEventListener('input', updateStartAt);
     updateStartAt();
 
     document.addEventListener('click', (event) => {

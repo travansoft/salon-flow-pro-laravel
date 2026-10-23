@@ -23,13 +23,13 @@ class AppointmentService
     /**
      * @param  array<int, array{service_id: int, staff_profile_id: int}>  $lineItems
      */
-    public function book(int $clientId, Carbon $startAt, array $lineItems, ?string $notes = null): Appointment
+    public function book(int $clientId, Carbon $startAt, array $lineItems, ?string $notes = null, ?Carbon $requestedEndAt = null): Appointment
     {
         $tenant = $this->tenantContext->get();
         $branch = $this->branchContext->get();
 
         $resolvedLineItems = $this->resolveLineItems($startAt, $lineItems);
-        $endAt = collect($resolvedLineItems)->max('end_at');
+        $endAt = $requestedEndAt ?? collect($resolvedLineItems)->max('end_at');
 
         foreach ($this->groupByStaff($resolvedLineItems) as $staffProfileId => $staffLineItems) {
             $staffProfile = StaffProfile::findOrFail($staffProfileId);
