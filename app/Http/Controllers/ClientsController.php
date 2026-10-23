@@ -45,15 +45,13 @@ class ClientsController extends Controller
             $client->phone,
             $client->email,
             $client->gst_number,
-            $client->family_link,
-            $client->is_frequent_no_show ? 'Yes' : 'No',
             $client->notes,
             $client->created_at?->format('d M Y'),
         ])->all();
 
         $path = $xlsxWriter->build(
             'Clients',
-            ['Name', 'Mobile', 'Email', 'GST Number', 'Family Link', 'Frequent No-show', 'Notes', 'Added On'],
+            ['Name', 'Mobile', 'Email', 'GST Number', 'Notes', 'Added On'],
             $rows,
         );
 
