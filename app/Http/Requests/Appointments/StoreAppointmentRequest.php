@@ -28,9 +28,11 @@ class StoreAppointmentRequest extends FormRequest
 
         return [
             'client_id' => [
-                'required', 'integer',
+                'nullable', 'integer',
                 Rule::exists('clients', 'id')->where('tenant_id', $tenantId),
             ],
+            'client_name' => ['required_without:client_id', 'nullable', 'string', 'max:255'],
+            'client_phone' => ['required_without:client_id', 'nullable', 'string', 'max:30'],
             'start_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'services' => ['required', 'array', 'min:1'],

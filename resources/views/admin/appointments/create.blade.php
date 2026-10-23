@@ -18,29 +18,26 @@
             @csrf
 
             <div class="sfp-field">
-                <label class="sfp-label">Client</label>
-                <input type="text" id="appt-client-search" class="sfp-input" autocomplete="off"
-                       placeholder="Search by name or mobile number" value="{{ old('client_search') }}">
+                <label class="sfp-label">Mobile number</label>
+                <input type="text" name="client_phone" id="appt-client-phone" class="sfp-input" autocomplete="off"
+                       placeholder="Type mobile number" value="{{ old('client_phone') }}">
                 <input type="hidden" name="client_id" id="appt-client-id" value="{{ old('client_id') }}">
                 <div id="appt-client-results" class="sfp-autosuggest-list" style="display:none"></div>
-                <div id="appt-client-selected" style="display:none;margin-top:8px" class="sfp-pill sfp-pill-blue"></div>
+                @error('client_phone')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
                 @error('client_id')
                     <span class="sfp-invalid-feedback">{{ $message }}</span>
                 @enderror
+            </div>
 
-                <div id="appt-new-client" style="display:none;margin-top:14px;padding:14px;border:1px solid #E3EAE8;border-radius:12px;background:#FDFAF8">
-                    <div style="font-size:13px;color:#66736F;margin-bottom:10px">No client found. Add a new one:</div>
-                    <div class="sfp-field">
-                        <label class="sfp-label">Name</label>
-                        <input type="text" id="appt-new-name" class="sfp-input">
-                    </div>
-                    <div class="sfp-field">
-                        <label class="sfp-label">Phone</label>
-                        <input type="text" id="appt-new-phone" class="sfp-input">
-                    </div>
-                    <div id="appt-new-client-feedback" style="font-size:12.5px;color:#A8506B;min-height:16px"></div>
-                    <button type="button" id="appt-new-client-save" class="sfp-btn-outline">Create client</button>
-                </div>
+            <div class="sfp-field">
+                <label class="sfp-label">Client name</label>
+                <input type="text" name="client_name" id="appt-client-name" class="sfp-input" autocomplete="off"
+                       placeholder="Type client name" value="{{ old('client_name') }}">
+                @error('client_name')
+                    <span class="sfp-invalid-feedback">{{ $message }}</span>
+                @enderror
             </div>
 
             <div class="sfp-field">
@@ -109,15 +106,10 @@
 <script>
 (function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-    const searchInput = document.getElementById('appt-client-search');
+    const phoneInput = document.getElementById('appt-client-phone');
+    const nameInput = document.getElementById('appt-client-name');
     const resultsBox = document.getElementById('appt-client-results');
     const clientIdInput = document.getElementById('appt-client-id');
-    const selectedBox = document.getElementById('appt-client-selected');
-    const newClientBox = document.getElementById('appt-new-client');
-    const newNameInput = document.getElementById('appt-new-name');
-    const newPhoneInput = document.getElementById('appt-new-phone');
-    const newClientFeedback = document.getElementById('appt-new-client-feedback');
-    const newClientSave = document.getElementById('appt-new-client-save');
     const dateInput = document.getElementById('appt-date');
     const slotSelect = document.getElementById('appt-time-slot');
     const startAtInput = document.getElementById('appt-start-at');
@@ -295,34 +287,23 @@
 
     function selectClient(client) {
         clientIdInput.value = client.id;
-        selectedBox.textContent = client.name + (client.phone ? ' · ' + client.phone : '');
-        selectedBox.style.display = 'inline-block';
+        phoneInput.value = client.phone || '';
+        nameInput.value = client.name;
         resultsBox.style.display = 'none';
-        newClientBox.style.display = 'none';
-        searchInput.value = client.name;
-    }
-
-    function clearSelection() {
-        clientIdInput.value = '';
-        selectedBox.style.display = 'none';
     }
 
     function renderResults(clients) {
         resultsBox.innerHTML = '';
 
         if (clients.length === 0) {
-            newPhoneInput.value = /^[0-9+ -]{4,}$/.test(searchInput.value.trim()) ? searchInput.value.trim() : '';
-            newNameInput.value = /^[0-9+ -]{4,}$/.test(searchInput.value.trim()) ? '' : searchInput.value.trim();
-            newClientBox.style.display = 'block';
             resultsBox.style.display = 'none';
             return;
         }
 
-        newClientBox.style.display = 'none';
         clients.forEach((client) => {
             const row = document.createElement('div');
             row.className = 'sfp-autosuggest-item';
-            row.textContent = client.name + (client.phone ? ' · ' + client.phone : '');
+            row.textContent = (client.phone ? client.phone + ' · ' : '') + client.name;
             row.addEventListener('click', () => selectClient(client));
             resultsBox.appendChild(row);
         });
@@ -339,58 +320,29 @@
         }
 
         const data = await response.json();
-        renderResults(data.clients || []);
+        const clients = data.clients || [];
+        const exact = clients.find((client) => client.phone === term);
+
+        if (exact) {
+            selectClient(exact);
+            return;
+        }
+
+        renderResults(clients);
     }
 
-    searchInput.addEventListener('input', () => {
-        clearSelection();
-        const term = searchInput.value.trim();
+    phoneInput.addEventListener('input', () => {
+        clientIdInput.value = '';
+        const term = phoneInput.value.trim();
 
         clearTimeout(clientSearchTimer);
 
-        if (term.length < 2) {
+        if (term.length < 3) {
             resultsBox.style.display = 'none';
-            newClientBox.style.display = 'none';
             return;
         }
 
         clientSearchTimer = setTimeout(() => search(term), 250);
-    });
-
-    newClientSave.addEventListener('click', async () => {
-        newClientFeedback.textContent = '';
-
-        if (!newNameInput.value.trim() || !newPhoneInput.value.trim()) {
-            newClientFeedback.textContent = 'Name and phone are both required.';
-            return;
-        }
-
-        newClientSave.disabled = true;
-
-        try {
-            const response = await fetch('{{ $tenantUrl->route("appointments.quickCreateClient") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify({ name: newNameInput.value.trim(), phone: newPhoneInput.value.trim() }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                newClientFeedback.textContent = data.message || (data.errors ? Object.values(data.errors).flat().join(' ') : 'Could not create client.');
-                newClientSave.disabled = false;
-                return;
-            }
-
-            selectClient(data);
-        } catch (error) {
-            newClientFeedback.textContent = 'Network error creating client.';
-            newClientSave.disabled = false;
-        }
     });
 
     function updateStartAt() {
@@ -406,7 +358,7 @@
     updateStartAt();
 
     document.addEventListener('click', (event) => {
-        if (!resultsBox.contains(event.target) && event.target !== searchInput) {
+        if (!resultsBox.contains(event.target) && event.target !== phoneInput) {
             resultsBox.style.display = 'none';
         }
     });

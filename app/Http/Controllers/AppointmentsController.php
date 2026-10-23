@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ResolveClientForBooking;
 use App\Exceptions\StaffUnavailableException;
 use App\Http\Requests\Appointments\CancelAppointmentRequest;
 use App\Http\Requests\Appointments\RescheduleAppointmentRequest;
@@ -28,9 +29,9 @@ class AppointmentsController extends Controller
         private AppointmentRepositoryInterface $appointmentRepository,
         private AppointmentService $appointmentService,
         private ClientRepositoryInterface $clientRepository,
+        private TenantContext $tenantContext,
         private ServiceRepositoryInterface $serviceRepository,
         private TimeSlotRepositoryInterface $timeSlotRepository,
-        private TenantContext $tenantContext,
         private TenantUrl $tenantUrl,
     ) {}
 
@@ -53,15 +54,21 @@ class AppointmentsController extends Controller
         ]);
     }
 
-    public function store(StoreAppointmentRequest $request): RedirectResponse
+    public function store(StoreAppointmentRequest $request, ResolveClientForBooking $resolveClient): RedirectResponse
     {
         abort_unless($request->user()->can('appointments.create'), 403);
 
         $data = $request->validated();
 
+        $client = $resolveClient->handle(
+            $data['client_id'] ?? null,
+            $data['client_name'] ?? null,
+            $data['client_phone'] ?? null,
+        );
+
         try {
             $appointment = $this->appointmentService->book(
-                $data['client_id'],
+                $client->id,
                 Carbon::parse($data['start_at']),
                 $data['services'],
                 $data['notes'] ?? null,
