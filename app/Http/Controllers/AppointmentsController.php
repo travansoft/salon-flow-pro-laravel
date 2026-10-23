@@ -72,6 +72,7 @@ class AppointmentsController extends Controller
                 Carbon::parse($data['start_at']),
                 $data['services'],
                 $data['notes'] ?? null,
+                isset($data['end_at']) ? Carbon::parse($data['end_at']) : null,
             );
         } catch (StaffUnavailableException $exception) {
             return back()->withErrors(['services' => $exception->getMessage()])->withInput();

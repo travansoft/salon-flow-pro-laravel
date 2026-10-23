@@ -34,6 +34,7 @@ class StoreAppointmentRequest extends FormRequest
             'client_name' => ['required_without:client_id', 'nullable', 'string', 'max:255'],
             'client_phone' => ['required_without:client_id', 'nullable', 'string', 'max:30'],
             'start_at' => ['required', 'date'],
+            'end_at' => ['nullable', 'date', 'after:start_at'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'services' => ['required', 'array', 'min:1'],
             'services.*.service_id' => [

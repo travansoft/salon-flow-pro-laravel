@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Appointments;
 
+use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\Service;
 use App\Models\StaffProfile;
 use App\Models\StaffShift;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\ActsAsTenant;
@@ -95,5 +97,35 @@ class BookAppointmentByMobileTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Create client');
         $response->assertSee('Mobile number');
+        $response->assertDontSee('Time slot');
+    }
+
+    public function test_chosen_to_time_is_saved_as_appointment_end(): void
+    {
+        $payload = $this->bookingPayload();
+
+        $this->actingAs($this->frontDesk())->postToTenant('/appointments', [
+            ...$payload,
+            'end_at' => Carbon::parse($payload['start_at'])->setTime(12, 30)->toDateTimeString(),
+            'client_name' => 'Priya Nair',
+            'client_phone' => '9000000789',
+        ]);
+
+        $appointment = Appointment::firstOrFail();
+        $this->assertSame('12:30', $appointment->end_at->format('H:i'));
+    }
+
+    public function test_to_time_must_be_after_from_time(): void
+    {
+        $payload = $this->bookingPayload();
+
+        $response = $this->actingAs($this->frontDesk())->postToTenant('/appointments', [
+            ...$payload,
+            'end_at' => Carbon::parse($payload['start_at'])->subHour()->toDateTimeString(),
+            'client_name' => 'Priya Nair',
+            'client_phone' => '9000000790',
+        ]);
+
+        $response->assertSessionHasErrors('end_at');
     }
 }
