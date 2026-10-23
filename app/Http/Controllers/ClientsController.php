@@ -8,10 +8,12 @@ use App\Models\Client;
 use App\Repositories\Contracts\ClientRepositoryInterface;
 use App\Services\TenantContext;
 use App\Services\TenantUrl;
+use App\Services\XlsxWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ClientsController extends Controller
 {
@@ -29,6 +31,35 @@ class ClientsController extends Controller
         $clients = $search ? $this->clientRepository->search($search) : $this->clientRepository->getAll();
 
         return view('admin.clients.index', ['clients' => $clients, 'search' => $search]);
+    }
+
+    public function export(Request $request, XlsxWriter $xlsxWriter): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('clients.view'), 403);
+
+        $search = $request->query('search');
+        $clients = $search ? $this->clientRepository->search($search) : $this->clientRepository->getAll();
+
+        $rows = $clients->map(fn (Client $client): array => [
+            $client->name,
+            $client->phone,
+            $client->email,
+            $client->gst_number,
+            $client->family_link,
+            $client->is_frequent_no_show ? 'Yes' : 'No',
+            $client->notes,
+            $client->created_at?->format('d M Y'),
+        ])->all();
+
+        $path = $xlsxWriter->build(
+            'Clients',
+            ['Name', 'Mobile', 'Email', 'GST Number', 'Family Link', 'Frequent No-show', 'Notes', 'Added On'],
+            $rows,
+        );
+
+        return response()
+            ->download($path, 'clients-'.now()->format('Y-m-d').'.xlsx')
+            ->deleteFileAfterSend();
     }
 
     public function create(Request $request): View
