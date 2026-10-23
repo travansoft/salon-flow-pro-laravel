@@ -212,6 +212,7 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
 
         Route::middleware('permission:clients.view')->group(function () use ($nameSuffix): void {
             Route::get('/clients', [ClientsController::class, 'index'])->name("clients.index{$nameSuffix}");
+            Route::get('/clients/export', [ClientsController::class, 'export'])->name("clients.export{$nameSuffix}");
         });
 
         Route::middleware('permission:billing.create')->group(function () use ($nameSuffix): void {

@@ -12,6 +12,9 @@
             <form method="GET" style="margin:0">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Search name or mobile…" class="sfp-input" style="margin-bottom:0;width:280px;border-radius:999px">
             </form>
+            @can('clients.view')
+                <a href="{{ $tenantUrl->route('clients.export') }}?{{ http_build_query(array_filter(['search' => $search])) }}" class="sfp-btn-outline"><i class="bi bi-file-earmark-excel"></i> Export to Excel</a>
+            @endcan
             @can('clients.create')
                 <a href="{{ $tenantUrl->route('clients.create') }}" class="sfp-btn-pill-dark">+ Add client</a>
             @endcan
