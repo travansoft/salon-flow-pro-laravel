@@ -12,6 +12,7 @@ use App\Models\Appointment;
 use App\Repositories\Contracts\AppointmentRepositoryInterface;
 use App\Repositories\Contracts\ClientRepositoryInterface;
 use App\Repositories\Contracts\ServiceRepositoryInterface;
+use App\Repositories\Contracts\StaffProfileRepositoryInterface;
 use App\Repositories\Contracts\TimeSlotRepositoryInterface;
 use App\Services\AppointmentService;
 use App\Services\TenantContext;
@@ -31,6 +32,7 @@ class AppointmentsController extends Controller
         private ClientRepositoryInterface $clientRepository,
         private TenantContext $tenantContext,
         private ServiceRepositoryInterface $serviceRepository,
+        private StaffProfileRepositoryInterface $staffProfileRepository,
         private TimeSlotRepositoryInterface $timeSlotRepository,
         private TenantUrl $tenantUrl,
     ) {}
@@ -120,6 +122,18 @@ class AppointmentsController extends Controller
                 'name' => $service->name,
                 'duration_minutes' => $service->duration_minutes,
                 'price' => $service->price,
+            ])->values(),
+        ]);
+    }
+
+    public function searchStaff(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('appointments.create'), 403);
+
+        return response()->json([
+            'staff' => $this->staffProfileRepository->getActive()->map(fn ($staffMember) => [
+                'id' => $staffMember->id,
+                'name' => $staffMember->name,
             ])->values(),
         ]);
     }
