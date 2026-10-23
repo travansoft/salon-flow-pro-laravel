@@ -159,7 +159,7 @@
     }
 
     async function loadEligibleStaff(serviceId, select, selectedId) {
-        const response = await fetch('{{ $tenantUrl->route("appointments.services.eligibleStaff", ["service" => "__ID__"]) }}'.replace('__ID__', serviceId), {
+        const response = await fetch('{{ $tenantUrl->route("appointments.staff") }}', {
             headers: { 'Accept': 'application/json' },
         });
 
