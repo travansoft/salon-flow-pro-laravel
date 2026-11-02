@@ -24,10 +24,16 @@ class Tenant extends Model
         'address',
         'phone',
         'default_gst_rate',
+        'gst_inclusive',
         'print_logo',
         'ui_logo',
         'max_users',
         'max_branches',
+    ];
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'gst_inclusive' => true,
     ];
 
     /** @return array<string, string> */
@@ -36,6 +42,7 @@ class Tenant extends Model
         return [
             'is_active' => 'boolean',
             'default_gst_rate' => 'decimal:2',
+            'gst_inclusive' => 'boolean',
         ];
     }
 

@@ -29,6 +29,7 @@ class UpdateTenantSettingsRequest extends FormRequest
             'gst_number' => ['nullable', 'string', 'regex:/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/'],
             'gst_state_code' => ['nullable', 'string', 'size:2'],
             'default_gst_rate' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
+            'gst_inclusive' => ['sometimes', 'required', 'boolean'],
             'print_logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg', 'max:500'],
             'ui_logo' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg', 'max:500'],
             'remove_print_logo' => ['sometimes', 'boolean'],

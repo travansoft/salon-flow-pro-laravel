@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'tenant_id', 'branch_id', 'client_id', 'appointment_id', 'bridal_engagement_id', 'bill_number', 'financial_year', 'subtotal', 'tax_amount', 'total',
     'cgst_amount', 'sgst_amount', 'igst_amount', 'discount_percent', 'discount_amount',
-    'amount_paid', 'amount_refunded', 'status', 'created_by', 'notes',
+    'amount_paid', 'amount_refunded', 'status', 'created_by', 'notes', 'prices_include_gst',
 ])]
 #[ScopedBy([TenantScope::class, BranchScope::class])]
 class Bill extends Model
@@ -47,6 +47,7 @@ class Bill extends Model
             'discount_amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'amount_refunded' => 'decimal:2',
+            'prices_include_gst' => 'boolean',
         ];
     }
 

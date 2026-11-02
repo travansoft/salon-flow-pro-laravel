@@ -92,6 +92,12 @@
                 <span>Discount</span>
                 <span id="bill-discount-amount" class="sfp-mono">&minus;&#8377;0.00</span>
             </div>
+            @unless($pricesIncludeGst)
+                <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#66736F;padding-top:4px">
+                    <span>GST (added on top)</span>
+                    <span id="bill-tax-amount" class="sfp-mono">&#8377;0.00</span>
+                </div>
+            @endunless
 
             <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:16px;margin-top:8px;border-top:1px solid #EDF1F0">
                 <span style="font-size:15px">Total</span>
@@ -254,6 +260,8 @@
     const discountModePercentBtn = document.getElementById('bill-discount-mode-percent');
     const discountModeAmountBtn = document.getElementById('bill-discount-mode-amount');
     const totalEl = document.getElementById('bill-total');
+    const taxAmountEl = document.getElementById('bill-tax-amount');
+    const pricesIncludeGst = @json($pricesIncludeGst);
 
     const paymentMethodSelect = document.getElementById('bill-payment-method');
     const feedback = document.getElementById('bill-feedback');
@@ -527,6 +535,8 @@
             components: (service.components || []).map((component) => ({
                 serviceId: component.id,
                 name: component.name,
+                price: Number(component.price),
+                taxRate: Number(component.tax_rate),
                 staffProfileId: null,
             })),
         });
@@ -719,12 +729,38 @@
         const discount = discountMode === 'percent'
             ? subtotal * (discountValue() / 100)
             : Math.min(discountValue(), subtotal);
-        const total = subtotal - discount;
+        const tax = pricesIncludeGst || subtotal === 0 ? 0 : additionalTax(subtotal, discount);
+        const total = subtotal - discount + tax;
 
         subtotalEl.textContent = money(subtotal);
         discountRow.style.display = discount > 0 ? 'flex' : 'none';
         discountAmountEl.textContent = '−' + money(discount);
+        if (taxAmountEl) {
+            taxAmountEl.textContent = money(tax);
+        }
         totalEl.textContent = money(total);
+    }
+
+    // Preview of the GST added on top of the discounted price; the server
+    // recalculates it per line when the bill is created.
+    function additionalTax(subtotal, discount) {
+        const keptShare = (subtotal - discount) / subtotal;
+
+        return lines.reduce((sum, line) => {
+            const lineBase = Number(line.priceInclusive) * (line.isCombo ? 1 : Number(line.quantity));
+            const components = line.isCombo ? (line.components || []) : [];
+            const componentsTotal = components.reduce((total, component) => total + Number(component.price || 0), 0);
+
+            if (components.length && componentsTotal > 0) {
+                return sum + components.reduce((componentSum, component) => {
+                    const componentBase = lineBase * (Number(component.price || 0) / componentsTotal);
+
+                    return componentSum + componentBase * keptShare * (Number(component.taxRate ?? line.taxRate) / 100);
+                }, 0);
+            }
+
+            return sum + lineBase * keptShare * (Number(line.taxRate) / 100);
+        }, 0);
     }
 
     discountInput.addEventListener('input', updateTotal);

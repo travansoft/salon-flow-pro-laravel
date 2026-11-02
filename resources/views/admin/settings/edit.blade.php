@@ -36,6 +36,12 @@
             'value' => $tenant->default_gst_rate,
         ],
         [
+            'key' => 'gst_inclusive',
+            'label' => 'GST on service prices',
+            'value' => $tenant->gst_inclusive ? 1 : 0,
+            'display' => $tenant->gst_inclusive ? 'Inclusive in the service price' : 'Additional to the service price',
+        ],
+        [
             'key' => 'print_logo',
             'label' => 'Print logo',
             'value' => $tenant->print_logo,
@@ -80,7 +86,7 @@
                             <span style="color:#66736F">Not set</span>
                         @endif
                     @else
-                        {{ $item['value'] !== null && $item['value'] !== '' ? $item['value'] : ($item['placeholder'] ?? '—') }}
+                        {{ $item['display'] ?? ($item['value'] !== null && $item['value'] !== '' ? $item['value'] : ($item['placeholder'] ?? '—')) }}
                     @endif
                 </span>
                 <div style="display:flex;align-items:center;justify-content:flex-end">
@@ -140,6 +146,17 @@
                                     <div class="sfp-field">
                                         <input type="number" step="0.01" min="0" max="100" name="{{ $item['key'] }}" class="sfp-input" value="{{ old($item['key'], $item['value']) }}">
                                         <p style="font-size:12.5px;color:#66736F;margin:6px 0 0">Used for services that don't have their own GST rate set.</p>
+                                        @error($item['key'])
+                                            <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                @elseif ($item['key'] === 'gst_inclusive')
+                                    <div class="sfp-field">
+                                        <select name="{{ $item['key'] }}" class="sfp-input">
+                                            <option value="1" @selected((string) old($item['key'], $item['value']) === '1')>Inclusive — GST is already part of the service price</option>
+                                            <option value="0" @selected((string) old($item['key'], $item['value']) === '0')>Additional — GST is added on top of the service price</option>
+                                        </select>
+                                        <p style="font-size:12.5px;color:#66736F;margin:6px 0 0">Applies to every new bill straight away. Bills already created keep the GST they were billed with.</p>
                                         @error($item['key'])
                                             <span class="sfp-invalid-feedback">{{ $message }}</span>
                                         @enderror
