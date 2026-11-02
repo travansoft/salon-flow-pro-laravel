@@ -18,6 +18,7 @@ use App\Services\BillDraftService;
 use App\Services\BillingService;
 use App\Services\IncentiveService;
 use App\Services\QuickBillService;
+use App\Services\TenantContext;
 use App\Services\TenantUrl;
 use App\Services\XlsxWriter;
 use Illuminate\Http\JsonResponse;
@@ -97,7 +98,7 @@ class BillsController extends Controller
             ->deleteFileAfterSend();
     }
 
-    public function create(Request $request, StaffProfileRepositoryInterface $staffProfileRepository): View
+    public function create(Request $request, StaffProfileRepositoryInterface $staffProfileRepository, TenantContext $tenantContext): View
     {
         abort_unless($request->user()->can('billing.create'), 403);
 
@@ -112,15 +113,17 @@ class BillsController extends Controller
         return view('admin.bills.create', [
             'referrers' => $staffProfileRepository->getActive(),
             'draft' => $draft,
+            'pricesIncludeGst' => (bool) $tenantContext->get()->gst_inclusive,
         ]);
     }
 
-    public function backfillCreate(Request $request, StaffProfileRepositoryInterface $staffProfileRepository): View
+    public function backfillCreate(Request $request, StaffProfileRepositoryInterface $staffProfileRepository, TenantContext $tenantContext): View
     {
         abort_unless($request->user()->can('billing.backfill'), 403);
 
         return view('admin.bills.backfill', [
             'referrers' => $staffProfileRepository->getActive(),
+            'pricesIncludeGst' => (bool) $tenantContext->get()->gst_inclusive,
         ]);
     }
 

@@ -91,40 +91,47 @@ class BillingService
         $isIntraState = $this->isIntraState($tenant->gst_state_code, $client->gst_number);
         $discountAmountInput = $discountAmount !== null ? (string) $discountAmount : null;
         $discountPercentInput = (string) $discountPercent;
+        $pricesIncludeGst = (bool) $tenant->gst_inclusive;
 
-        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $discountPercentInput, $discountAmountInput, $billDate, $notes): Bill {
+        return DB::transaction(function () use ($tenant, $branch, $clientId, $createdBy, $lineItems, $appointmentId, $isIntraState, $pricesIncludeGst, $discountPercentInput, $discountAmountInput, $billDate, $notes): Bill {
             $subtotal = '0';
-            $subtotalInclusive = '0';
+            $subtotalDiscountBase = '0';
             $lineIntermediates = [];
 
             foreach ($lineItems as $item) {
                 $quantity = $item['quantity'] ?? 1;
-                $unitPriceInclusive = (string) $item['unit_price'];
+                $enteredUnitPrice = (string) $item['unit_price'];
                 $taxRate = (string) ($item['tax_rate'] ?? $tenant->default_gst_rate);
                 $taxRateMultiplier = bcadd('1', bcdiv($taxRate, '100', 4), 4);
 
-                // Unit price is GST-inclusive. Back-calculate the exclusive rate from
-                // the inclusive line total (not the inclusive unit price) so rounding
-                // is applied once per line, not once per unit — this keeps quantity > 1
+                // The discount applies to the amount the customer sees as the price:
+                // the GST-inclusive line total when prices include GST, the
+                // GST-exclusive line total when GST is added on top.
+                $lineDiscountBase = bcmul($enteredUnitPrice, (string) $quantity, 2);
+
+                // With inclusive pricing, back-calculate the exclusive rate from the
+                // inclusive line total (not the inclusive unit price) so rounding is
+                // applied once per line, not once per unit — this keeps quantity > 1
                 // exact and avoids the classic "-1 paisa" drift from rounding twice.
-                $lineTotalInclusive = bcmul($unitPriceInclusive, (string) $quantity, 2);
-                $lineTotal = bcadd(bcdiv($lineTotalInclusive, $taxRateMultiplier, 10), '0', 2);
+                $lineTotal = $pricesIncludeGst
+                    ? bcadd(bcdiv($lineDiscountBase, $taxRateMultiplier, 10), '0', 2)
+                    : $lineDiscountBase;
                 $unitPrice = bcdiv($lineTotal, (string) $quantity, 2);
 
                 $subtotal = bcadd($subtotal, $lineTotal, 2);
-                $subtotalInclusive = bcadd($subtotalInclusive, $lineTotalInclusive, 2);
+                $subtotalDiscountBase = bcadd($subtotalDiscountBase, $lineDiscountBase, 2);
 
                 $lineIntermediates[] = [
                     'item' => $item,
                     'quantity' => $quantity,
                     'taxRate' => $taxRate,
-                    'lineTotalInclusive' => $lineTotalInclusive,
+                    'lineDiscountBase' => $lineDiscountBase,
                     'lineTotal' => $lineTotal,
                     'unitPrice' => $unitPrice,
                 ];
             }
 
-            if ($discountAmountInput !== null && bccomp($discountAmountInput, $subtotalInclusive, 2) > 0) {
+            if ($discountAmountInput !== null && bccomp($discountAmountInput, $subtotalDiscountBase, 2) > 0) {
                 throw new InvalidArgumentException('Discount amount cannot exceed the bill subtotal.');
             }
 
@@ -147,7 +154,7 @@ class BillingService
                 $item = $line['item'];
                 $quantity = $line['quantity'];
                 $taxRate = $line['taxRate'];
-                $lineTotalInclusive = $line['lineTotalInclusive'];
+                $lineDiscountBase = $line['lineDiscountBase'];
                 $lineTotal = $line['lineTotal'];
                 $unitPrice = $line['unitPrice'];
 
@@ -155,21 +162,24 @@ class BillingService
                     $isLastLine = $index === $lineCount - 1;
                     $lineDiscount = $isLastLine
                         ? bcsub($discountAmountInput, $allocatedDiscount, 2)
-                        : (bccomp($subtotalInclusive, '0', 2) === 0 ? '0' : bcmul($discountAmountInput, bcdiv($lineTotalInclusive, $subtotalInclusive, 10), 2));
+                        : (bccomp($subtotalDiscountBase, '0', 2) === 0 ? '0' : bcmul($discountAmountInput, bcdiv($lineDiscountBase, $subtotalDiscountBase, 10), 2));
                     $allocatedDiscount = bcadd($allocatedDiscount, $lineDiscount, 2);
                 } else {
-                    $lineDiscount = bcmul($lineTotalInclusive, bcdiv($discountPercentInput, '100', 4), 2);
+                    $lineDiscount = bcmul($lineDiscountBase, bcdiv($discountPercentInput, '100', 4), 2);
                 }
 
                 $taxableAmount = bcsub($lineTotal, $lineDiscount, 2);
 
-                // The discount is applied to the GST-inclusive amount the customer
-                // actually sees, so tax is the remainder needed to make the line's
-                // taxable value plus its tax equal (inclusive - discount) exactly —
-                // not the taxable value re-multiplied by the tax rate, which would
-                // also strip GST off the discount itself and shrink the bill by
-                // more than what was typed.
-                $lineTax = bcsub(bcsub($lineTotalInclusive, $lineDiscount, 2), $taxableAmount, 2);
+                // Inclusive pricing applies the discount to the GST-inclusive amount
+                // the customer actually sees, so tax is the remainder needed to make
+                // the line's taxable value plus its tax equal (inclusive - discount)
+                // exactly — not the taxable value re-multiplied by the tax rate,
+                // which would also strip GST off the discount itself and shrink the
+                // bill by more than what was typed. With GST added on top, the
+                // discount comes off the price first and GST is charged on what's left.
+                $lineTax = $pricesIncludeGst
+                    ? bcsub(bcsub($lineDiscountBase, $lineDiscount, 2), $taxableAmount, 2)
+                    : $this->roundMoney(bcmul($taxableAmount, bcdiv($taxRate, '100', 6), 6));
 
                 [$lineCgst, $lineSgst, $lineIgst] = $this->splitTax($lineTax, $isIntraState);
 
@@ -204,7 +214,7 @@ class BillingService
             // math above, so it can't introduce the rounding drift a stored
             // percent would if it were round-tripped through tax calculations.
             $discountRate = $discountAmountInput !== null
-                ? (bccomp($subtotalInclusive, '0', 2) === 0 ? '0' : bcmul(bcdiv($discountAmount, $subtotalInclusive, 6), '100', 4))
+                ? (bccomp($subtotalDiscountBase, '0', 2) === 0 ? '0' : bcmul(bcdiv($discountAmount, $subtotalDiscountBase, 6), '100', 4))
                 : $discountPercentInput;
 
             $total = bcadd(bcsub($subtotal, $discountAmount, 2), $taxAmount, 2);
@@ -226,6 +236,7 @@ class BillingService
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'igst_amount' => $igstAmount,
+                'prices_include_gst' => $pricesIncludeGst,
                 'status' => Bill::StatusUnpaid,
                 'created_by' => $createdBy,
                 'notes' => $notes,

@@ -85,7 +85,7 @@
 
         wrapper.innerHTML = `
             <div class="sfp-field" style="margin:0"><select name="combo_items[${index}][service_id]" class="sfp-select" data-combo-service>${options}</select></div>
-            <div class="sfp-field" style="margin:0"><input type="number" step="0.01" min="0" name="combo_items[${index}][price]" class="sfp-input" data-combo-price placeholder="Price (incl. GST)"></div>
+            <div class="sfp-field" style="margin:0"><input type="number" step="0.01" min="0" name="combo_items[${index}][price]" class="sfp-input" data-combo-price placeholder="Price ({{ $tenant->gst_inclusive ? 'incl. GST' : 'excl. GST' }})"></div>
             <button type="button" class="sfp-btn-outline" data-combo-remove aria-label="Remove">Remove</button>`;
 
         const select = wrapper.querySelector('[data-combo-service]');

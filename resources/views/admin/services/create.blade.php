@@ -48,7 +48,7 @@
 
             <div class="sfp-split-2">
                 <div class="sfp-field">
-                    <label class="sfp-label">Price (incl. GST)</label>
+                    <label class="sfp-label">Price ({{ $tenant->gst_inclusive ? 'incl. GST' : 'excl. GST' }})</label>
                     <input type="number" step="0.01" min="0" name="price" id="service-price-inclusive" class="sfp-input" value="{{ old('price') }}">
                     <p id="service-price-breakdown" style="font-size:12.5px;color:#66736F;margin:6px 0 0"></p>
                     @error('price')
@@ -122,6 +122,7 @@
 <script>
 (function () {
     const tenantDefaultGstRate = {{ (float) ($tenant->default_gst_rate ?? 18) }};
+    const pricesIncludeGst = @json((bool) $tenant->gst_inclusive);
 
     const inclusiveInput = document.getElementById('service-price-inclusive');
     const taxRateInput = document.getElementById('service-tax-rate');
@@ -145,6 +146,14 @@
         }
 
         const rate = currentTaxRate();
+
+        if (!pricesIncludeGst) {
+            const gstOnTop = inclusive * (rate / 100);
+
+            breakdown.textContent = `Price ${money(inclusive)} + GST (${rate}%) ${money(gstOnTop)} = ${money(inclusive + gstOnTop)}`;
+            return;
+        }
+
         const exclusive = inclusive / (1 + rate / 100);
         const gstAmount = inclusive - exclusive;
 

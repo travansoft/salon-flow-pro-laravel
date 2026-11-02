@@ -164,6 +164,7 @@ class ServicesController extends Controller
                         'id' => $comboItem->component_service_id,
                         'name' => $comboItem->component->name,
                         'price' => (float) $comboItem->price,
+                        'tax_rate' => (float) $comboItem->component->effectiveTaxRate($tenantDefaultGstRate),
                     ])->values()
                     : [],
             ])->values(),
