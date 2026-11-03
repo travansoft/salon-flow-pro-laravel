@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 
 class BillRepository implements BillRepositoryInterface
 {
@@ -74,6 +75,16 @@ class BillRepository implements BillRepositoryInterface
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();
+    }
+
+    public function inclusiveForRateCorrection(?Carbon $from, ?Carbon $to): LazyCollection
+    {
+        return $this->model->where('status', '!=', Bill::StatusVoid)
+            ->where('prices_include_gst', true)
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from->copy()->startOfDay()))
+            ->when($to, fn ($query) => $query->where('created_at', '<=', $to->copy()->endOfDay()))
+            ->with('lineItems')
+            ->lazyById();
     }
 
     public function totalForDate(Carbon $date): string

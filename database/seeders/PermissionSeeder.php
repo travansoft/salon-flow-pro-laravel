@@ -45,6 +45,7 @@ class PermissionSeeder extends Seeder
         $permissions[] = 'billing.backfill';
         $permissions[] = 'billing.editBill';
         $permissions[] = 'billing.cancel';
+        $permissions[] = 'billing.correctGst';
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
@@ -62,7 +63,7 @@ class PermissionSeeder extends Seeder
 
         $this->seedRole('Manager', 'Runs the salon day to day; cannot manage users or roles.', array_diff(
             $permissions,
-            ['billing.editBill', 'billing.cancel'],
+            ['billing.editBill', 'billing.cancel', 'billing.correctGst'],
             $accessManagement,
         ));
 

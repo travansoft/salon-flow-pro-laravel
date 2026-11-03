@@ -301,7 +301,7 @@ class BillingService
      *
      * @return array{0: string, 1: string, 2: string}
      */
-    private function splitTax(string $taxAmount, bool $isIntraState): array
+    public function splitTax(string $taxAmount, bool $isIntraState): array
     {
         if (! $isIntraState) {
             return ['0.00', '0.00', $taxAmount];

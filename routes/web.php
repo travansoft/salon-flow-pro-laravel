@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\BillDraftsController;
+use App\Http\Controllers\BillGstCorrectionsController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\BranchSwitcherController;
@@ -291,6 +292,11 @@ $registerTenantRoutes = function (string $nameSuffix = ''): void {
         Route::middleware('permission:billing.editBill')->group(function () use ($nameSuffix): void {
             Route::get('/bills/{bill}/edit', [BillsController::class, 'edit'])->name("bills.edit{$nameSuffix}");
             Route::put('/bills/{bill}', [BillsController::class, 'update'])->name("bills.update{$nameSuffix}");
+        });
+
+        Route::middleware('permission:billing.correctGst')->group(function () use ($nameSuffix): void {
+            Route::get('/bills/gst-correction', [BillGstCorrectionsController::class, 'create'])->name("billGstCorrections.create{$nameSuffix}");
+            Route::post('/bills/gst-correction', [BillGstCorrectionsController::class, 'store'])->name("billGstCorrections.store{$nameSuffix}");
         });
 
         Route::middleware('permission:billing.cancel')->group(function () use ($nameSuffix): void {
