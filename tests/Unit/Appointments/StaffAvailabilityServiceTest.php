@@ -26,7 +26,7 @@ class StaffAvailabilityServiceTest extends TestCase
 
     public function test_staff_is_available_within_their_working_hours_with_no_conflicts(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create(['check_staff_availability' => true]);
         app(TenantContext::class)->set($tenant);
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
@@ -50,7 +50,7 @@ class StaffAvailabilityServiceTest extends TestCase
 
     public function test_staff_is_unavailable_outside_their_working_hours(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create(['check_staff_availability' => true]);
         app(TenantContext::class)->set($tenant);
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
@@ -74,7 +74,7 @@ class StaffAvailabilityServiceTest extends TestCase
 
     public function test_staff_is_unavailable_on_an_approved_leave_override_day(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create(['check_staff_availability' => true]);
         app(TenantContext::class)->set($tenant);
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
@@ -108,7 +108,7 @@ class StaffAvailabilityServiceTest extends TestCase
 
     public function test_staff_is_unavailable_when_an_overlapping_appointment_exists(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create(['check_staff_availability' => true]);
         app(TenantContext::class)->set($tenant);
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
@@ -144,5 +144,18 @@ class StaffAvailabilityServiceTest extends TestCase
         $service = $this->makeService();
 
         $this->assertFalse($service->isAvailable($staffProfile, $monday->copy()->addMinutes(30), $monday->copy()->addMinutes(90)));
+    }
+
+    public function test_staff_is_always_available_when_the_tenant_does_not_check_availability(): void
+    {
+        $tenant = Tenant::factory()->create(['check_staff_availability' => false]);
+        app(TenantContext::class)->set($tenant);
+        $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
+        app(BranchContext::class)->set($branch);
+
+        $staffProfile = StaffProfile::factory()->create(['tenant_id' => $tenant->id]);
+        $monday = now()->next(1)->setTime(10, 0);
+
+        $this->assertTrue($this->makeService()->isAvailable($staffProfile, $monday, $monday->copy()->addHour()));
     }
 }

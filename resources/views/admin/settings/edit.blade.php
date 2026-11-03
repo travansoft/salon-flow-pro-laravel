@@ -42,6 +42,12 @@
             'display' => $tenant->gst_inclusive ? 'Inclusive in the service price' : 'Additional to the service price',
         ],
         [
+            'key' => 'check_staff_availability',
+            'label' => 'Check staff availability',
+            'value' => $tenant->check_staff_availability ? 1 : 0,
+            'display' => $tenant->check_staff_availability ? 'Yes — block bookings outside shifts or overlapping' : 'No — allow any booking',
+        ],
+        [
             'key' => 'print_logo',
             'label' => 'Print logo',
             'value' => $tenant->print_logo,
@@ -157,6 +163,16 @@
                                             <option value="0" @selected((string) old($item['key'], $item['value']) === '0')>Additional â€” GST is added on top of the service price</option>
                                         </select>
                                         <p style="font-size:12.5px;color:#66736F;margin:6px 0 0">Applies to every new bill straight away. Bills already created keep the GST they were billed with.</p>
+                                        @error($item['key'])
+                                            <span class="sfp-invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                @elseif ($item['key'] === 'check_staff_availability')
+                                    <div class="sfp-field">
+                                        <select name="{{ $item['key'] }}" class="sfp-input">
+                                            <option value="0" @selected((string) old($item['key'], $item['value']) === '0')>No — appointments can be booked without checking staff availability</option>
+                                            <option value="1" @selected((string) old($item['key'], $item['value']) === '1')>Yes — block appointments outside staff shifts or overlapping another booking</option>
+                                        </select>
                                         @error($item['key'])
                                             <span class="sfp-invalid-feedback">{{ $message }}</span>
                                         @enderror

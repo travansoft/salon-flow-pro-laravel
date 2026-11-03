@@ -25,6 +25,7 @@ class Tenant extends Model
         'phone',
         'default_gst_rate',
         'gst_inclusive',
+        'check_staff_availability',
         'print_logo',
         'ui_logo',
         'max_users',
@@ -34,6 +35,7 @@ class Tenant extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'gst_inclusive' => true,
+        'check_staff_availability' => false,
     ];
 
     /** @return array<string, string> */
@@ -43,6 +45,7 @@ class Tenant extends Model
             'is_active' => 'boolean',
             'default_gst_rate' => 'decimal:2',
             'gst_inclusive' => 'boolean',
+            'check_staff_availability' => 'boolean',
         ];
     }
 

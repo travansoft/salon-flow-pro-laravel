@@ -130,23 +130,25 @@
                         </a>
                     @endcan
 
-                    @can('settings.view')
-                        <a href="{{ $tenantUrl->route('settings.edit') }}" class="sfp-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Settings
-                        </a>
-                    @endcan
-
-                    @can('users.view')
-                        <a href="{{ $tenantUrl->route('users.index') }}" class="sfp-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Users
-                        </a>
-                    @endcan
-
-                    @can('roles.view')
-                        <a href="{{ $tenantUrl->route('roles.index') }}" class="sfp-nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                            <span class="sfp-nav-bar"></span>Roles
-                        </a>
-                    @endcan
+                    @canany(['settings.view', 'users.view', 'roles.view'])
+                        <x-nav-group label="Administration" :active="request()->routeIs('settings.*', 'users.*', 'roles.*')">
+                            @can('settings.view')
+                                <a href="{{ $tenantUrl->route('settings.edit') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                                    Settings
+                                </a>
+                            @endcan
+                            @can('users.view')
+                                <a href="{{ $tenantUrl->route('users.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                                    Users
+                                </a>
+                            @endcan
+                            @can('roles.view')
+                                <a href="{{ $tenantUrl->route('roles.index') }}" class="sfp-nav-item sfp-nav-child {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                                    Roles
+                                </a>
+                            @endcan
+                        </x-nav-group>
+                    @endcanany
 
                     <div class="sfp-sidebar-footer">
                         Role: <strong>{{ auth()->user()->getRoleNames()->first() ?? '—' }}</strong>

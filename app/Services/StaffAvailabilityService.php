@@ -8,10 +8,16 @@ use Illuminate\Support\Carbon;
 
 class StaffAvailabilityService
 {
-    public function __construct(private AppointmentRepositoryInterface $appointmentRepository) {}
+    public function __construct(private AppointmentRepositoryInterface $appointmentRepository,
+        private TenantContext $tenantContext,
+    ) {}
 
     public function isAvailable(StaffProfile $staffProfile, Carbon $start, Carbon $end, ?int $excludingAppointmentId = null): bool
     {
+        if (! $this->tenantContext->get()->check_staff_availability) {
+            return true;
+        }
+
         return $this->isWithinWorkingHours($staffProfile, $start, $end)
             && $this->appointmentRepository->getOverlappingForStaff($staffProfile->id, $start, $end, $excludingAppointmentId)->isEmpty();
     }

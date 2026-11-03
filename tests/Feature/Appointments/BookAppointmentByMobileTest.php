@@ -128,4 +128,14 @@ class BookAppointmentByMobileTest extends TestCase
 
         $response->assertSessionHasErrors('end_at');
     }
+
+    public function test_staff_list_includes_active_staff_not_assigned_to_any_service(): void
+    {
+        $staffProfile = StaffProfile::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Meera Das']);
+
+        $response = $this->actingAs($this->frontDesk())->getFromTenant('/appointments/staff');
+
+        $response->assertOk();
+        $response->assertJsonFragment(['id' => $staffProfile->id, 'name' => 'Meera Das']);
+    }
 }
