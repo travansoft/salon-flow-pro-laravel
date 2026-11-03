@@ -12,6 +12,9 @@
             @can('billing.backfill')
                 <a href="{{ $tenantUrl->route('bills.backfillCreate') }}" class="sfp-btn-outline">Backfill old bill</a>
             @endcan
+            @can('billing.correctGst')
+                <a href="{{ $tenantUrl->route('billGstCorrections.create') }}" class="sfp-btn-outline">Correct GST rate</a>
+            @endcan
             @can('billing.create')
                 <a href="{{ $tenantUrl->route('bills.create') }}" class="sfp-btn-primary">New bill</a>
             @endcan

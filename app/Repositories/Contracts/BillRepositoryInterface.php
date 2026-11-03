@@ -7,6 +7,7 @@ use App\Models\BillPayment;
 use App\Models\BillRefund;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\LazyCollection;
 
 interface BillRepositoryInterface
 {
@@ -32,6 +33,14 @@ interface BillRepositoryInterface
      * @return Collection<int, Bill>
      */
     public function forGstReport(Carbon $from, Carbon $to): Collection;
+
+    /**
+     * Non-void bills whose prices include GST, with their lines, oldest first.
+     * Optionally limited to bills created within the given dates.
+     *
+     * @return LazyCollection<int, Bill>
+     */
+    public function inclusiveForRateCorrection(?Carbon $from, ?Carbon $to): LazyCollection;
 
     /** Sum of non-void bill totals on a single date, for reporting trends. */
     public function totalForDate(Carbon $date): string;
