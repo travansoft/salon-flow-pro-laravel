@@ -99,6 +99,8 @@ class CreateAppointmentTest extends TestCase
 
     public function test_booking_outside_working_hours_fails_with_validation_error(): void
     {
+        $this->tenant->update(['check_staff_availability' => true]);
+
         $frontDesk = User::factory()->for($this->tenant)->create();
         $frontDesk->assignRole('FrontDesk');
 

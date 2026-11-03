@@ -120,7 +120,7 @@ class AppointmentServiceTest extends TestCase
 
     public function test_book_throws_when_staff_is_unavailable(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Tenant::factory()->create(['check_staff_availability' => true]);
         app(TenantContext::class)->set($tenant);
         $branch = Branch::factory()->create(['tenant_id' => $tenant->id]);
         app(BranchContext::class)->set($branch);
